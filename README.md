@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="80" height="80" alt="ChatGPT Image May 23, 2026, 06_53_25 AM (1)" src="https://github.com/user-attachments/assets/eed57d8b-f387-4b31-bd6b-b1b0e86f6ed3" />
+<img src="./screenshots/icon.png" width="80" height="80" alt="YT-MANGO">
 
 
 # YT-MANGO
@@ -50,22 +50,33 @@ yt-dlp is powerful, but its command-line interface can be intimidating. **YT-MAN
 - Cookie authentication for age-restricted or members-only content
 - Light / Dark / Auto theme
 
-## Screenshots
+### 📸 Screenshots
 
- Home  
 
- <img width="720"  alt="image (1)" src="https://github.com/user-attachments/assets/5f48e217-fd79-4ba3-8836-475efd8e936d" />
-  <img width="720"  alt="image (2)" src="https://github.com/user-attachments/assets/585b0234-9fa0-4390-8f99-b2767db56049" />
- 
+| Main Interface |
+| :---: |
+| [<img src="screenshots/dark.png" width="800">](screenshots/dark.png) |
+| **** |
 
-| Download Options | Download Sections |
-|:-:|:-:|
-| ![Download](screenshot/download.png) | ![Download Other](screenshot/download-other.png) |
+| Selection Options |
+| :---: |
+| [<img src="screenshots/home.png" width="800">](screenshots/home.png) |
+| ** |
 
-| Downloading | Tools |
-|:-:|:-:|
-| ![Downloading](screenshot/downloading.png) | ![Tools](screenshot/tools.png) |
+| Playlist Manager | Download Sections |
+| :---: | :---: |
+| [<img src="screenshots/playlist.png" width="350">](screenshots/playlist.png) | [<img src="screenshots/sections.png" width="350">](screenshots/sections.png) |
+| ** | ** |
 
+| drag and drop url | App Settings |
+| :---: | :---: |
+| [<img src="screenshots/drag and drop url.png" width="350">](screenshots/.png) | [<img src="screenshots/settings.png" width="350">](screenshots/settings.png) |
+| ** | ** |
+
+---
+*Click on any image to view in full size.*
+---
+*Click on any image to view in full size.*
 ## Getting Started
 
 ### Download
