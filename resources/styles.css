@@ -672,7 +672,7 @@ body {
 
 /* Drag and Drop Active State Styles */
 body.drag-active {
-    outline: 3px dashed #848484dd;
+    outline: 5px dashed rgb(255, 156, 9);
     outline-offset: -3px;
     transition: outline 0.2s ease;
 }
