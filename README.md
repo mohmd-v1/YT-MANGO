@@ -1,29 +1,95 @@
-# YT-DLP GUI
+<div align="center">
 
-A modern, professional desktop application for downloading videos using yt-dlp with an intuitive graphical interface.
+<img width="80" height="80" alt="ChatGPT Image May 23, 2026, 06_53_25 AM (1)" src="https://github.com/user-attachments/assets/eed57d8b-f387-4b31-bd6b-b1b0e86f6ed3" />
+
+
+# YT-MANGO
+
+A modern, beautiful desktop GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp).
+
+Download videos from YouTube, Bilibili, Twitter/X and [1000+ websites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) with ease.
+
+
+
+**English** 
+
+</div>
+
+---
+
+## Why YT-MANGO?
+
+yt-dlp is powerful, but its command-line interface can be intimidating. **YT-MANGO** wraps it in a clean, native desktop app — no terminal needed.
+
+- **Zero config to start** — paste a link, pick a quality, click download
+- **Native & lightweight** — built with neutralino.js, ~10 MB installer, low memory usage
+- **Cross-platform** — Windows, macOS, and Linux
 
 ## Features
 
-- 🎨 **Modern UI**: Professional dark theme with smooth animations
-- 🎬 **Format Selection**: Choose from video-only, audio-only, or mixed formats
-- 📊 **Quality Badges**: Color-coded resolution and codec indicators
-- ⚙️ **Advanced Settings**: Metadata embedding, subtitles, cookies support
-- 🚀 **Quick Actions**: One-click M4A audio download
-- 💾 **Persistent Settings**: Your preferences are saved automatically
-- 🔒 **Cookie Authentication**: Support for private/restricted videos
-- 📁 **Custom Download Path**: Choose where to save your files
+### Core
 
-## Requirements
+- Paste a video URL and instantly preview title, thumbnail, duration, and available formats
+- Choose video quality, audio-only, or video-only downloads
+- Download queue with pause / resume / cancel controls
+- Real-time progress with speed and ETA display
+- Playlist support — download all or selected items
+- Configurable concurrent downloads and fragment threading
 
-- **yt-dlp**: Must be installed and available in PATH
-- **ffmpeg**: Required for merging video and audio streams
+### Settings
+- **Download Location**: Choose custom download folder
+- **Cookies File**: Use cookies for authentication
+- **Metadata Options**: Embed thumbnails and metadata
+- **Download Behavior**: Configure playlist handling and error management
 
-## Installation
 
-### Option 1: Pre-built Release
-1. Download the latest release from the `dist/yt_dlp_gui` folder
-2. Ensure `yt-dlp.exe` and `ffmpeg.exe` are in the same folder
-3. Run `yt_dlp_gui-win_x64.exe`
+### Advanced
+
+- Embed subtitles, thumbnails, and metadata, into the output file
+- SponsorBlock integration — automatically skip sponsored segments
+- Cookie authentication for age-restricted or members-only content
+- Light / Dark / Auto theme
+
+## Screenshots
+
+ Home  
+
+ <img width="720"  alt="image (1)" src="https://github.com/user-attachments/assets/5f48e217-fd79-4ba3-8836-475efd8e936d" />
+  <img width="720"  alt="image (2)" src="https://github.com/user-attachments/assets/585b0234-9fa0-4390-8f99-b2767db56049" />
+ 
+
+| Download Options | Download Sections |
+|:-:|:-:|
+| ![Download](screenshot/download.png) | ![Download Other](screenshot/download-other.png) |
+
+| Downloading | Tools |
+|:-:|:-:|
+| ![Downloading](screenshot/downloading.png) | ![Tools](screenshot/tools.png) |
+
+## Getting Started
+
+### Download
+
+Grab the latest release for your platform from [**Releases**][([https://github.com/imsyy/yt-dlp-gui/releases](https://github.com/mohmd-v1/YT-MANGO/releases/tag/v3))](https://github.com/mohmd-v1/YT-MANGO/releases/tag/v3):
+
+| Platform | File |
+|----------|------|
+| Windows  | `.exe` installer |
+| macOS    | `.dmg` |
+| Linux    | `.AppImage` / `.deb` |
+
+### First Launch
+
+1. Open the app and go to **Settings**
+2. Click **Download** next to yt-dlp — the binary is fetched automatically
+3. *(Optional)* Install **Deno** runtime for full YouTube format support
+4. Set your **download directory**
+5. Go back to the home page, paste a URL, and start downloading
+
+> [!TIP]
+> If you encounter login-required videos, configure Cookie in settings using Netscape format text or a cookie file.
+
+
 
 ### Option 2: Build from Source
 1. Install [Neutralinojs](https://neutralino.js.org/docs/getting-started/your-first-neutralinojs-app)
@@ -46,11 +112,6 @@ Click the "M4A" button for instant audio download without format selection.
 - **Cookies File**: Use cookies for authentication
 - **Metadata Options**: Embed thumbnails and metadata
 - **Download Behavior**: Configure playlist handling and error management
-
-## Keyboard Shortcuts
-
-- `Ctrl+S`: Open Settings
-- `Ctrl+D`: Start Download (when format is selected)
 
 ## Technical Details
 
