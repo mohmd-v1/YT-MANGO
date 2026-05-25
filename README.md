@@ -11,7 +11,6 @@ Download videos from YouTube, Bilibili, Twitter/X and [1000+ websites](https://g
 
 
 
-**English** 
 
 </div>
 
@@ -24,6 +23,29 @@ yt-dlp is powerful, but its command-line interface can be intimidating. **YT-MAN
 - **Zero config to start** — paste a link, pick a quality, click download
 - **Native & lightweight** — built with neutralino.js, ~10 MB installer, low memory usage
 - **Cross-platform** — Windows, macOS, and Linux
+### 📸 Screenshots
+
+
+| Main Interface |
+| :---: |
+| [<img src="screenshots/dark.png" width="800">](screenshots/dark.png) |
+| **** |
+
+| Selection Options |
+| :---: |
+| [<img src="screenshots/home.png" width="800">](screenshots/home.png) |
+| ** |
+
+| Playlist Manager | Download Sections |
+| :---: | :---: |
+| [<img src="screenshots/playlist.png" width="350">](screenshots/playlist.png) | [<img src="screenshots/sections.png" width="350">](screenshots/sections.png) |
+| ** | ** |
+
+| drag and drop url | App Settings |
+| :---: | :---: |
+| [<img src="screenshots/drag and drop url.png" width="350">](screenshots/.png) | [<img src="screenshots/settings.png" width="350">](screenshots/settings.png) |
+| ** | ** |
+
 
 ## Features
 
@@ -50,28 +72,6 @@ yt-dlp is powerful, but its command-line interface can be intimidating. **YT-MAN
 - Cookie authentication for age-restricted or members-only content
 - Light / Dark / Auto theme
 
-### 📸 Screenshots
-
-
-| Main Interface |
-| :---: |
-| [<img src="screenshots/dark.png" width="800">](screenshots/dark.png) |
-| **** |
-
-| Selection Options |
-| :---: |
-| [<img src="screenshots/home.png" width="800">](screenshots/home.png) |
-| ** |
-
-| Playlist Manager | Download Sections |
-| :---: | :---: |
-| [<img src="screenshots/playlist.png" width="350">](screenshots/playlist.png) | [<img src="screenshots/sections.png" width="350">](screenshots/sections.png) |
-| ** | ** |
-
-| drag and drop url | App Settings |
-| :---: | :---: |
-| [<img src="screenshots/drag and drop url.png" width="350">](screenshots/.png) | [<img src="screenshots/settings.png" width="350">](screenshots/settings.png) |
-| ** | ** |
 
 ---
 *Click on any image to view in full size.*
