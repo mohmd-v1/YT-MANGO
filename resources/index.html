@@ -21,9 +21,16 @@
         <button id="analyzePlaylistBtn" class="primary-btn"
           style="background: linear-gradient(135deg, #b9101037 0%, #9605057b 100%);"
           title="Analyze as Playlist">Playlist</button>
-        <button id="quickM4aBtn" class="secondary-btn" title="Quick Download Audio" style="min-width: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: center; gap: 8px; border-color: var(--warning); color: var(--warning);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-            <span id="quickAudioLabel" style="font-size: 10px; font-weight: 900; background: var(--warning); color: #000; padding: 2px 5px; border-radius: 4px; line-height: 1;">M4A</span>
+        <button id="quickM4aBtn" class="secondary-btn" title="Quick Download Audio"
+          style="min-width: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: center; gap: 8px; border-color: var(--warning); color: var(--warning);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+          <span id="quickAudioLabel"
+            style="font-size: 10px; font-weight: 900; background: var(--warning); color: #000; padding: 2px 5px; border-radius: 4px; line-height: 1;">M4A</span>
         </button>
       </div>
     </header>
@@ -68,7 +75,11 @@
           <div class="split-col">
             <div class="split-header video-header">
               <div style="display: flex; align-items: center; gap: 10px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);">
+                  <path d="M23 7l-7 5 7 5V7z"></path>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
                 <span>Video Streams</span>
               </div>
               <span class="info-sub">Quality & Codec</span>
@@ -79,19 +90,32 @@
           <div class="split-col">
             <div class="split-header audio-header">
               <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--warning);"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round" style="color: var(--warning);">
+                  <path d="M9 18V5l12-2v13"></path>
+                  <circle cx="6" cy="18" r="3"></circle>
+                  <circle cx="18" cy="16" r="3"></circle>
+                </svg>
                 <span style="font-weight: 700; font-size: 13px;">Audio</span>
               </div>
-              
+
               <!-- Subtitle Multi-Select (Compact) -->
               <div id="subSelectorWrapper" class="hidden" style="display: flex; align-items: center; gap: 6px;">
                 <div class="custom-select-container" id="subMultiSelect" style="min-width: 110px;">
-                  <div class="custom-select-trigger" style="padding: 4px 8px; font-size: 11px; height: 26px; border-color: rgba(168, 85, 247, 0.4);">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #a855f7; margin-right: 4px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                  <div class="custom-select-trigger"
+                    style="padding: 4px 8px; font-size: 11px; height: 26px; border-color: rgba(168, 85, 247, 0.4);">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      style="color: #a855f7; margin-right: 4px;">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
                     <span id="subCountText">Subs (0)</span>
-                    <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="3">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
                   </div>
-                  <div class="custom-options custom-scrollbar" id="subOptionsList" style="max-height: 250px; width: 180px; right: 0;">
+                  <div class="custom-options custom-scrollbar" id="subOptionsList"
+                    style="max-height: 250px; width: 180px; right: 0;">
                     <!-- Subtitle options with checkboxes -->
                   </div>
                 </div>
@@ -107,7 +131,11 @@
         <div id="standardView" class="split-col hidden">
           <div class="split-header">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);">
+                <path d="M23 7l-7 5 7 5V7z"></path>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+              </svg>
               <span>Mixed Formats (Video + Audio)</span>
             </div>
             <span class="info-sub">Integrated Streams</span>
@@ -199,12 +227,14 @@
             <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
               <label style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Theme</label>
               <div style="display: flex; gap: 8px; width: 100%;">
-                <select id="themeSelect" class="res-select" style="min-width: 160px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm);">
+                <select id="themeSelect" class="res-select"
+                  style="min-width: 160px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm);">
                   <option value="dark">Dark Mode</option>
                   <option value="light">Light Mode</option>
                   <option value="system">System Default</option>
                 </select>
-                <small style="color: var(--text-muted); display: flex; align-items: center;">Choose your preferred app appearance</small>
+                <small style="color: var(--text-muted); display: flex; align-items: center;">Choose your preferred app
+                  appearance</small>
               </div>
             </div>
           </div>
@@ -212,23 +242,28 @@
           <!-- Shortcuts -->
           <div class="setting-group">
             <h4>Shortcuts</h4>
-            <p style="font-size: 11px; color: var(--text-muted); margin: -8px 0 8px 0;">Click on a shortcut input to assign new keys.</p>
-            <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 10px;">
-                <!-- Analyze Shortcut -->
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <span style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Analyze</span>
-                    <input type="text" id="shortcutAnalyze" value="Ctrl + V" readonly style="width: 120px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
-                </div>
-                <!-- Quick Audio Shortcut -->
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <span style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Quick Download Audio</span>
-                    <input type="text" id="shortcutQuickAudio" value="Alt + 1" readonly style="width: 120px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
-                </div>
-                <!-- Analyze Playlist Shortcut -->
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <span style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Analyze Playlist</span>
-                    <input type="text" id="shortcutPlaylist" value="Alt + 2" readonly style="width: 120px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
-                </div>
+            <p style="font-size: 11px; color: var(--text-muted); margin: -8px 0 8px 0;">Click on a shortcut input to
+              assign new keys.</p>
+            <div class="setting-item"
+              style="flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 10px;">
+              <!-- Analyze Shortcut -->
+              <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                <span style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Analyze</span>
+                <input type="text" id="shortcutAnalyze" value="Ctrl + V" readonly
+                  style="width: 120px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
+              </div>
+              <!-- Quick Audio Shortcut -->
+              <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                <span style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Quick Download Audio</span>
+                <input type="text" id="shortcutQuickAudio" value="Alt + 1" readonly
+                  style="width: 120px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
+              </div>
+              <!-- Analyze Playlist Shortcut -->
+              <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                <span style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Analyze Playlist</span>
+                <input type="text" id="shortcutPlaylist" value="Alt + 2" readonly
+                  style="width: 120px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
+              </div>
             </div>
           </div>
 
@@ -285,6 +320,12 @@
               <button id="clearCookiesBtn" class="secondary-btn">Clear</button>
             </div>
             <small>Use cookies for authentication (e.g., for private videos)</small>
+            <!-- Warning for Cookies & JS Runtime -->
+            <div id="cookiesRuntimeWarning" class="hidden"
+              style="color: var(--warning, #f59e0b); font-size: 11px; margin-top: 8px; font-weight: 500; display: none; align-items: center; gap: 4px;">
+              ⚠️ Notice: Using cookies requires an active External JS Runtime (like Node.js) for signature extraction on
+              many platforms.
+            </div>
           </div>
 
           <!-- Metadata & Files -->
@@ -323,15 +364,73 @@
             <div class="setting-item"
               style="flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 16px;">
               <label style="font-size: 13px; font-weight: 500; color: var(--text-primary);">External JS Runtime</label>
-              <div style="display: flex; gap: 8px; width: 100%;">
-                <select id="jsRuntimeSelect" class="res-select" style="min-width: 140px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px 12px; border-radius: var(--radius-sm);">
+              <div style="display: flex; gap: 8px; width: 100%; margin-bottom: 8px;">
+                <select id="jsRuntimeSelect" class="res-select"
+                  style="min-width: 140px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px 12px; border-radius: var(--radius-sm);">
+                  <option value="none">None (Default)</option>
                   <option value="node">Node.js</option>
                   <option value="deno">Deno</option>
                   <option value="bun">Bun</option>
                   <option value="quickjs">QuickJS</option>
-                  <option value="none">None (Default)</option>
                 </select>
-                <small style="color: var(--text-muted); display: flex; align-items: center;">JavaScript runtime for solving video signature challenges</small>
+                <small style="color: var(--text-muted); display: flex; align-items: center;">JavaScript runtime for
+                  solving video signature challenges</small>
+              </div>
+
+              <!-- Runtime Managers List -->
+              <div
+                style="display: flex; flex-direction: column; gap: 8px; width: 100%; padding: 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                <div
+                  style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+                  Runtime Check & Download</div>
+
+                <!-- Node.js Row -->
+                <div class="runtime-row" style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; font-weight: 500;">Node.js</span>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="status-node" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
+                    <button class="secondary-btn check-rt-btn" data-runtime="node"
+                      style="padding: 2px 8px; font-size: 11px; min-width: 50px;">Check</button>
+                    <button class="secondary-btn dl-rt-btn" data-runtime="node" data-url="https://nodejs.org/en/download"
+                      style="padding: 2px 8px; font-size: 11px;">Download</button>
+                  </div>
+                </div>
+
+                <!-- Deno Row -->
+                <div class="runtime-row" style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; font-weight: 500;">Deno</span>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="status-deno" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
+                    <button class="secondary-btn check-rt-btn" data-runtime="deno"
+                      style="padding: 2px 8px; font-size: 11px; min-width: 50px;">Check</button>
+                    <button class="secondary-btn dl-rt-btn" data-runtime="deno" data-url="https://deno.com/"
+                      style="padding: 2px 8px; font-size: 11px;">Download</button>
+                  </div>
+                </div>
+
+                <!-- Bun Row -->
+                <div class="runtime-row" style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; font-weight: 500;">Bun</span>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="status-bun" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
+                    <button class="secondary-btn check-rt-btn" data-runtime="bun"
+                      style="padding: 2px 8px; font-size: 11px; min-width: 50px;">Check</button>
+                    <button class="secondary-btn dl-rt-btn" data-runtime="bun" data-url="https://bun.sh/"
+                      style="padding: 2px 8px; font-size: 11px;">Download</button>
+                  </div>
+                </div>
+
+                <!-- QuickJS Row 
+                <div class="runtime-row" style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 12px; font-weight: 500;">QuickJS</span>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="status-quickjs" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
+                    <button class="secondary-btn check-rt-btn" data-runtime="quickjs"
+                      style="padding: 2px 8px; font-size: 11px; min-width: 50px;">Check</button>
+                    <button class="secondary-btn dl-rt-btn" data-url="https://bellard.org/quickjs/"
+                      style="padding: 2px 8px; font-size: 11px;">Download</button>
+                  </div>
+                </div>-->
               </div>
             </div>
 
@@ -339,12 +438,15 @@
               style="flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 16px;">
               <label style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Quick Audio Format</label>
               <div style="display: flex; gap: 8px; width: 100%;">
-                <select id="quickAudioFormat" class="res-select" style="min-width: 140px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px 12px; border-radius: var(--radius-sm);">
+                <select id="quickAudioFormat" class="res-select"
+                  style="min-width: 140px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px 12px; border-radius: var(--radius-sm);">
                   <option value="m4a">M4A (Apple Audio)</option>
                   <option value="opus">Opus (High Quality)</option>
                 </select>
-                <small style="color: var(--text-muted); display: flex; align-items: center;">Default format for 'Quick Download Audio' button</small>
-                <small style="color: var(--warning); font-weight: 600; margin-top: 2px;">Tip: Press [ALT + 1] anywhere to quick download from clipboard!</small>
+                <small style="color: var(--text-muted); display: flex; align-items: center;">Default format for 'Quick
+                  Download Audio' button</small>
+                <small style="color: var(--warning); font-weight: 600; margin-top: 2px;">Tip: Press [ALT + 1] anywhere
+                  to quick download from clipboard!</small>
               </div>
             </div>
 

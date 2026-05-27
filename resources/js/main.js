@@ -30,7 +30,7 @@ let settings = {
     ignoreErrors: false,
     concurrentFragments: 8,
     quickAudioFormat: 'opus',
-    jsRuntime: 'node',
+    jsRuntime: 'none',
     theme: 'system',
     shortcuts: {
         analyze: 'Ctrl+KeyV',
@@ -988,6 +988,7 @@ checkboxes.forEach(key => {
             settings.writeSubs = el.inputs.writeSubs.checked;
             settings.ignoreErrors = el.inputs.ignoreErrors.checked;
             settings.useCookies = el.inputs.useCookies.checked;
+            toggleCookiesWarning();
             updateCommand();
             saveSettings();
         });
@@ -1025,6 +1026,7 @@ if (el.inputs.themeSelect) {
 if (el.inputs.jsRuntimeSelect) {
     el.inputs.jsRuntimeSelect.addEventListener('change', () => {
         settings.jsRuntime = el.inputs.jsRuntimeSelect.value;
+        toggleCookiesWarning();
         updateCommand();
         saveSettings();
     });
@@ -1260,7 +1262,7 @@ async function loadSettings() {
     el.inputs.ignoreErrors.checked = settings.ignoreErrors;
     el.inputs.concurrentFragments.value = settings.concurrentFragments || 1;
     el.inputs.quickAudioFormat.value = settings.quickAudioFormat || 'm4a';
-    el.inputs.jsRuntimeSelect.value = settings.jsRuntime || 'node';
+    el.inputs.jsRuntimeSelect.value = settings.jsRuntime || 'none';
     el.inputs.themeSelect.value = settings.theme || 'system';
 
     // Migrate older shortcuts if any
@@ -1272,6 +1274,9 @@ async function loadSettings() {
 
     // Initialize/sync interactive shortcut inputs
     initShortcutInputs();
+
+    // Initialize External JS Runtime Managers and checking systems
+    initRuntimeManagers();
 
     applyTheme(settings.theme || 'system');
 
@@ -1730,7 +1735,7 @@ function renderCompactRow(fmt, container, smartData = null) {
         row.classList.add('selected');
     }
 
-    const size = fmt.filesize ? formatBytes(fmt.filesize) : (fmt.filesize_approx ? '~' + formatBytes(fmt.filesize_approx) : '≈' + formatBytes(((fmt.tbr || 0) * 1024 / 8) * (currentData?.duration || 0)));
+    const size = getFormatDisplaySize(fmt);
     const bitrate = Math.round(fmt.tbr || fmt.vbr || 0) + 'k';
 
     // Main Title
@@ -1920,7 +1925,7 @@ function renderSmartRow(resKey, ctypes, activeCType, variants, activeFmt, resGro
     else if (activeFmt.height >= 1080) resClass = 'res-1080';
     else if (activeFmt.height >= 720) resClass = 'res-720';
 
-    const size = activeFmt.filesize ? formatBytes(activeFmt.filesize) : (activeFmt.filesize_approx ? '~' + formatBytes(activeFmt.filesize_approx) : '≈' + formatBytes(((activeFmt.tbr || 0) * 1024 / 8) * (currentData?.duration || 0)));
+    const size = getFormatDisplaySize(activeFmt);
 
     const codecHTML = ctypes.length > 1
         ? `<select class="res-select codec-select">
@@ -2003,7 +2008,7 @@ function renderRow(fmt) {
 
     row.onclick = () => handleRowClick(fmt, row);
 
-    const size = fmt.filesize ? formatBytes(fmt.filesize) : (fmt.filesize_approx ? '~' + formatBytes(fmt.filesize_approx) : '≈' + formatBytes(((fmt.tbr || 0) * 1024 / 8) * (currentData?.duration || 0)));
+    const size = getFormatDisplaySize(fmt);
 
     row.innerHTML = `
         <div class="col">${fmt.format_id}</div>
@@ -2134,29 +2139,41 @@ function updateCommand() {
         let vFmt = formats.find(f => f.format_id === selectedVideoId);
         let aFmt = formats.find(f => f.format_id === selectedAudioId);
 
-        const getFormatSize = (fmt) => {
+        const getFormatSizeVal = (fmt) => {
             if (!fmt) return 0;
-            return fmt.filesize || fmt.filesize_approx || (((fmt.tbr || 0) * 1024 / 8) * (currentData?.duration || 0));
+            // 1. Try any potential size fields from yt-dlp
+            const possibleSize = fmt.filesize || fmt.filesize_approx || fmt.filesize_approximate || fmt.size || fmt.file_size;
+            if (possibleSize !== undefined && possibleSize !== null && possibleSize !== '') {
+                return parseSizeToBytes(possibleSize);
+            }
+            // 2. Fallback to estimation based on bitrate and duration
+            const bitrate = fmt.tbr || fmt.vbr || fmt.abr || 0;
+            const duration = currentData?.duration || 0;
+            if (bitrate > 0 && duration > 0) {
+                return ((bitrate * 1024) / 8) * duration;
+            }
+            return 0;
         };
 
         const isFormatSizeApprox = (fmt) => {
             if (!fmt) return false;
-            return !fmt.filesize;
+            const hasExact = !!fmt.filesize;
+            return !hasExact;
         };
 
         let sizeStr = '';
         if (vFmt && aFmt) {
-            let totalBytes = getFormatSize(vFmt) + getFormatSize(aFmt);
-            let approx = isFormatSizeApprox(vFmt) || isFormatSizeApprox(aFmt);
-            sizeStr = (approx ? '≈' : '') + formatBytes(totalBytes);
+            let totalBytes = getFormatSizeVal(vFmt) + getFormatSizeVal(aFmt);
+            let approx = isFormatSizeApprox(vFmt) || isFormatSizeApprox(aFmt) ||
+                         String(vFmt.filesize).includes('~') || String(aFmt.filesize).includes('~') ||
+                         String(vFmt.filesize_approx).includes('~') || String(aFmt.filesize_approx).includes('~') ||
+                         String(vFmt.filesize).includes('≈') || String(aFmt.filesize).includes('≈') ||
+                         String(vFmt.filesize_approx).includes('≈') || String(aFmt.filesize_approx).includes('≈');
+            sizeStr = totalBytes ? (approx ? '~' : '') + formatBytes(totalBytes) : '--';
         } else if (vFmt) {
-            let totalBytes = getFormatSize(vFmt);
-            let approx = isFormatSizeApprox(vFmt);
-            sizeStr = (approx ? '≈' : '') + formatBytes(totalBytes);
+            sizeStr = getFormatDisplaySize(vFmt);
         } else if (aFmt) {
-            let totalBytes = getFormatSize(aFmt);
-            let approx = isFormatSizeApprox(aFmt);
-            sizeStr = (approx ? '≈' : '') + formatBytes(totalBytes);
+            sizeStr = getFormatDisplaySize(aFmt);
         }
 
         if (vFmt && aFmt) {
@@ -2446,6 +2463,226 @@ function formatDuration(seconds) {
         return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
     return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+// Robust size helpers to parse and format values returned by yt-dlp (which can be strings or numbers)
+function formatSizeValue(val) {
+    if (val === undefined || val === null || val === '') return '';
+    if (typeof val === 'string') {
+        const valClean = val.trim();
+        if (/[a-zA-Z]+$/.test(valClean)) {
+            return valClean;
+        }
+        const num = parseFloat(valClean);
+        if (!isNaN(num)) {
+            return formatBytes(num);
+        }
+        return valClean;
+    }
+    if (typeof val === 'number') {
+        return formatBytes(val);
+    }
+    return String(val);
+}
+
+function getFormatDisplaySize(fmt) {
+    if (!fmt) return '--';
+    
+    // 1. Try to read any potential size fields from yt-dlp
+    const possibleSize = fmt.filesize || fmt.filesize_approx || fmt.filesize_approximate || fmt.size || fmt.file_size;
+    if (possibleSize !== undefined && possibleSize !== null && possibleSize !== '') {
+        const sizeStr = formatSizeValue(possibleSize);
+        const isApprox = !fmt.filesize && (fmt.filesize_approx || fmt.filesize_approximate);
+        if (isApprox && sizeStr && !sizeStr.startsWith('~') && !sizeStr.startsWith('≈')) {
+            return '~' + sizeStr;
+        }
+        return sizeStr;
+    }
+    
+    // 2. Fallback to estimation based on bitrate and duration
+    const bitrate = fmt.tbr || fmt.vbr || fmt.abr || 0;
+    const duration = currentData?.duration || 0;
+    if (bitrate > 0 && duration > 0) {
+        const estimatedBytes = ((bitrate * 1024) / 8) * duration;
+        return '≈' + formatBytes(estimatedBytes);
+    }
+    
+    return '--';
+}
+
+function parseSizeToBytes(val) {
+    if (val === undefined || val === null || val === '') return 0;
+    if (typeof val === 'number') return val;
+    let str = val.replace(/[~≈\s]/g, '').trim().toLowerCase();
+    const num = parseFloat(str);
+    if (isNaN(num)) return 0;
+    let multiplier = 1;
+    if (str.endsWith('tib') || str.endsWith('tb')) multiplier = Math.pow(1024, 4);
+    else if (str.endsWith('gib') || str.endsWith('gb')) multiplier = Math.pow(1024, 3);
+    else if (str.endsWith('mib') || str.endsWith('mb')) multiplier = Math.pow(1024, 2);
+    else if (str.endsWith('kib') || str.endsWith('kb') || str.endsWith('k')) multiplier = 1024;
+    return num * multiplier;
+}
+
+// Check if a specific JS runtime command is available on the machine
+async function checkRuntime(name) {
+    let cmd = '';
+    if (name === 'node') cmd = 'node -v';
+    else if (name === 'deno') cmd = 'deno --version';
+    else if (name === 'bun') cmd = 'bun --version';
+    else if (name === 'quickjs') cmd = 'qjs --version';
+    
+    if (!cmd) return false;
+    
+    try {
+        let output = await Neutralino.os.execCommand(cmd);
+        return output.exitCode === 0;
+    } catch (e) {
+        return false;
+    }
+}
+
+// Handle Check button click and update status
+async function handleCheckRuntime(name) {
+    const statusSpan = document.getElementById(`status-${name}`);
+    if (!statusSpan) return;
+    
+    statusSpan.textContent = 'Checking...';
+    statusSpan.style.color = 'var(--text-muted)';
+    
+    const exists = await checkRuntime(name);
+    if (exists) {
+        statusSpan.textContent = 'Installed ✔️';
+        statusSpan.style.color = '#4caf50';
+    } else {
+        statusSpan.textContent = 'Missing ❌';
+        statusSpan.style.color = '#f44336';
+    }
+}
+
+// Check all runtimes on settings page load
+function checkAllRuntimes() {
+    ['node', 'deno', 'bun', 'quickjs'].forEach(rt => {
+        checkRuntime(rt).then(exists => {
+            const statusSpan = document.getElementById(`status-${rt}`);
+            if (statusSpan) {
+                if (exists) {
+                    statusSpan.textContent = 'Installed ✔️';
+                    statusSpan.style.color = '#4caf50';
+                } else {
+                    statusSpan.textContent = 'Missing ❌';
+                    statusSpan.style.color = '#f44336';
+                }
+            }
+        });
+    });
+}
+
+// Dynamic display of warnings/notices about runtime requirements for cookies
+function toggleCookiesWarning() {
+    const warningEl = document.getElementById('cookiesRuntimeWarning');
+    if (!warningEl) return;
+    
+    const useCookies = el.inputs.useCookies ? el.inputs.useCookies.checked : false;
+    const jsRuntime = el.inputs.jsRuntimeSelect ? el.inputs.jsRuntimeSelect.value : 'none';
+    
+    if (useCookies && jsRuntime === 'none') {
+        warningEl.classList.remove('hidden');
+        warningEl.style.display = 'flex';
+    } else {
+        warningEl.classList.add('hidden');
+        warningEl.style.display = 'none';
+    }
+}
+
+// Poll to see if runtime is installed
+async function pollCheckRuntime(rt, maxAttempts = 20, delayMs = 3000) {
+    const statusSpan = document.getElementById(`status-${rt}`);
+    for (let i = 0; i < maxAttempts; i++) {
+        const exists = await checkRuntime(rt);
+        if (exists) {
+            if (statusSpan) {
+                statusSpan.textContent = 'Installed ✔️';
+                statusSpan.style.color = '#4caf50';
+            }
+            return;
+        }
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+    await handleCheckRuntime(rt);
+}
+
+// Initialize runtime download and check listeners
+function initRuntimeManagers() {
+    // Bind click events on check buttons
+    document.querySelectorAll('.check-rt-btn').forEach(btn => {
+        const rt = btn.getAttribute('data-runtime');
+        if (rt) {
+            btn.onclick = () => handleCheckRuntime(rt);
+        }
+    });
+
+    // Bind click events on download buttons
+    document.querySelectorAll('.dl-rt-btn').forEach(btn => {
+        const rt = btn.getAttribute('data-runtime');
+        const url = btn.getAttribute('data-url');
+        if (rt === 'node' || rt === 'deno' || rt === 'bun') {
+            btn.onclick = async () => {
+                const rtName = rt === 'node' ? 'Node.js' : (rt === 'deno' ? 'Deno' : 'Bun');
+                const buttonSelected = await Neutralino.os.showMessageBox(
+                    `Confirm Installation`,
+                    `Do you want to download and install ${rtName} silently?`,
+                    'YES_NO'
+                );
+                
+                if (buttonSelected === 'YES') {
+                    const statusSpan = document.getElementById(`status-${rt}`);
+                    if (statusSpan) {
+                        statusSpan.textContent = 'Installing...';
+                        statusSpan.style.color = '#ff9800'; // Orange
+                    }
+                    
+                    let cmd = '';
+                    if (rt === 'deno') {
+                        cmd = 'powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://deno.land/install.ps1 | iex"';
+                    } else if (rt === 'bun') {
+                        cmd = 'powershell -NoProfile -ExecutionPolicy Bypass -Command "irm bun.sh/install.ps1 | iex"';
+                    } else if (rt === 'node') {
+                        cmd = `powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process powershell -ArgumentList '-NoProfile', '-Command', 'curl -L https://nodejs.org/dist/v20.11.1/node-v20.11.1-x64.msi -o $env:TEMP\\\\node.msi; Start-Process msiexec.exe -ArgumentList /i, $env:TEMP\\\\node.msi, /qn, /norestart -Wait; Remove-Item $env:TEMP\\\\node.msi' -Verb RunAs"`;
+                    }
+                    
+                    try {
+                        // Start polling in parallel
+                        pollCheckRuntime(rt);
+                        
+                        let output = await Neutralino.os.execCommand(cmd);
+                        if (rt !== 'node' && output.exitCode !== 0) {
+                            if (statusSpan) {
+                                statusSpan.textContent = 'Failed ❌';
+                                statusSpan.style.color = '#f44336';
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Error installing ${rtName}:`, e);
+                        if (statusSpan) {
+                            statusSpan.textContent = 'Failed ❌';
+                            statusSpan.style.color = '#f44336';
+                        }
+                    }
+                }
+            };
+        } else if (url) {
+            btn.onclick = () => {
+                Neutralino.os.open(url);
+            };
+        }
+    });
+
+    // Run initial runtime checks
+    checkAllRuntimes();
+    
+    // Display cookies warning if needed
+    toggleCookiesWarning();
 }
 
 function formatBytes(bytes, decimals = 1) {
