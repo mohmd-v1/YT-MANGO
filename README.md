@@ -84,7 +84,7 @@ yt-dlp is powerful, but its command-line interface can be intimidating. **YT-MAN
 Grab the latest release for your platform from 
 ### 
 
-[![Download Latest Release](https://img.shields.io/badge/Download-Latest_Release-brightgreen?style=for-the-badge&logo=github)](https://github.com/mohmd-v1/YT-MANGO/releases/latest)
+[![ Latest Release](https://img.shields.io/badge/Download-Latest_Release-brightgreen?style=for-the-badge&logo=github)](https://github.com/mohmd-v1/YT-MANGO/releases/latest)
 ###
 ### 📥 Download
 
