@@ -1393,6 +1393,21 @@ function populatePlaylistModal(data) {
     });
 }
 
+let currentBgThumbnailUrl = null;
+function updateDynamicBackground(url) {
+    if (url === currentBgThumbnailUrl) return;
+    currentBgThumbnailUrl = url;
+    const bgDiv = document.getElementById('infoBg');
+    if (!bgDiv) return;
+    if (url) {
+        bgDiv.style.backgroundImage = `url('${url}')`;
+        bgDiv.classList.add('active');
+    } else {
+        bgDiv.style.backgroundImage = 'none';
+        bgDiv.classList.remove('active');
+    }
+}
+
 async function analyzeUrl(isPlaylistFormatMode = false) {
     const url = el.urlInput.value.trim();
     if (!url) return;
@@ -1430,8 +1445,10 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
         if (data.thumbnail) {
             el.videoThumbnail.src = data.thumbnail;
             el.videoThumbnail.classList.remove('hidden');
+            updateDynamicBackground(data.thumbnail);
         } else {
             el.videoThumbnail.classList.add('hidden');
+            updateDynamicBackground(null);
         }
 
         // Setup Chapters for Sections Modal

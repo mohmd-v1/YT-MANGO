@@ -59,7 +59,7 @@
 
 body {
     font-family: var(--font-ui);
-    background: var(--bg-primary);
+    background: var(--bg-gradient);
     color: var(--text-primary);
     overflow: auto;
     height: auto;
@@ -69,7 +69,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background: var(--bg-gradient);
+    background: transparent;
 }
 
 /* Header */
@@ -192,18 +192,29 @@ body {
 
 /* Video Info Banner */
 .video-info-container {
+    position: relative;
+    overflow: hidden;
     display: flex;
     gap: 16px;
     align-items: center;
-    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+    background: rgba(18, 18, 18, 0.5) !important;
     padding: 16px 20px;
     border-radius: var(--radius);
-    border: 1px solid var(--border);
-    box-shadow: 0 2px 8px var(--shadow);
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(20px);
     flex-shrink: 0;
 }
 
+[data-theme="light"] .video-info-container {
+    background: rgba(248, 250, 252, 0.65) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+}
+
 .video-thumbnail {
+    position: relative;
+    z-index: 1;
     width: 160px;
     height: 90px;
     object-fit: cover;
@@ -214,10 +225,17 @@ body {
 }
 
 #videoInfo {
+    position: relative;
+    z-index: 1;
     flex: 1;
     font-size: 15px;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-primary);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="light"] #videoInfo {
+    text-shadow: none;
 }
 
 /* Content Area */
@@ -1661,4 +1679,36 @@ body::-webkit-scrollbar-thumb {
     background: rgba(239, 68, 68, 0.3) !important;
     border-color: rgba(239, 68, 68, 0.6) !important;
     box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+/* Dynamic Blurred Thumbnail Background for Video Info */
+.info-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transform: scale(1.15);
+    /* Zoom to prevent white/dark border leaking due to blur */
+    filter: blur(3px) brightness(0.32);
+    transition: background-image 0.8s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.8s ease-in-out;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.info-bg.active {
+    opacity: 0.85;
+}
+
+[data-theme="light"] .info-bg {
+    filter: blur(25px) brightness(1.15) contrast(0.85);
+}
+
+[data-theme="light"] .info-bg.active {
+    opacity: 0.3;
+    /* Soft blend in light mode */
 }
