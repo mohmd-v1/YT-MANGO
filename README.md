@@ -79,15 +79,20 @@ yt-dlp is powerful, but its command-line interface can be intimidating. **YT-MAN
 *Click on any image to view in full size.*
 ## Getting Started
 
-### Download
+### 
 
-Grab the latest release for your platform from [**Releases**][([https://github.com/imsyy/yt-dlp-gui/releases](https://github.com/mohmd-v1/YT-MANGO/releases/tag/v3))](https://github.com/mohmd-v1/YT-MANGO/releases/tag/v3):
+Grab the latest release for your platform from 
+### 
 
-| Platform | File |
-|----------|------|
-| Windows  | `.exe` installer |
-| macOS    | `.dmg` |
-| Linux    | `.AppImage` / `.deb` |
+[![ Latest Release](https://img.shields.io/badge/Download-Latest_Release-brightgreen?style=for-the-badge&logo=github)](https://github.com/mohmd-v1/YT-MANGO/releases/latest)
+###
+### 📥 Download
+
+[![Windows](https://img.shields.io/badge/Windows-Download-blue?style=for-the-badge&logo=windows)](https://github.com/mohmd-v1/YT-MANGO/releases/download/v4/YT_MANGO-win_x64.zip)
+[![macOS](https://img.shields.io/badge/macOS-Download-black?style=for-the-badge&logo=apple)](https://github.com/mohmd-v1/YT-MANGO/releases/download/v4/YT_MANGO-mac_.zip)
+[![Linux](https://img.shields.io/badge/Linux-Download-orange?style=for-the-badge&logo=linux)](https://github.com/mohmd-v1/YT-MANGO/releases/download/v4/YT_MANGO-linux.zip)
+
+
 
 ### First Launch
 
