@@ -181,9 +181,134 @@ function showStatus(text, type = 'info') {
     else if (type === 'warning') el.statusMsg.style.color = 'var(--warning)';
 }
 
+function detectErrorFix(message) {
+    if (!message) return null;
+    const msg = message.toLowerCase();
+    
+    // ── 1. Cookies errors (HIGHEST PRIORITY – check first) ──
+    if (msg.includes('cookies') || msg.includes('sign in') || msg.includes('login') || msg.includes('confirm your age') || msg.includes('age-restricted') || msg.includes('members only')) {
+        return {
+            type: 'cookies',
+            btnText: '🔑 Fix: Configure Cookies',
+            action: () => {
+                el.settingsModal.classList.remove('hidden');
+                const runtimeTabBtn = document.querySelector('[data-settings-tab="runtimes"]');
+                if (runtimeTabBtn) runtimeTabBtn.click();
+                
+                const cookiesInput = document.getElementById('cookiesPath');
+                const cookiesCard = cookiesInput ? cookiesInput.closest('.settings-card') : null;
+                if (cookiesCard) {
+                    cookiesCard.classList.add('glowing-fix-highlight');
+                }
+                
+                // Remove highlight when cookies toggled/changed
+                const useCookiesCheck = document.getElementById('useCookies');
+                const removeHighlight = () => {
+                    if ((useCookiesCheck && !useCookiesCheck.checked) || (cookiesInput && cookiesInput.value.trim() !== '')) {
+                        if (cookiesCard) cookiesCard.classList.remove('glowing-fix-highlight');
+                        if (useCookiesCheck) useCookiesCheck.removeEventListener('change', removeHighlight);
+                        if (cookiesInput) cookiesInput.removeEventListener('input', removeHighlight);
+                    }
+                };
+                if (useCookiesCheck) useCookiesCheck.addEventListener('change', removeHighlight);
+                if (cookiesInput) cookiesInput.addEventListener('input', removeHighlight);
+            }
+        };
+    }
+    
+    // ── 2. JS Runtime errors ──
+    if (msg.includes('javascript runtime') || msg.includes('js-runtime') || msg.includes('nsig') || msg.includes('n-parameter') || msg.includes('signature-bypassing') || msg.includes('player javascript') || msg.includes('failed to extract signature')) {
+        return {
+            type: 'runtime',
+            btnText: '🔧 Fix: Setup JS Runtime',
+            action: () => {
+                // Open Settings
+                el.settingsModal.classList.remove('hidden');
+                // Switch to runtimes tab
+                const runtimeTabBtn = document.querySelector('[data-settings-tab="runtimes"]');
+                if (runtimeTabBtn) runtimeTabBtn.click();
+                
+                // Highlight target card
+                const selectEl = document.getElementById('jsRuntimeSelect');
+                const checkCard = selectEl ? selectEl.closest('.settings-card') : null;
+                if (checkCard) {
+                    checkCard.classList.add('glowing-fix-highlight');
+                }
+                
+                // Clear highlight when JS Runtime changes
+                if (selectEl) {
+                    const removeHighlight = () => {
+                        if (selectEl.value !== 'none') {
+                            if (checkCard) checkCard.classList.remove('glowing-fix-highlight');
+                            selectEl.removeEventListener('change', removeHighlight);
+                        }
+                    };
+                    selectEl.addEventListener('change', removeHighlight);
+                }
+            }
+        };
+    }
+    
+    // ── 3. Format/quality errors → usually caused by missing JS Runtime ──
+    if (msg.includes('requested format') || msg.includes('not available') || msg.includes('format is not available')) {
+        return {
+            type: 'format',
+            btnText: '🔧 Fix: Setup JS Runtime',
+            action: () => {
+                // Open Settings → JS Runtimes tab
+                el.settingsModal.classList.remove('hidden');
+                const runtimeTabBtn = document.querySelector('[data-settings-tab="runtimes"]');
+                if (runtimeTabBtn) runtimeTabBtn.click();
+                
+                // Highlight the JS Runtime selector card
+                const selectEl = document.getElementById('jsRuntimeSelect');
+                const runtimeCard = selectEl ? selectEl.closest('.settings-card') : null;
+                if (runtimeCard) {
+                    runtimeCard.classList.add('glowing-fix-highlight');
+                }
+                
+                // Reset stream selection to avoid stale format IDs
+                selectedVideoId = null;
+                selectedAudioId = null;
+                renderGrid();
+                updateCommand();
+                
+                // Clear highlight when JS Runtime changes
+                if (selectEl) {
+                    const removeHighlight = () => {
+                        if (selectEl.value !== 'none') {
+                            if (runtimeCard) runtimeCard.classList.remove('glowing-fix-highlight');
+                            selectEl.removeEventListener('change', removeHighlight);
+                        }
+                    };
+                    selectEl.addEventListener('change', removeHighlight);
+                }
+            }
+        };
+    }
+    
+    return null;
+}
+
 function showAlert(message, title = 'Notice') {
     el.alert.title.textContent = title;
     el.alert.msg.textContent = message;
+    
+    const fixWrapper = document.getElementById('alertFixWrapper');
+    const fixBtn = document.getElementById('alertFixBtn');
+    
+    const fix = detectErrorFix(message);
+    if (fix && fixWrapper && fixBtn) {
+        fixBtn.textContent = fix.btnText;
+        fixBtn.onclick = () => {
+            fix.action();
+            el.alert.modal.classList.add('hidden'); // Close alert modal after click
+        };
+        fixWrapper.classList.remove('hidden');
+    } else {
+        if (fixWrapper) fixWrapper.classList.add('hidden');
+    }
+    
     el.alert.modal.classList.remove('hidden');
 }
 
@@ -2382,6 +2507,13 @@ async function startDownload() {
                         currentDownloadProcess = null; // Clear process
                         el.modal.cancel.classList.add('hidden'); // Hide cancel
                         el.modal.close.classList.remove('hidden');
+                        
+                        // Intelligent troubleshooting for download failure
+                        const logContent = el.modal.log.textContent || '';
+                        const hasFix = detectErrorFix(logContent);
+                        if (hasFix) {
+                            showAlert(logContent, 'Download Failed');
+                        }
                     }
                 }
             }
@@ -2571,25 +2703,64 @@ async function handleCheckRuntime(name) {
     if (exists) {
         statusSpan.textContent = 'Installed ✔️';
         statusSpan.style.color = '#4caf50';
+        installedRuntimes.add(name);
     } else {
         statusSpan.textContent = 'Missing ❌';
         statusSpan.style.color = '#f44336';
+        installedRuntimes.delete(name);
+    }
+    rebuildRuntimeSelect();
+}
+
+// Track which runtimes are installed
+let installedRuntimes = new Set();
+
+// Rebuild jsRuntimeSelect dropdown based on detected runtimes
+function rebuildRuntimeSelect() {
+    const select = document.getElementById('jsRuntimeSelect');
+    if (!select) return;
+    const currentVal = settings.jsRuntime || 'none';
+    select.innerHTML = '<option value="none">None (Default)</option>';
+    const runtimeLabels = { node: 'Node.js', deno: 'Deno', bun: 'Bun', quickjs: 'QuickJS' };
+    installedRuntimes.forEach(rt => {
+        const opt = document.createElement('option');
+        opt.value = rt;
+        opt.textContent = runtimeLabels[rt] || rt;
+        select.appendChild(opt);
+    });
+    // Restore selection if still available, else fallback to 'none'
+    if (installedRuntimes.has(currentVal)) {
+        select.value = currentVal;
+    } else {
+        select.value = 'none';
+        if (currentVal !== 'none') {
+            settings.jsRuntime = 'none';
+            saveSettings();
+        }
     }
 }
 
 // Check all runtimes on settings page load
 function checkAllRuntimes() {
-    ['node', 'deno', 'bun', 'quickjs'].forEach(rt => {
+    const runtimes = ['node', 'deno', 'bun', 'quickjs'];
+    let completed = 0;
+    runtimes.forEach(rt => {
         checkRuntime(rt).then(exists => {
             const statusSpan = document.getElementById(`status-${rt}`);
             if (statusSpan) {
                 if (exists) {
                     statusSpan.textContent = 'Installed ✔️';
                     statusSpan.style.color = '#4caf50';
+                    installedRuntimes.add(rt);
                 } else {
                     statusSpan.textContent = 'Missing ❌';
                     statusSpan.style.color = '#f44336';
+                    installedRuntimes.delete(rt);
                 }
+            }
+            completed++;
+            if (completed === runtimes.length) {
+                rebuildRuntimeSelect();
             }
         });
     });
@@ -2622,6 +2793,8 @@ async function pollCheckRuntime(rt, maxAttempts = 20, delayMs = 3000) {
                 statusSpan.textContent = 'Installed ✔️';
                 statusSpan.style.color = '#4caf50';
             }
+            installedRuntimes.add(rt);
+            rebuildRuntimeSelect();
             return;
         }
         await new Promise(resolve => setTimeout(resolve, delayMs));
@@ -2700,6 +2873,39 @@ function initRuntimeManagers() {
     
     // Display cookies warning if needed
     toggleCookiesWarning();
+
+    // Initialize tabbed settings panel navigation
+    initSettingsTabs();
+
+    // Bind informational links
+    const cookiesLink = document.getElementById('cookiesTutorialLink');
+    if (cookiesLink) {
+        cookiesLink.onclick = (e) => {
+            e.preventDefault();
+            Neutralino.os.open('https://youtu.be/Lr9eoIXukpY');
+        };
+    }
+    const jsRuntimeLink = document.getElementById('jsRuntimeWikiLink');
+    if (jsRuntimeLink) {
+        jsRuntimeLink.onclick = (e) => {
+            e.preventDefault();
+            Neutralino.os.open('https://github.com/yt-dlp/yt-dlp/wiki/EJS');
+        };
+    }
+}
+
+function initSettingsTabs() {
+    document.querySelectorAll('.settings-tab-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.settings-pane').forEach(p => p.classList.remove('active'));
+            
+            btn.classList.add('active');
+            const tabName = btn.getAttribute('data-settings-tab');
+            const pane = document.getElementById(`settings-pane-${tabName}`);
+            if (pane) pane.classList.add('active');
+        };
+    });
 }
 
 function formatBytes(bytes, decimals = 1) {

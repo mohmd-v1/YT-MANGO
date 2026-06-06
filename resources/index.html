@@ -221,274 +221,397 @@
           <h3>⚙️ Settings</h3>
           <button id="closeSettingsBtn" class="close-btn">×</button>
         </div>
-        <div class="modal-body">
-          <!-- Appearance -->
-          <div class="setting-group">
-            <h4>Appearance</h4>
-            <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
-              <label style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Theme</label>
-              <div style="display: flex; gap: 8px; width: 100%;">
-                <select id="themeSelect" class="res-select"
-                  style="min-width: 160px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm);">
-                  <option value="dark">Dark Mode</option>
-                  <option value="light">Light Mode</option>
-                  <option value="system">System Default</option>
-                </select>
-                <small style="color: var(--text-muted); display: flex; align-items: center;">Choose your preferred app
-                  appearance</small>
-              </div>
-            </div>
+        <div class="settings-wrapper">
+          <!-- Left Sidebar Navigation -->
+          <div class="settings-sidebar">
+            <button class="settings-tab-btn active" data-settings-tab="general">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+              </svg>
+              General
+            </button>
+            <button class="settings-tab-btn" data-settings-tab="downloader">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Downloader
+            </button>
+            <button class="settings-tab-btn" data-settings-tab="runtimes">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              JS Runtimes
+            </button>
+            <button class="settings-tab-btn" data-settings-tab="shortcuts">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                <line x1="6" y1="8" x2="6" y2="8"></line>
+                <line x1="10" y1="8" x2="10" y2="8"></line>
+                <line x1="14" y1="8" x2="14" y2="8"></line>
+                <line x1="18" y1="8" x2="18" y2="8"></line>
+                <line x1="6" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="18" y2="12"></line>
+                <line x1="7" y1="16" x2="17" y2="16"></line>
+              </svg>
+              Shortcuts
+            </button>
+            <button class="settings-tab-btn" data-settings-tab="about">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              About & Tools
+            </button>
           </div>
 
-          <!-- Shortcuts -->
-          <div class="setting-group">
-            <h4>Shortcuts</h4>
-            <p style="font-size: 11px; color: var(--text-muted); margin: -8px 0 8px 0;">Click on a shortcut input to
-              assign new keys.</p>
-            <div class="setting-item"
-              style="flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 10px;">
-              <!-- Analyze Shortcut -->
-              <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                <span style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Analyze</span>
-                <input type="text" id="shortcutAnalyze" value="Ctrl + V" readonly
-                  style="width: 120px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
-              </div>
-              <!-- Quick Audio Shortcut -->
-              <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                <span style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Quick Download Audio</span>
-                <input type="text" id="shortcutQuickAudio" value="Alt + 1" readonly
-                  style="width: 120px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
-              </div>
-              <!-- Analyze Playlist Shortcut -->
-              <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                <span style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Analyze Playlist</span>
-                <input type="text" id="shortcutPlaylist" value="Alt + 2" readonly
-                  style="width: 120px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
-              </div>
-            </div>
-          </div>
+          <!-- Right Content Area -->
+          <div class="settings-content custom-scrollbar">
+            <!-- 1. General Pane -->
+            <div id="settings-pane-general" class="settings-pane active">
+              <div class="settings-pane-title">General Settings</div>
 
-          <!-- Core Tools -->
-          <div class="setting-group">
-            <h4>Core Dependencies</h4>
-            <div class="setting-item"
-              style="flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 10px;">
-              <!-- YT-DLP -->
-              <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                <span style="font-size: 13px; font-weight: 500; color: var(--text-primary);">yt-dlp</span>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <span id="ytdlpVersionText"
-                    style="font-weight: 500; color: var(--text-secondary); font-size: 13px;">Checking...</span>
-                  <button id="updateYtdlpBtn" class="secondary-btn"
-                    style="padding: 6px 12px; font-size: 11px; display: flex; align-items: center; gap: 6px;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.25 5.25" />
-                    </svg>
-                    Update
-                  </button>
+              <div class="settings-grid">
+                <!-- Theme selection card -->
+                <div class="settings-card row-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <label>Theme</label>
+                    <small>Choose your preferred app appearance</small>
+                  </div>
+                  <select id="themeSelect" class="res-select"
+                    style="min-width: 140px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm);">
+                    <option value="dark">Dark Mode</option>
+                    <option value="light">Light Mode</option>
+                    <option value="system">System Default</option>
+                  </select>
+                </div>
+
+                <!-- Download location card -->
+                <div class="settings-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px;">
+                    <label>Download Location</label>
+                    <small>Where downloaded video and audio files will be saved.</small>
+                  </div>
+                  <div style="display: flex; gap: 8px; width: 100%;">
+                    <input type="text" id="downloadPath" value="Downloads" readonly
+                      style="flex: 1; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 13px;">
+                    <button id="browseBtn" class="secondary-btn" style="padding: 8px 14px;">Browse</button>
+                  </div>
                 </div>
               </div>
-              <!-- FFmpeg -->
-              <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                <span style="font-size: 13px; font-weight: 500; color: var(--text-primary);">FFmpeg</span>
-                <span id="ffmpegVersionText"
-                  style="font-weight: 500; color: var(--text-secondary); font-size: 13px;">Checking...</span>
+            </div>
+
+            <!-- 2. Downloader Pane -->
+            <div id="settings-pane-downloader" class="settings-pane">
+              <div class="settings-pane-title">Downloader Options</div>
+
+              <div class="settings-grid">
+                <!-- Thread options -->
+                <div class="settings-card row-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <label>Download Threads</label>
+                    <small>Multi-threading speeds up DASH/HLS streams (Default: 1)</small>
+                  </div>
+                  <input type="number" id="concurrentFragments" min="1" max="32" value="1"
+                    style="background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm); font-family: var(--font-ui); font-size: 13px; width: 70px; text-align: center;">
+                </div>
+
+                <!-- Quick download audio options -->
+                <div class="settings-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                      <label>Quick Audio Format</label>
+                      <small>Default format for the quick download audio button</small>
+                    </div>
+                    <select id="quickAudioFormat" class="res-select"
+                      style="min-width: 120px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px 12px; border-radius: var(--radius-sm);">
+                      <option value="m4a">M4A (Apple Audio)</option>
+                      <option value="opus">Opus (High Quality)</option>
+                    </select>
+                  </div>
+                  <small style="color: var(--warning); font-weight: 600; margin-top: 4px;">💡 Shortcut: Press [ALT + 1]
+                    anywhere to quick download URL from clipboard!</small>
+                </div>
+
+                <!-- Toggle options grid -->
+                <div class="settings-card" style="gap: 16px;">
+                  <label
+                    style="border-bottom: 1px solid var(--border-light); padding-bottom: 6px; margin-bottom: 4px;">Download
+                    Switches</label>
+
+                  <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; max-width: 80%;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">No Playlist</span>
+                        <small style="margin-top: 0;">Download only the video, not the playlist</small>
+                      </div>
+                      <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                        <input type="checkbox" id="noPlaylist" checked>
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; max-width: 80%;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Embed
+                          Metadata</span>
+                        <small style="margin-top: 0;">Add video details & metadata to output file</small>
+                      </div>
+                      <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                        <input type="checkbox" id="embedMetadata" checked>
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; max-width: 80%;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Embed
+                          Thumbnail</span>
+                        <small style="margin-top: 0;">Set the thumbnail art on the audio/video file</small>
+                      </div>
+                      <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                        <input type="checkbox" id="embedThumbnail" checked>
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; max-width: 80%;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Restrict
+                          Filenames</span>
+                        <small style="margin-top: 0;">Force ASCII filenames (replaces special characters)</small>
+                      </div>
+                      <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                        <input type="checkbox" id="restrictFilenames">
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; max-width: 80%;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Write
+                          Subtitles</span>
+                        <small style="margin-top: 0;">Export subtitle file along with video</small>
+                      </div>
+                      <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                        <input type="checkbox" id="writeSubs">
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; max-width: 80%;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Ignore
+                          Errors</span>
+                        <small style="margin-top: 0;">Force downloading rest of files on warning/failure</small>
+                      </div>
+                      <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                        <input type="checkbox" id="ignoreErrors" checked>
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          <!-- Download Location -->
-          <div class="setting-item">
-            <label>Download Location:</label>
-            <div style="display: flex; gap: 8px;">
-              <input type="text" id="downloadPath" value="Downloads" readonly style="flex: 1;">
-              <button id="browseBtn" class="secondary-btn">Browse</button>
-            </div>
-          </div>
 
-          <!-- Cookies File -->
-          <div class="setting-item" style="flex-direction: column; align-items: flex-start;">
-            <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 8px;">
-              <label>Cookies File (Optional):</label>
-              <label class="toggle-switch">
-                <input type="checkbox" id="useCookies" checked>
-                <span class="slider"></span>
-                <span style="font-size: 11px; font-weight: bold;">USE COOKIES</span>
-              </label>
-            </div>
-            <div style="display: flex; gap: 8px; width: 100%;">
-              <input type="text" id="cookiesPath" value="" placeholder="No cookies file" style="flex: 1;">
-              <button id="browseCookiesBtn" class="secondary-btn">Browse</button>
-              <button id="clearCookiesBtn" class="secondary-btn">Clear</button>
-            </div>
-            <small>Use cookies for authentication (e.g., for private videos)</small>
-            <!-- Warning for Cookies & JS Runtime -->
-            <div id="cookiesRuntimeWarning" class="hidden"
-              style="color: var(--warning, #f59e0b); font-size: 11px; margin-top: 8px; font-weight: 500; display: none; align-items: center; gap: 4px;">
-              ⚠️ Notice: Using cookies requires an active External JS Runtime (like Node.js) for signature extraction on
-              many platforms.
-            </div>
-          </div>
+            <!-- 3. Runtimes Pane -->
+            <div id="settings-pane-runtimes" class="settings-pane">
+              <div class="settings-pane-title">JS Runtimes & Cookies</div>
 
-          <!-- Metadata & Files -->
-          <div class="setting-group">
-            <h4>Metadata & Files</h4>
-            <div class="setting-item">
-              <label class="toggle-switch">
-                <input type="checkbox" id="embedMetadata" checked>
-                <span class="slider"></span>
-                <span>Embed Metadata</span>
-              </label>
-              <small>Add metadata to the video file</small>
-            </div>
-            <div class="setting-item">
-              <label class="toggle-switch">
-                <input type="checkbox" id="embedThumbnail" checked>
-                <span class="slider"></span>
-                <span>Embed Thumbnail</span>
-              </label>
-              <small>Embed the thumbnail in the audio/video file</small>
-            </div>
-            <div class="setting-item">
-              <label class="toggle-switch">
-                <input type="checkbox" id="restrictFilenames">
-                <span class="slider"></span>
-                <span>Restrict Filenames</span>
-              </label>
-              <small>Restrict filenames to ASCII characters</small>
-            </div>
-          </div>
-
-          <!-- Download Behavior -->
-          <div class="setting-group">
-            <h4>Download Behavior</h4>
-
-            <div class="setting-item"
-              style="flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 16px;">
-              <label style="font-size: 13px; font-weight: 500; color: var(--text-primary);">External JS Runtime</label>
-              <div style="display: flex; gap: 8px; width: 100%; margin-bottom: 8px;">
-                <select id="jsRuntimeSelect" class="res-select"
-                  style="min-width: 140px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px 12px; border-radius: var(--radius-sm);">
-                  <option value="none">None (Default)</option>
-                  <option value="node">Node.js</option>
-                  <option value="deno">Deno</option>
-                  <option value="bun">Bun</option>
-                  <option value="quickjs">QuickJS</option>
-                </select>
-                <small style="color: var(--text-muted); display: flex; align-items: center;">JavaScript runtime for
-                  solving video signature challenges</small>
-              </div>
-
-              <!-- Runtime Managers List -->
-              <div
-                style="display: flex; flex-direction: column; gap: 8px; width: 100%; padding: 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
-                <div
-                  style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
-                  Runtime Check & Download</div>
-
-                <!-- Node.js Row -->
-                <div class="runtime-row" style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 12px; font-weight: 500;">Node.js</span>
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span id="status-node" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
-                    <button class="secondary-btn check-rt-btn" data-runtime="node"
-                      style="padding: 2px 8px; font-size: 11px; min-width: 50px;">Check</button>
-                    <button class="secondary-btn dl-rt-btn" data-runtime="node" data-url="https://nodejs.org/en/download"
-                      style="padding: 2px 8px; font-size: 11px;">Download</button>
+              <div class="settings-grid">
+                <!-- Cookies Configuration -->
+                <div class="settings-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                      <label>Cookies Authentication</label>
+                      <small>Use browser session cookies for private/member-only videos.</small>
+                      <a href="#" id="cookiesTutorialLink" style="font-size: 11px; color: var(--accent-light); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; opacity: 0.85; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.549-4.385-8.816zM9 16V8l8 4-8 4z"/></svg>
+                        How to setup cookies (Tutorial)
+                      </a>
+                    </div>
+                    <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                      <input type="checkbox" id="useCookies" checked>
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div style="display: flex; gap: 8px; width: 100%; margin-top: 4px;">
+                    <input type="text" id="cookiesPath" value="" placeholder="No cookies file"
+                      style="flex: 1; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 13px;">
+                    <button id="browseCookiesBtn" class="secondary-btn" style="padding: 8px 12px;">Browse</button>
+                    <button id="clearCookiesBtn" class="secondary-btn" style="padding: 8px 12px;">Clear</button>
+                  </div>
+                  <!-- Warning for Cookies & JS Runtime -->
+                  <div id="cookiesRuntimeWarning" class="hidden"
+                    style="color: var(--warning, #f59e0b); font-size: 11px; margin-top: 8px; font-weight: 500; display: none; align-items: center; gap: 4px;">
+                    ⚠️ Notice: Using cookies requires an active External JS Runtime (like Node.js) for signature
+                    extraction on many platforms.
                   </div>
                 </div>
 
-                <!-- Deno Row -->
-                <div class="runtime-row" style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 12px; font-weight: 500;">Deno</span>
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span id="status-deno" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
-                    <button class="secondary-btn check-rt-btn" data-runtime="deno"
-                      style="padding: 2px 8px; font-size: 11px; min-width: 50px;">Check</button>
-                    <button class="secondary-btn dl-rt-btn" data-runtime="deno" data-url="https://deno.com/"
-                      style="padding: 2px 8px; font-size: 11px;">Download</button>
+                <!-- JS Runtimes selector -->
+                <div class="settings-card row-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <label>Active JS Runtime</label>
+                    <small>Bypasses signature extraction/player challenges</small>
+                    <a href="#" id="jsRuntimeWikiLink" style="font-size: 11px; color: var(--accent-light); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; opacity: 0.85; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                      Learn about JS Runtimes (Wiki)
+                    </a>
                   </div>
+                  <select id="jsRuntimeSelect" class="res-select"
+                    style="min-width: 140px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm);">
+                    <option value="none">None (Default)</option>
+                    <option value="node">Node.js</option>
+                    <option value="deno">Deno</option>
+                    <option value="bun">Bun</option>
+                    <option value="quickjs">QuickJS</option>
+                  </select>
                 </div>
 
-                <!-- Bun Row -->
-                <div class="runtime-row" style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 12px; font-weight: 500;">Bun</span>
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span id="status-bun" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
-                    <button class="secondary-btn check-rt-btn" data-runtime="bun"
-                      style="padding: 2px 8px; font-size: 11px; min-width: 50px;">Check</button>
-                    <button class="secondary-btn dl-rt-btn" data-runtime="bun" data-url="https://bun.sh/"
-                      style="padding: 2px 8px; font-size: 11px;">Download</button>
+                <!-- JS Runtime list and managers -->
+                <div class="settings-card">
+                  <label style="margin-bottom: 6px;">Runtime Check & Download (Silent Install)</label>
+
+                  <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                    <!-- Node.js Row -->
+                    <div class="runtime-row"
+                      style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                      <span style="font-size: 12px; font-weight: 600;">Node.js</span>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="status-node" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
+                        <button class="secondary-btn check-rt-btn" data-runtime="node"
+                          style="padding: 4px 8px; font-size: 10px; min-width: 50px;">Check</button>
+                        <button class="secondary-btn dl-rt-btn" data-runtime="node"
+                          data-url="https://nodejs.org/en/download"
+                          style="padding: 4px 8px; font-size: 10px;">Download</button>
+                      </div>
+                    </div>
+
+                    <!-- Deno Row -->
+                    <div class="runtime-row"
+                      style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                      <span style="font-size: 12px; font-weight: 600;">Deno</span>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="status-deno" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
+                        <button class="secondary-btn check-rt-btn" data-runtime="deno"
+                          style="padding: 4px 8px; font-size: 10px; min-width: 50px;">Check</button>
+                        <button class="secondary-btn dl-rt-btn" data-runtime="deno" data-url="https://deno.com/"
+                          style="padding: 4px 8px; font-size: 10px;">Download</button>
+                      </div>
+                    </div>
+
+                    <!-- Bun Row -->
+                    <div class="runtime-row"
+                      style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                      <span style="font-size: 12px; font-weight: 600;">Bun</span>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="status-bun" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
+                        <button class="secondary-btn check-rt-btn" data-runtime="bun"
+                          style="padding: 4px 8px; font-size: 10px; min-width: 50px;">Check</button>
+                        <button class="secondary-btn dl-rt-btn" data-runtime="bun" data-url="https://bun.sh/"
+                          style="padding: 4px 8px; font-size: 10px;">Download</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <!-- QuickJS Row 
-                <div class="runtime-row" style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 12px; font-weight: 500;">QuickJS</span>
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span id="status-quickjs" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
-                    <button class="secondary-btn check-rt-btn" data-runtime="quickjs"
-                      style="padding: 2px 8px; font-size: 11px; min-width: 50px;">Check</button>
-                    <button class="secondary-btn dl-rt-btn" data-url="https://bellard.org/quickjs/"
-                      style="padding: 2px 8px; font-size: 11px;">Download</button>
+            <!-- 4. Shortcuts Pane -->
+            <div id="settings-pane-shortcuts" class="settings-pane">
+              <div class="settings-pane-title">Keyboard Shortcuts</div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: -10px;">Click on any shortcut input box
+                and press keys to record a custom hotkey.</p>
+
+              <div class="settings-grid">
+                <!-- Analyze Shortcut -->
+                <div class="settings-card row-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); display: block;">Analyze
+                      URL</span>
+                    <small>Triggers smart video analysis</small>
                   </div>
-                </div>-->
+                  <input type="text" id="shortcutAnalyze" value="Ctrl + V" readonly
+                    style="width: 130px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease; font-family: var(--font-ui); font-size: 12px; font-weight: 600;">
+                </div>
+
+                <!-- Quick Audio Shortcut -->
+                <div class="settings-card row-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); display: block;">Quick
+                      Audio Download</span>
+                    <small>Downloads audio directly from clipboard</small>
+                  </div>
+                  <input type="text" id="shortcutQuickAudio" value="Alt + 1" readonly
+                    style="width: 130px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease; font-family: var(--font-ui); font-size: 12px; font-weight: 600;">
+                </div>
+
+                <!-- Analyze Playlist Shortcut -->
+                <div class="settings-card row-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); display: block;">Analyze
+                      Playlist URL</span>
+                    <small>Forces URL to be analyzed as playlist</small>
+                  </div>
+                  <input type="text" id="shortcutPlaylist" value="Alt + 2" readonly
+                    style="width: 130px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease; font-family: var(--font-ui); font-size: 12px; font-weight: 600;">
+                </div>
               </div>
             </div>
 
-            <div class="setting-item"
-              style="flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 16px;">
-              <label style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Quick Audio Format</label>
-              <div style="display: flex; gap: 8px; width: 100%;">
-                <select id="quickAudioFormat" class="res-select"
-                  style="min-width: 140px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px 12px; border-radius: var(--radius-sm);">
-                  <option value="m4a">M4A (Apple Audio)</option>
-                  <option value="opus">Opus (High Quality)</option>
-                </select>
-                <small style="color: var(--text-muted); display: flex; align-items: center;">Default format for 'Quick
-                  Download Audio' button</small>
-                <small style="color: var(--warning); font-weight: 600; margin-top: 2px;">Tip: Press [ALT + 1] anywhere
-                  to quick download from clipboard!</small>
-              </div>
-            </div>
+            <!-- 5. About & Dependencies Pane -->
+            <div id="settings-pane-about" class="settings-pane">
+              <div class="settings-pane-title">About & Dependencies</div>
 
-            <div class="setting-item"
-              style="flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 16px;">
-              <label style="font-size: 13px; font-weight: 500; color: var(--text-primary);">Number of Fragments
-                (Concurrent)</label>
-              <div style="display: flex; gap: 8px; width: 100%;">
-                <input type="number" id="concurrentFragments" min="1" max="32" value="1"
-                  style="background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm); font-family: var(--font-ui); font-size: 13px; width: 80px;">
-                <small style="color: var(--text-muted); display: flex; align-items: center;">Use multiple threads for
-                  DASH/HLS (Default: 1)</small>
-              </div>
-            </div>
+              <div class="settings-grid">
+                <!-- App Info -->
+                <div class="settings-card" style="align-items: center; text-align: center; padding: 20px; gap: 8px;">
+                  <img src="icon.png" alt="App Logo" style="height: 50px; filter: drop-shadow(0 2px 6px #ff86007a);">
+                  <span style="font-weight: 700; font-size: 16px; color: var(--text-primary);">YT-MANGO</span>
+                  <span style="font-size: 12px; color: var(--text-muted);">A professional graphical interface for
+                    yt-dlp.</span>
+                  <button id="openGithubBtn" class="secondary-btn"
+                    style="padding: 6px 14px; font-size: 11px; margin-top: 6px;">GitHub Repository</button>
+                </div>
 
-            <div class="setting-item">
-              <label class="toggle-switch">
-                <input type="checkbox" id="noPlaylist" checked>
-                <span class="slider"></span>
-                <span>No Playlist</span>
-              </label>
-              <small>Download only the video, not the playlist</small>
-            </div>
-            <div class="setting-item">
-              <label class="toggle-switch">
-                <input type="checkbox" id="writeSubs">
-                <span class="slider"></span>
-                <span>Write Subtitles</span>
-              </label>
-              <small>Write subtitle file</small>
-            </div>
-            <div class="setting-item">
-              <label class="toggle-switch">
-                <input type="checkbox" id="ignoreErrors" checked>
-                <span class="slider"></span>
-                <span>Ignore Errors</span>
-              </label>
-              <small>Continue on download errors</small>
+                <!-- Dependencies -->
+                <div class="settings-card" style="gap: 12px;">
+                  <label style="margin-bottom: 0;">Core Dependencies</label>
+
+                  <!-- yt-dlp version & update -->
+                  <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                    <span style="font-size: 13px; font-weight: 600;">yt-dlp version</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span id="ytdlpVersionText"
+                        style="font-weight: 600; color: var(--text-secondary); font-size: 13px;">Checking...</span>
+                      <button id="updateYtdlpBtn" class="secondary-btn"
+                        style="padding: 4px 10px; font-size: 10px; display: flex; align-items: center; gap: 4px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2.5">
+                          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.25 5.25" />
+                        </svg>
+                        Update
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- FFmpeg version -->
+                  <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                    <span style="font-size: 13px; font-weight: 600;">FFmpeg version</span>
+                    <span id="ffmpegVersionText"
+                      style="font-weight: 600; color: var(--text-secondary); font-size: 13px;">Checking...</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -738,6 +861,11 @@
         <p id="alertMsg"
           style="color: var(--text-secondary); font-size: 14px; line-height: 1.5; text-align: left; white-space: pre-wrap; word-break: break-word;">
         </p>
+      </div>
+      <div id="alertFixWrapper" class="hidden" style="margin-bottom: 15px;">
+        <button id="alertFixBtn" class="primary-btn" style="width: 100%; padding: 12px; background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); border: none; font-weight: 700; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
+          🔧 Fix Issue
+        </button>
       </div>
       <button id="closeAlertBtn" class="primary-btn" style="width: 100%; padding: 12px;">OK</button>
     </div>
