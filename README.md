@@ -43,7 +43,7 @@ yt-dlp is powerful, but its command-line interface can be intimidating. **YT-MAN
 
 | drag and drop url | App Settings |
 | :---: | :---: |
-| [<img src="screenshots/drag and drop url.png" width="350">](screenshots/.png) | [<img src="screenshots/settings.png" width="350">](screenshots/settings.png) |
+| [<img src="screenshots/drag and drop url.png" width="350">](screenshots/.png) | [<img src="screenshots/settingss.png" width="350">](screenshots/settingss.png) |
 | ** | ** |
 
 
