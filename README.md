@@ -7,7 +7,7 @@
 
 A modern, beautiful desktop GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp).
 
-Download videos from YouTube, Bilibili, Twitter/X and [1000+ websites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) with ease.
+Download videos from YouTube, Bilibili, Twitter/X/Twitch/Kick and [1000+ websites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) with ease.
 
 
 
