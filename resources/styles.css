@@ -603,7 +603,7 @@ body {
 /* Compact Row Styles */
 .compact-row {
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr 1fr 0.5fr;
+    grid-template-columns: 1.6fr 1fr 1fr 0.5fr;
     align-items: center;
     gap: 12px;
     padding: 12px 18px;
@@ -611,6 +611,7 @@ body {
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    justify-items: start;
     /* Removed overflow: hidden to allow dropdowns to be visible outside row */
 }
 
@@ -656,6 +657,20 @@ body {
     background: var(--warning);
 }
 
+.compact-row .info-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.compact-row .info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+
 .compact-row .info-main {
     font-weight: 700;
     font-size: 14px;
@@ -665,12 +680,29 @@ body {
     gap: 8px;
 }
 
+.compact-row .info-details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    flex-direction: row-reverse;
+}
+
 .compact-row .info-sub {
     color: var(--text-muted);
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+}
+
+.compact-row .size-sub {
+    font-weight: 400;
+    font-size: 15px;
+    color: var(--text-muted);
+   //* opacity: 0.8;*//
 }
 
 .compact-row .badge-pill {

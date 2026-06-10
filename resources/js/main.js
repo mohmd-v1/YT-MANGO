@@ -2020,9 +2020,12 @@ function renderCompactRow(fmt, container, smartData = null) {
         <div class="info-group">
             <div class="info-main">${icon} ${mainTitle}</div>
             ${smartData?.isDRC ? `<div class="info-sub" style="color: var(--warning); font-size: 9px; margin-top: -2px; font-weight: 800; letter-spacing: 0.5px;">DRC ACTIVE</div>` : ''}
-            ${!isAudioOnly && fmt.fps ? `<div class="info-sub">${fmt.fps} FPS</div>` : ''}
+            <div class="info-details">
+                ${!isAudioOnly && fmt.fps ? `<span class="info-sub">${fmt.fps} FPS</span>` : ''}
+                ${isAudioOnly ? `<span class="info-sub">${Math.round(fmt.tbr || fmt.vbr || 0)}k</span>` : ''}
+                <span class="info-sub size-sub">${size}</span>
+            </div>
         </div>
-        <div class="col" style="font-weight: 600; color: var(--text-secondary);">${size}</div>
         <div class="col codec-slot"></div>
         <div class="col bitrate-slot"></div>
         <div class="col" style="text-align: center;">
