@@ -21,7 +21,7 @@
   ],
   "modes": {
     "window": {
-      "title": "YT-MANGO",
+      "title": "YT MANGO",
       "width": 1200,
       "height": 800,
       "minWidth": 900,
@@ -39,7 +39,7 @@
     }
   },
   "cli": {
-    "binaryName": "YT_MANGO",
+    "binaryName": "YT MANGO",
     "resourcesPath": "/resources/",
     "extensionsPath": "/extensions/",
     "clientLibrary": "/resources/js/neutralino.js",
