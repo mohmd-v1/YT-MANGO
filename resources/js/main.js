@@ -322,7 +322,10 @@ if (el.cancelAnalyzeBtn) {
         if (currentAnalyzeProcessPid) {
             try {
                 // Kill yt-dlp analysis process tree
-                await Neutralino.os.execCommand(`taskkill /F /T /PID ${currentAnalyzeProcessPid}`);
+                let killCmd = window.NL_OS === 'Windows' 
+                    ? `taskkill /F /T /PID ${currentAnalyzeProcessPid}`
+                    : `kill -9 ${currentAnalyzeProcessPid}`;
+                await Neutralino.os.execCommand(killCmd);
                 console.log("Analysis cancelled by user.");
             } catch (err) {
                 console.error("Failed to kill analysis process:", err);
@@ -672,12 +675,24 @@ function showInstallModal(target) {
 
     if (target === 'ytdlp') {
         el.install.title.textContent = 'yt-dlp Required';
-        el.install.desc.textContent = "The core engine (yt-dlp) is missing. It's required to analyze and download videos. Download it now?";
+        if (window.NL_OS === 'Windows') {
+            el.install.desc.textContent = "The core engine (yt-dlp) is missing. It's required to analyze and download videos. Download it now?";
+            el.install.startBtn.textContent = "Download Now";
+        } else {
+            el.install.desc.textContent = "The core engine (yt-dlp) is missing. Automatic installation is only supported on Windows. Click 'Instructions' to see how to install it on " + window.NL_OS + ".";
+            el.install.startBtn.textContent = "Instructions";
+        }
         el.install.exitBtn.classList.remove('hidden');
         el.install.skipBtn.classList.add('hidden');
     } else {
         el.install.title.textContent = 'FFmpeg Recommended';
-        el.install.desc.textContent = "FFmpeg is missing. It is highly recommended for merging high-quality video and audio. Install it via Winget?";
+        if (window.NL_OS === 'Windows') {
+            el.install.desc.textContent = "FFmpeg is missing. It is highly recommended for merging high-quality video and audio. Install it via Winget?";
+            el.install.startBtn.textContent = "Install Now";
+        } else {
+            el.install.desc.textContent = "FFmpeg is missing. Automatic installation is only supported on Windows. Click 'Instructions' to see how to install it on " + window.NL_OS + ".";
+            el.install.startBtn.textContent = "Instructions";
+        }
         el.install.exitBtn.classList.add('hidden');
         el.install.skipBtn.classList.remove('hidden');
     }
@@ -693,6 +708,24 @@ el.install.skipBtn.addEventListener('click', () => {
 });
 
 el.install.startBtn.addEventListener('click', async () => {
+    if (window.NL_OS !== 'Windows') {
+        let msg = "";
+        if (installTarget === 'ytdlp') {
+            msg = window.NL_OS === 'Darwin' 
+                ? "To install yt-dlp on macOS, open Terminal and run:\n\nbrew install yt-dlp\n\nAfter installing, please restart the app."
+                : "To install yt-dlp on Linux, open Terminal and run:\n\nsudo apt install yt-dlp\nor\npip install yt-dlp\n\nAfter installing, please restart the app.";
+        } else {
+            msg = window.NL_OS === 'Darwin' 
+                ? "To install FFmpeg on macOS, open Terminal and run:\n\nbrew install ffmpeg\n\nAfter installing, please restart the app."
+                : "To install FFmpeg on Linux, open Terminal and run:\n\nsudo apt install ffmpeg\n\nAfter installing, please restart the app.";
+        }
+        await Neutralino.os.showMessageBox("Installation Instructions", msg, "OK");
+        if (installTarget === 'ffmpeg') {
+            el.install.modal.classList.add('hidden');
+        }
+        return;
+    }
+
     el.install.promptView.classList.add('hidden');
     el.install.progressView.classList.remove('hidden');
 
@@ -740,7 +773,11 @@ async function downloadYtdlp() {
             setTimeout(async () => {
                 const hasFfmpeg = await checkFfmpeg();
                 if (!hasFfmpeg) showInstallModal('ffmpeg');
-                else el.install.modal.classList.add('hidden');
+                else {
+                    el.install.modal.classList.add('hidden');
+                    let restart = await Neutralino.os.showMessageBox('Restart Required', 'yt-dlp has been successfully installed. The application needs to restart to apply changes. Restart now?', 'YES_NO');
+                    if (restart === 'YES') Neutralino.app.restartProcess();
+                }
             }, 1500);
         } else {
             throw new Error(result.stdErr || 'Download failed');
@@ -765,7 +802,11 @@ async function installFfmpeg() {
 
         if (result.exitCode === 0) {
             el.install.status.textContent = 'FFmpeg installed successfully!';
-            setTimeout(() => el.install.modal.classList.add('hidden'), 2000);
+            setTimeout(async () => {
+                el.install.modal.classList.add('hidden');
+                let restart = await Neutralino.os.showMessageBox('Restart Required', 'FFmpeg has been successfully installed. The application needs to restart to apply changes. Restart now?', 'YES_NO');
+                if (restart === 'YES') Neutralino.app.restartProcess();
+            }, 2000);
         } else {
             throw new Error(result.stdErr || 'Winget failed. You may need to install it manually.');
         }
@@ -1308,8 +1349,11 @@ el.modal.close.addEventListener('click', closeModal);
 el.modal.cancel.addEventListener('click', async () => {
     if (currentDownloadProcessPid) {
         try {
-            // Kill yt-dlp and all child processes using PID tree kill
-            await Neutralino.os.execCommand(`taskkill /F /T /PID ${currentDownloadProcessPid}`);
+            // Kill yt-dlp and all child processes
+            let killCmd = window.NL_OS === 'Windows' 
+                ? `taskkill /F /T /PID ${currentDownloadProcessPid}`
+                : `kill -9 ${currentDownloadProcessPid}`;
+            await Neutralino.os.execCommand(killCmd);
 
             el.modal.log.textContent += '\n\n[CANCELLED] Download cancelled by user.';
             el.statusMsg.textContent = 'Download cancelled';
@@ -1333,24 +1377,26 @@ el.modal.cancel.addEventListener('click', async () => {
 
 el.modal.open.addEventListener('click', async () => {
     let path = settings.downloadPath;
-    // Use the actual download path from settings
-    if (path && path !== 'Downloads') {
+    if (!path || path === 'Downloads') {
         try {
-            // Fix for Windows Explorer: Convert forward slashes to backslashes
+            path = await Neutralino.os.getPath('downloads');
+        } catch (e) {
+            path = './Downloads';
+        }
+    }
+    try {
+        let openCmd = '';
+        if (window.NL_OS === 'Windows') {
             let winPath = path.replace(/\//g, '\\');
-            await Neutralino.os.execCommand(`explorer "${winPath}"`);
-        } catch (err) {
-            console.error("Failed to open folder:", err);
+            openCmd = `explorer "${winPath}"`;
+        } else if (window.NL_OS === 'Darwin') {
+            openCmd = `open "${path}"`;
+        } else {
+            openCmd = `xdg-open "${path}"`;
         }
-    } else {
-        // Fallback to system downloads if no custom path
-        try {
-            const downloadsPath = await Neutralino.os.getPath('downloads');
-            let winPath = downloadsPath.replace(/\//g, '\\');
-            await Neutralino.os.execCommand(`explorer "${winPath}"`);
-        } catch (err) {
-            console.error("Failed to open folder:", err);
-        }
+        await Neutralino.os.execCommand(openCmd);
+    } catch (err) {
+        console.error("Failed to open folder:", err);
     }
 });
 
@@ -2798,6 +2844,11 @@ async function pollCheckRuntime(rt, maxAttempts = 20, delayMs = 3000) {
             }
             installedRuntimes.add(rt);
             rebuildRuntimeSelect();
+            
+            let restart = await Neutralino.os.showMessageBox('Restart Required', 'Installation successful. The application needs to restart to update system paths and apply changes. Restart now?', 'YES_NO');
+            if (restart === 'YES') {
+                Neutralino.app.restartProcess();
+            }
             return;
         }
         await new Promise(resolve => setTimeout(resolve, delayMs));
@@ -2822,6 +2873,26 @@ function initRuntimeManagers() {
         if (rt === 'node' || rt === 'deno' || rt === 'bun') {
             btn.onclick = async () => {
                 const rtName = rt === 'node' ? 'Node.js' : (rt === 'deno' ? 'Deno' : 'Bun');
+                
+                if (window.NL_OS !== 'Windows') {
+                    let urls = {
+                        'node': 'https://nodejs.org/',
+                        'deno': 'https://deno.land/#installation',
+                        'bun': 'https://bun.sh/'
+                    };
+                    let cmds = {
+                        'node': window.NL_OS === 'Darwin' ? 'brew install node' : 'sudo apt install nodejs',
+                        'deno': 'curl -fsSL https://deno.land/install.sh | sh',
+                        'bun': 'curl -fsSL https://bun.sh/install | bash'
+                    };
+                    await Neutralino.os.showMessageBox(
+                        "Manual Installation",
+                        `Silent install for ${rtName} is optimized for Windows.\n\nFor ${window.NL_OS}, open Terminal and use:\n\n${cmds[rt]}\n\nOr download from:\n${urls[rt]}`,
+                        "OK"
+                    );
+                    return;
+                }
+
                 const buttonSelected = await Neutralino.os.showMessageBox(
                     `Confirm Installation`,
                     `Do you want to download and install ${rtName} silently?`,
@@ -2964,16 +3035,19 @@ async function downloadSubtitle(langCode, langName, btnElement, isAuto = false) 
         btnElement.innerHTML = `<svg class="anim-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
         btnElement.disabled = true;
 
-        // Direct download using PowerShell
-        const cmd = `powershell -Command "Invoke-WebRequest -Uri '${subUrl}' -OutFile '${fullPath}'"`;
+        // Direct download (cross platform)
+        let cmd = window.NL_OS === 'Windows'
+            ? `powershell -Command "Invoke-WebRequest -Uri '${subUrl}' -OutFile '${fullPath}'"`
+            : `curl -L -o "${fullPath}" "${subUrl}"`;
+            
         const output = await Neutralino.os.execCommand(cmd);
 
-        // PowerShell success is exitCode 0
+        // Success is exitCode 0
         if (output.exitCode === 0) {
             btnElement.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="4"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
             showStatus(`Saved: ${langName} subtitle`, 'success');
         } else {
-            console.error("PS Error:", output.stdErr);
+            console.error("Download Error:", output.stdErr);
             btnElement.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
         }
 
