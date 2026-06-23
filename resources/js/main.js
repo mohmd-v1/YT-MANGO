@@ -50,7 +50,9 @@ const el = {
     cancelAnalyzeBtn: document.getElementById('cancelAnalyzeBtn'),
     contentArea: document.getElementById('contentArea'),
     videoInfo: document.getElementById('videoInfo'),
+    thumbnailWrapper: document.getElementById('thumbnailWrapper'),
     videoThumbnail: document.getElementById('videoThumbnail'),
+    videoDurationOverlay: document.getElementById('videoDurationOverlay'),
     gridBody: document.getElementById('gridBody'),
     videoGridBody: document.getElementById('videoGridBody'),
     audioGridBody: document.getElementById('audioGridBody'),
@@ -1612,13 +1614,12 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
         metadata = data;
         formats = data.formats || [];
 
-        // Display thumbnail if available
-        if (data.thumbnail) {
+        if (data.thumbnail && data.thumbnail !== 'N/A') {
             el.videoThumbnail.src = data.thumbnail;
-            el.videoThumbnail.classList.remove('hidden');
+            el.thumbnailWrapper.classList.remove('hidden');
             updateDynamicBackground(data.thumbnail);
         } else {
-            el.videoThumbnail.classList.add('hidden');
+            el.thumbnailWrapper.classList.add('hidden'); el.videoThumbnail.classList.add('hidden');
             updateDynamicBackground(null);
         }
 
@@ -1643,7 +1644,56 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
         }
         let duration = data.duration ? formatDuration(data.duration) : 'N/A';
         let uploader = data.uploader || 'Unknown';
-        el.videoInfo.textContent = `${title} | Duration: ${duration} | Uploader: ${uploader}`;
+        // Smart RTL detection for Arabic characters
+        const containsArabic = /[\u0600-\u06FF]/.test(title);
+        const dir = containsArabic ? 'rtl' : 'ltr';
+        
+        // Formatter helpers
+        const formatCompact = (num) => {
+            if (num == null) return null;
+            return Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(num);
+        };
+        const formatYMD = (dateStr) => {
+            if (!dateStr || dateStr.length !== 8) return null;
+            const year = dateStr.substring(0, 4);
+            const month = dateStr.substring(4, 6);
+            const day = dateStr.substring(6, 8);
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        };
+
+        let views = formatCompact(data.view_count);
+        let likes = formatCompact(data.like_count);
+        let uploadDate = formatYMD(data.upload_date);
+        
+        // Update overlay
+        if (el.videoDurationOverlay) {
+            el.videoDurationOverlay.textContent = duration;
+        }
+
+        el.videoInfo.innerHTML = `
+            <div class="video-info-content" dir="${dir}">
+                <h3 class="video-info-title" title="${title.replace(/"/g, '&quot;')}">${title}</h3>
+                <div class="video-info-meta" style="flex-wrap: wrap;">
+                    <span class="meta-item" title="Uploader">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        ${uploader}
+                    </span>
+                    ${views ? `<span class="meta-item" title="Views">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        ${views}
+                    </span>` : ''}
+                    ${likes ? `<span class="meta-item" title="Likes">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                        ${likes}
+                    </span>` : ''}
+                    ${uploadDate ? `<span class="meta-item" title="Upload Date">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        ${uploadDate}
+                    </span>` : ''}
+                </div>
+            </div>
+        `;
 
         el.emptyState.classList.add('hidden');
         el.contentArea.classList.remove('hidden');
