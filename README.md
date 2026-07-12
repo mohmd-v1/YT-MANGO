@@ -46,20 +46,22 @@ yt-dlp is powerful, but its command-line interface can be intimidating. **YT-MAN
 | [<img src="screenshots/drag and drop url.png" width="350">](screenshots/.png) | [<img src="screenshots/settingss.png" width="350">](screenshots/settingss.png) |
 | ** | ** |
 
+*Click on any image to view in full size.*
 
 ## Features
 
 ### Core
 
-- Paste a video URL and instantly preview title, thumbnail, duration, and available formats
+- Paste a video URL, or drag and drop url and instantly preview title, thumbnail, duration, and available formats
 - Choose video quality, audio-only, or video-only downloads
-- Download queue with pause / resume / cancel controls
-- Real-time progress with speed and ETA display
 - Playlist support — download all or selected items
+- Download Sections — Download a specific part of the video. **Note: It is best to select the video quality from the "Mixed" menu. 
 - Configurable concurrent downloads and fragment threading
+- Quick audio Download — Click the "opus/M4A" button for instant audio download without format selection.
 
 ### Settings
 - **Download Location**: Choose custom download folder
+- Shortcuts — fast Analyze URL, Analyze Playlist, or Quick Audio Download
 - **Cookies File**: Use cookies for authentication
 - **Metadata Options**: Embed thumbnails and metadata
 - **Download Behavior**: Configure playlist handling and error management
@@ -73,10 +75,7 @@ yt-dlp is powerful, but its command-line interface can be intimidating. **YT-MAN
 - Light / Dark / Auto theme
 
 
----
-*Click on any image to view in full size.*
----
-*Click on any image to view in full size.*
+
 ## Getting Started
 
 ### 
@@ -113,21 +112,7 @@ Grab the latest release for your platform from
 3. Run `neu build`
 4. Copy `yt-dlp.exe` and `ffmpeg.exe` to `dist/yt_dlp_gui/`
 
-## Usage
 
-1. **Paste URL**: Enter a video URL in the input field
-2. **Analyze**: Click "Analyze" to fetch available formats
-3. **Select Format**: Choose from Video Only, Audio Only, or Mixed tabs
-4. **Download**: Click on your preferred quality and hit "Download"
-
-### Quick M4A Download
-Click the "M4A" button for instant audio download without format selection.
-
-### Settings
-- **Download Location**: Choose custom download folder
-- **Cookies File**: Use cookies for authentication
-- **Metadata Options**: Embed thumbnails and metadata
-- **Download Behavior**: Configure playlist handling and error management
 
 ## Technical Details
 
