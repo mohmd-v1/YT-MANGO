@@ -173,6 +173,20 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
     }
 });
 
+function getCodecBadgeHTML(codec) {
+    if (!codec || codec === 'none') return '<span class="badge codec-pro badge-codec-default">NONE</span>';
+    const c = codec.split('.')[0].toLowerCase();
+    let colorClass = 'badge-codec-default';
+    if (c === 'av01') colorClass = 'badge-codec-av1';
+    else if (c === 'vp9') colorClass = 'badge-codec-vp9';
+    else if (c === 'hevc' || c === 'h265') colorClass = 'badge-codec-hevc';
+    else if (c === 'avc' || c === 'h264' || c === 'avc1') colorClass = 'badge-codec-avc';
+    else if (c === 'opus') colorClass = 'badge-codec-opus';
+    else if (c === 'mp4a' || c === 'aac') colorClass = 'badge-codec-aac';
+    
+    return `<span class="badge codec-pro ${colorClass}">${codec.toUpperCase()}</span>`;
+}
+
 function showStatus(text, type = 'info') {
     if (!el.statusMsg) return;
     el.statusMsg.textContent = text;
@@ -2053,7 +2067,7 @@ function renderCompactRow(fmt, container, smartData = null) {
 
     let codecSelectContainer = null;
     if (smartData && smartData.ctypes && smartData.ctypes.length > 1) {
-        const codecOptions = smartData.ctypes.map(c => ({ value: c, label: c.toUpperCase() }));
+        const codecOptions = smartData.ctypes.map(c => ({ value: c, label: getCodecBadgeHTML(c) }));
         codecSelectContainer = createCustomSelect(codecOptions, smartData.activeCType, (newCType) => {
             const variants = smartData.resGroup[newCType].sort((a, b) => (b.tbr || b.vbr || 0) - (a.tbr || a.vbr || 0));
             const firstVariant = variants[0];
@@ -2067,6 +2081,7 @@ function renderCompactRow(fmt, container, smartData = null) {
             renderGrid();
             updateCommand();
         });
+        codecSelectContainer.classList.add('codec-select-container');
     } else {
         if (!isAudioOnly) {
             const container = document.createElement('div');
@@ -2075,10 +2090,11 @@ function renderCompactRow(fmt, container, smartData = null) {
 
             if (langSelectContainer) container.appendChild(langSelectContainer);
 
-            const badge = document.createElement('span');
-            badge.className = 'badge-pill';
-            badge.textContent = subTitle.toUpperCase();
-            container.appendChild(badge);
+            const badgeWrapper = document.createElement('div');
+            badgeWrapper.style.display = 'inline-flex';
+            badgeWrapper.style.alignItems = 'center';
+            badgeWrapper.innerHTML = getCodecBadgeHTML(subTitle);
+            container.appendChild(badgeWrapper);
 
             codecSelectContainer = container;
         } else {
@@ -2172,7 +2188,7 @@ function renderSmartRow(resKey, ctypes, activeCType, variants, activeFmt, resGro
         ? `<select class="res-select codec-select">
             ${ctypes.map(c => `<option value="${c}" ${c === activeCType ? 'selected' : ''}>${c.toUpperCase()}</option>`).join('')}
            </select>`
-        : `<span class="badge codec-mod">${activeCType.toUpperCase()}</span>`;
+        : `${getCodecBadgeHTML(activeCType)}`;
 
     const bitrateHTML = variants.length > 1
         ? `<select class="res-select bitrate-select">
@@ -2258,7 +2274,7 @@ function renderRow(fmt) {
         <div class="col">-</div>
         <div class="col">${size}</div>
         <div class="col">-</div>
-        <div class="col"><span class="badge codec-mod">${fmt.acodec}</span></div>
+        <div class="col">${getCodecBadgeHTML(fmt.acodec)}</div>
         <div class="col">${Math.round(fmt.tbr || 0)}k</div>
         <div class="col" style="text-align: center;">
             <button class="copy-link-btn" title="Copy URL">
