@@ -17,6 +17,8 @@
     "app.*",
     "os.*",
     "storage.*",
+    "window.*",
+    "events.*",
     "clipboard.*"
   ],
   "modes": {
@@ -31,7 +33,7 @@
       "alwaysOnTop": false,
       "icon": "/resources/icon.png",
       "enableInspector": false,
-      "borderless": false,
+      "borderless": true,
       "maximize": false,
       "hidden": false,
       "resizable": true,

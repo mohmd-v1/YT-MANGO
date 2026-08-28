@@ -68,7 +68,7 @@ body {
 .app-container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: 93vh;
     background: transparent;
 }
 
@@ -894,8 +894,8 @@ body.drag-active {
 }
 
 .empty-state svg {
-    width: 80px;
-    height: 80px;
+    width: 30px;
+    height: 24px;
     opacity: 0.3;
 }
 
@@ -2062,6 +2062,108 @@ body::-webkit-scrollbar-thumb {
     box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
 }
 
+/* Professional Empty State */
+.empty-state {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 40px;
+    height: 100%;
+}
+
+.empty-state-content {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    max-width: 500px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    animation: fadeIn 0.4s ease;
+}
+
+[data-theme="light"] .empty-state-content {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.empty-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    color: var(--accent);
+}
+
+.empty-icon-wrapper svg {
+    width: 32px;
+    height: 32px;
+}
+
+.empty-state h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.empty-state p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.empty-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.empty-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    /**background: rgba(255, 255, 255, 0.05);**/
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+[data-theme="light"] .empty-badge {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.05);
+    color: var(--text-secondary);
+}
+
+.empty-badge:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+[data-theme="light"] .empty-badge:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
 /* Custom Select Codec Integration */
 .codec-select-container .custom-select-trigger {
     background: transparent !important;
@@ -2217,4 +2319,168 @@ body::-webkit-scrollbar-thumb {
     border-color: var(--accent) !important;
     position: relative;
     z-index: 10;
+}
+
+/* ========================================================= CUSTOM WINDOW TITLE BAR ========================================================= */
+:root {
+    --titlebar-height: 42px;
+}
+
+/* --------------------------------------------------------- TITLE BAR --------------------------------------------------------- */
+.custom-titlebar {
+    position: relative;
+    width: 100%;
+    height: var(--titlebar-height);
+    display: flex;
+    align-items: center;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+    z-index: 9999;
+}
+
+/* --------------------------------------------------------- DRAG AREA --------------------------------------------------------- */
+.titlebar-drag-area {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+/* --------------------------------------------------------- APP BRAND --------------------------------------------------------- */
+.app-brand {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-left: 14px;
+    pointer-events: none;
+}
+
+/* --------------------------------------------------------- APP ICON --------------------------------------------------------- */
+.app-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    color: #ffffff;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    box-shadow: 0 2px 8px rgba(238, 55, 0, 0.25);
+}
+
+.app-title {
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --------------------------------------------------------- WINDOW CONTROLS --------------------------------------------------------- */
+.window-controls {
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+}
+
+/* --------------------------------------------------------- WINDOW BUTTON --------------------------------------------------------- */
+.window-btn {
+    width: 46px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.window-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.window-btn:active {
+    background: var(--border-light);
+}
+
+/* --------------------------------------------------------- ICONS --------------------------------------------------------- */
+.window-btn svg {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* --------------------------------------------------------- CLOSE BUTTON --------------------------------------------------------- */
+.close-btn:hover {
+    background: var(--danger);
+    color: #ffffff;
+}
+
+.close-btn:active {
+    background: #dc2626;
+    border-bottom: 1px solid var(--border);
+}
+
+/* --------------------------------------------------------- LIGHT THEME --------------------------------------------------------- */
+[data-theme="light"] .custom-titlebar {
+    background: var(--bg-secondary);
+    border-bottom-color: var(--border);
+}
+
+[data-theme="light"] .window-btn {
+    color: var(--text-secondary);
+}
+
+[data-theme="light"] .window-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .close-btn:hover {
+    background: var(--danger);
+    color: #ffffff;
+}
+
+/* --------------------------------------------------------- FOCUS --------------------------------------------------------- */
+.window-btn:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--accent);
+}
+.custom-titlebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+
+    user-select: none;
+    z-index: 99999;
+}
+body {
+    margin: 0;
+    padding-top: 42px;
 }

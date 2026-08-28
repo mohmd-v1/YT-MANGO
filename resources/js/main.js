@@ -179,11 +179,12 @@ function getCodecBadgeHTML(codec) {
     let colorClass = 'badge-codec-default';
     if (c === 'av01') colorClass = 'badge-codec-av1';
     else if (c === 'vp9') colorClass = 'badge-codec-vp9';
+    else if (c === 'vp09') colorClass = 'badge-codec-vp9';
     else if (c === 'hevc' || c === 'h265') colorClass = 'badge-codec-hevc';
     else if (c === 'avc' || c === 'h264' || c === 'avc1') colorClass = 'badge-codec-avc';
     else if (c === 'opus') colorClass = 'badge-codec-opus';
     else if (c === 'mp4a' || c === 'aac') colorClass = 'badge-codec-aac';
-    
+
     return `<span class="badge codec-pro ${colorClass}">${codec.toUpperCase()}</span>`;
 }
 
@@ -200,7 +201,7 @@ function showStatus(text, type = 'info') {
 function detectErrorFix(message) {
     if (!message) return null;
     const msg = message.toLowerCase();
-    
+
     // ── 1. Cookies errors (HIGHEST PRIORITY – check first) ──
     if (msg.includes('cookies') || msg.includes('sign in') || msg.includes('login') || msg.includes('confirm your age') || msg.includes('age-restricted') || msg.includes('members only')) {
         return {
@@ -210,13 +211,13 @@ function detectErrorFix(message) {
                 el.settingsModal.classList.remove('hidden');
                 const runtimeTabBtn = document.querySelector('[data-settings-tab="runtimes"]');
                 if (runtimeTabBtn) runtimeTabBtn.click();
-                
+
                 const cookiesInput = document.getElementById('cookiesPath');
                 const cookiesCard = cookiesInput ? cookiesInput.closest('.settings-card') : null;
                 if (cookiesCard) {
                     cookiesCard.classList.add('glowing-fix-highlight');
                 }
-                
+
                 // Remove highlight when cookies toggled/changed
                 const useCookiesCheck = document.getElementById('useCookies');
                 const removeHighlight = () => {
@@ -231,7 +232,7 @@ function detectErrorFix(message) {
             }
         };
     }
-    
+
     // ── 2. JS Runtime errors ──
     if (msg.includes('javascript runtime') || msg.includes('js-runtime') || msg.includes('nsig') || msg.includes('n-parameter') || msg.includes('signature-bypassing') || msg.includes('player javascript') || msg.includes('failed to extract signature')) {
         return {
@@ -243,14 +244,14 @@ function detectErrorFix(message) {
                 // Switch to runtimes tab
                 const runtimeTabBtn = document.querySelector('[data-settings-tab="runtimes"]');
                 if (runtimeTabBtn) runtimeTabBtn.click();
-                
+
                 // Highlight target card
                 const selectEl = document.getElementById('jsRuntimeSelect');
                 const checkCard = selectEl ? selectEl.closest('.settings-card') : null;
                 if (checkCard) {
                     checkCard.classList.add('glowing-fix-highlight');
                 }
-                
+
                 // Clear highlight when JS Runtime changes
                 if (selectEl) {
                     const removeHighlight = () => {
@@ -264,7 +265,7 @@ function detectErrorFix(message) {
             }
         };
     }
-    
+
     // ── 3. Format/quality errors → usually caused by missing JS Runtime ──
     if (msg.includes('requested format') || msg.includes('not available') || msg.includes('format is not available')) {
         return {
@@ -275,20 +276,20 @@ function detectErrorFix(message) {
                 el.settingsModal.classList.remove('hidden');
                 const runtimeTabBtn = document.querySelector('[data-settings-tab="runtimes"]');
                 if (runtimeTabBtn) runtimeTabBtn.click();
-                
+
                 // Highlight the JS Runtime selector card
                 const selectEl = document.getElementById('jsRuntimeSelect');
                 const runtimeCard = selectEl ? selectEl.closest('.settings-card') : null;
                 if (runtimeCard) {
                     runtimeCard.classList.add('glowing-fix-highlight');
                 }
-                
+
                 // Reset stream selection to avoid stale format IDs
                 selectedVideoId = null;
                 selectedAudioId = null;
                 renderGrid();
                 updateCommand();
-                
+
                 // Clear highlight when JS Runtime changes
                 if (selectEl) {
                     const removeHighlight = () => {
@@ -302,17 +303,17 @@ function detectErrorFix(message) {
             }
         };
     }
-    
+
     return null;
 }
 
 function showAlert(message, title = 'Notice') {
     el.alert.title.textContent = title;
     el.alert.msg.textContent = message;
-    
+
     const fixWrapper = document.getElementById('alertFixWrapper');
     const fixBtn = document.getElementById('alertFixBtn');
-    
+
     const fix = detectErrorFix(message);
     if (fix && fixWrapper && fixBtn) {
         fixBtn.textContent = fix.btnText;
@@ -324,7 +325,7 @@ function showAlert(message, title = 'Notice') {
     } else {
         if (fixWrapper) fixWrapper.classList.add('hidden');
     }
-    
+
     el.alert.modal.classList.remove('hidden');
 }
 
@@ -338,7 +339,7 @@ if (el.cancelAnalyzeBtn) {
         if (currentAnalyzeProcessPid) {
             try {
                 // Kill yt-dlp analysis process tree
-                let killCmd = window.NL_OS === 'Windows' 
+                let killCmd = window.NL_OS === 'Windows'
                     ? `taskkill /F /T /PID ${currentAnalyzeProcessPid}`
                     : `kill -9 ${currentAnalyzeProcessPid}`;
                 await Neutralino.os.execCommand(killCmd);
@@ -727,11 +728,11 @@ el.install.startBtn.addEventListener('click', async () => {
     if (window.NL_OS !== 'Windows') {
         let msg = "";
         if (installTarget === 'ytdlp') {
-            msg = window.NL_OS === 'Darwin' 
+            msg = window.NL_OS === 'Darwin'
                 ? "To install yt-dlp on macOS, open Terminal and run:\n\nbrew install yt-dlp\n\nAfter installing, please restart the app."
                 : "To install yt-dlp on Linux, open Terminal and run:\n\nsudo apt install yt-dlp\nor\npip install yt-dlp\n\nAfter installing, please restart the app.";
         } else {
-            msg = window.NL_OS === 'Darwin' 
+            msg = window.NL_OS === 'Darwin'
                 ? "To install FFmpeg on macOS, open Terminal and run:\n\nbrew install ffmpeg\n\nAfter installing, please restart the app."
                 : "To install FFmpeg on Linux, open Terminal and run:\n\nsudo apt install ffmpeg\n\nAfter installing, please restart the app.";
         }
@@ -1366,7 +1367,7 @@ el.modal.cancel.addEventListener('click', async () => {
     if (currentDownloadProcessPid) {
         try {
             // Kill yt-dlp and all child processes
-            let killCmd = window.NL_OS === 'Windows' 
+            let killCmd = window.NL_OS === 'Windows'
                 ? `taskkill /F /T /PID ${currentDownloadProcessPid}`
                 : `kill -9 ${currentDownloadProcessPid}`;
             await Neutralino.os.execCommand(killCmd);
@@ -1661,7 +1662,7 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
         // Smart RTL detection for Arabic characters
         const containsArabic = /[\u0600-\u06FF]/.test(title);
         const dir = containsArabic ? 'rtl' : 'ltr';
-        
+
         // Formatter helpers
         const formatCompact = (num) => {
             if (num == null) return null;
@@ -1679,7 +1680,7 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
         let views = formatCompact(data.view_count);
         let likes = formatCompact(data.like_count);
         let uploadDate = formatYMD(data.upload_date);
-        
+
         // Update overlay
         if (el.videoDurationOverlay) {
             el.videoDurationOverlay.textContent = duration;
@@ -1824,6 +1825,7 @@ function renderDualColumn(type, filtered, container = null) {
         let cType = 'unknown';
         if (vc.includes('av01')) cType = 'av01';
         else if (vc.includes('vp9')) cType = 'vp9';
+        else if (vc.includes('vp09')) cType = 'vp9';
         else if (vc.includes('avc') || vc.includes('h264') || vc.includes('mp4v')) cType = 'avc';
         else if (vc.includes('hev') || vc.includes('hvc') || vc.includes('h265')) cType = 'hevc';
         else if (vc && vc !== 'none' && vc !== 'unknown') cType = 'other';
@@ -2422,10 +2424,10 @@ function updateCommand() {
         if (vFmt && aFmt) {
             let totalBytes = getFormatSizeVal(vFmt) + getFormatSizeVal(aFmt);
             let approx = isFormatSizeApprox(vFmt) || isFormatSizeApprox(aFmt) ||
-                         String(vFmt.filesize).includes('~') || String(aFmt.filesize).includes('~') ||
-                         String(vFmt.filesize_approx).includes('~') || String(aFmt.filesize_approx).includes('~') ||
-                         String(vFmt.filesize).includes('≈') || String(aFmt.filesize).includes('≈') ||
-                         String(vFmt.filesize_approx).includes('≈') || String(aFmt.filesize_approx).includes('≈');
+                String(vFmt.filesize).includes('~') || String(aFmt.filesize).includes('~') ||
+                String(vFmt.filesize_approx).includes('~') || String(aFmt.filesize_approx).includes('~') ||
+                String(vFmt.filesize).includes('≈') || String(aFmt.filesize).includes('≈') ||
+                String(vFmt.filesize_approx).includes('≈') || String(aFmt.filesize_approx).includes('≈');
             sizeStr = totalBytes ? (approx ? '~' : '') + formatBytes(totalBytes) : '--';
         } else if (vFmt) {
             sizeStr = getFormatDisplaySize(vFmt);
@@ -2622,7 +2624,7 @@ async function startDownload() {
                         currentDownloadProcess = null; // Clear process
                         el.modal.cancel.classList.add('hidden'); // Hide cancel
                         el.modal.close.classList.remove('hidden');
-                        
+
                         // Intelligent troubleshooting for download failure
                         const logContent = el.modal.log.textContent || '';
                         const hasFix = detectErrorFix(logContent);
@@ -2751,7 +2753,7 @@ function formatSizeValue(val) {
 
 function getFormatDisplaySize(fmt) {
     if (!fmt) return '--';
-    
+
     // 1. Try to read any potential size fields from yt-dlp
     const possibleSize = fmt.filesize || fmt.filesize_approx || fmt.filesize_approximate || fmt.size || fmt.file_size;
     if (possibleSize !== undefined && possibleSize !== null && possibleSize !== '') {
@@ -2762,7 +2764,7 @@ function getFormatDisplaySize(fmt) {
         }
         return sizeStr;
     }
-    
+
     // 2. Fallback to estimation based on bitrate and duration
     const bitrate = fmt.tbr || fmt.vbr || fmt.abr || 0;
     const duration = currentData?.duration || 0;
@@ -2770,7 +2772,7 @@ function getFormatDisplaySize(fmt) {
         const estimatedBytes = ((bitrate * 1024) / 8) * duration;
         return '≈' + formatBytes(estimatedBytes);
     }
-    
+
     return '--';
 }
 
@@ -2795,9 +2797,9 @@ async function checkRuntime(name) {
     else if (name === 'deno') cmd = 'deno --version';
     else if (name === 'bun') cmd = 'bun --version';
     else if (name === 'quickjs') cmd = 'qjs --version';
-    
+
     if (!cmd) return false;
-    
+
     try {
         let output = await Neutralino.os.execCommand(cmd);
         return output.exitCode === 0;
@@ -2810,10 +2812,10 @@ async function checkRuntime(name) {
 async function handleCheckRuntime(name) {
     const statusSpan = document.getElementById(`status-${name}`);
     if (!statusSpan) return;
-    
+
     statusSpan.textContent = 'Checking...';
     statusSpan.style.color = 'var(--text-muted)';
-    
+
     const exists = await checkRuntime(name);
     if (exists) {
         statusSpan.textContent = 'Installed ✔️';
@@ -2885,10 +2887,10 @@ function checkAllRuntimes() {
 function toggleCookiesWarning() {
     const warningEl = document.getElementById('cookiesRuntimeWarning');
     if (!warningEl) return;
-    
+
     const useCookies = el.inputs.useCookies ? el.inputs.useCookies.checked : false;
     const jsRuntime = el.inputs.jsRuntimeSelect ? el.inputs.jsRuntimeSelect.value : 'none';
-    
+
     if (useCookies && jsRuntime === 'none') {
         warningEl.classList.remove('hidden');
         warningEl.style.display = 'flex';
@@ -2910,7 +2912,7 @@ async function pollCheckRuntime(rt, maxAttempts = 20, delayMs = 3000) {
             }
             installedRuntimes.add(rt);
             rebuildRuntimeSelect();
-            
+
             let restart = await Neutralino.os.showMessageBox('Restart Required', 'Installation successful. The application needs to restart to update system paths and apply changes. Restart now?', 'YES_NO');
             if (restart === 'YES') {
                 Neutralino.app.restartProcess();
@@ -2939,7 +2941,7 @@ function initRuntimeManagers() {
         if (rt === 'node' || rt === 'deno' || rt === 'bun') {
             btn.onclick = async () => {
                 const rtName = rt === 'node' ? 'Node.js' : (rt === 'deno' ? 'Deno' : 'Bun');
-                
+
                 if (window.NL_OS !== 'Windows') {
                     let urls = {
                         'node': 'https://nodejs.org/',
@@ -2964,14 +2966,14 @@ function initRuntimeManagers() {
                     `Do you want to download and install ${rtName} silently?`,
                     'YES_NO'
                 );
-                
+
                 if (buttonSelected === 'YES') {
                     const statusSpan = document.getElementById(`status-${rt}`);
                     if (statusSpan) {
                         statusSpan.textContent = 'Installing...';
                         statusSpan.style.color = '#ff9800'; // Orange
                     }
-                    
+
                     let cmd = '';
                     if (rt === 'deno') {
                         cmd = 'powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://deno.land/install.ps1 | iex"';
@@ -2980,11 +2982,11 @@ function initRuntimeManagers() {
                     } else if (rt === 'node') {
                         cmd = `powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process powershell -ArgumentList '-NoProfile', '-Command', 'curl -L https://nodejs.org/dist/v20.11.1/node-v20.11.1-x64.msi -o $env:TEMP\\\\node.msi; Start-Process msiexec.exe -ArgumentList /i, $env:TEMP\\\\node.msi, /qn, /norestart -Wait; Remove-Item $env:TEMP\\\\node.msi' -Verb RunAs"`;
                     }
-                    
+
                     try {
                         // Start polling in parallel
                         pollCheckRuntime(rt);
-                        
+
                         let output = await Neutralino.os.execCommand(cmd);
                         if (rt !== 'node' && output.exitCode !== 0) {
                             if (statusSpan) {
@@ -3010,7 +3012,7 @@ function initRuntimeManagers() {
 
     // Run initial runtime checks
     checkAllRuntimes();
-    
+
     // Display cookies warning if needed
     toggleCookiesWarning();
 
@@ -3039,7 +3041,7 @@ function initSettingsTabs() {
         btn.onclick = () => {
             document.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.settings-pane').forEach(p => p.classList.remove('active'));
-            
+
             btn.classList.add('active');
             const tabName = btn.getAttribute('data-settings-tab');
             const pane = document.getElementById(`settings-pane-${tabName}`);
@@ -3105,7 +3107,7 @@ async function downloadSubtitle(langCode, langName, btnElement, isAuto = false) 
         let cmd = window.NL_OS === 'Windows'
             ? `powershell -Command "Invoke-WebRequest -Uri '${subUrl}' -OutFile '${fullPath}'"`
             : `curl -L -o "${fullPath}" "${subUrl}"`;
-            
+
         const output = await Neutralino.os.execCommand(cmd);
 
         // Success is exitCode 0
@@ -3130,3 +3132,113 @@ async function downloadSubtitle(langCode, langName, btnElement, isAuto = false) 
 
 loadSettings();
 ensureToolsInstalled();
+/* =========================================================
+   CUSTOM WINDOW CONTROLS
+========================================================= */
+document.addEventListener("DOMContentLoaded", async () => {
+    const minimizeBtn = document.getElementById("minimize-btn");
+    const maximizeBtn = document.getElementById("maximize-btn");
+    const closeBtn = document.getElementById("close-btn");
+    const maximizeIcon = document.getElementById("maximize-icon");
+
+    /* -----------------------------------------------------
+       MINIMIZE
+    ----------------------------------------------------- */
+    minimizeBtn.addEventListener("click", async () => {
+        await Neutralino.window.minimize();
+    });
+
+    /* -----------------------------------------------------
+       MAXIMIZE / RESTORE
+    ----------------------------------------------------- */
+    maximizeBtn.addEventListener("click", async () => {
+        const maximized = await Neutralino.window.isMaximized();
+        if (maximized) {
+            await Neutralino.window.unmaximize();
+        } else {
+            await Neutralino.window.maximize();
+        }
+        updateMaximizeIcon();
+    });
+
+    /* -----------------------------------------------------
+       CLOSE
+    ----------------------------------------------------- */
+    closeBtn.addEventListener("click", async () => {
+        await Neutralino.app.exit();
+    });
+
+    /* -----------------------------------------------------
+       UPDATE MAXIMIZE ICON
+    ----------------------------------------------------- */
+    async function updateMaximizeIcon() {
+        const maximized = await Neutralino.window.isMaximized();
+        if (maximized) {
+            maximizeIcon.innerHTML = ` <path d="M8 8h10v10"/> <path d="M6 6h10v10"/> `;
+        } else {
+            maximizeIcon.innerHTML = ` <rect x="5" y="5" width="14" height="14" rx="1" /> `;
+        }
+    }
+
+    /* -----------------------------------------------------
+       DRAG WINDOW
+    ----------------------------------------------------- */
+    await Neutralino.window.setDraggableRegion("titlebar-drag-area", {
+        exclusions: ["minimize-btn", "maximize-btn", "close-btn"]
+    });
+
+    /* -----------------------------------------------------
+       NATIVE WINDOW EVENTS
+    ----------------------------------------------------- */
+    Neutralino.events.on("windowMaximize", updateMaximizeIcon);
+    Neutralino.events.on("windowRestore", updateMaximizeIcon);
+
+    /* -----------------------------------------------------
+       RESTORE RESIZABLE BORDERS (WORKAROUND)
+    ----------------------------------------------------- */
+    // In Neutralinojs, borderless windows might lose native edge/corner resize handles.
+    // Setting the window size to its current size explicitly restores the OS resize behavior.
+    try {
+        const currentSize = await Neutralino.window.getSize();
+        await Neutralino.window.setSize(currentSize);
+    } catch (e) {
+        console.error("Failed to restore borderless resize handles", e);
+    }
+
+    /* -----------------------------------------------------
+       INITIAL STATE
+    ----------------------------------------------------- */
+    updateMaximizeIcon();
+});
+
+/* =========================================================
+   DRAG AND DROP SUPPORT FOR URLs
+========================================================= */
+document.addEventListener("dragover", (e) => {
+    e.preventDefault(); // Prevent default to allow drop
+    if (el.emptyState && !el.emptyState.classList.contains("hidden")) {
+        el.emptyState.style.opacity = "0.7"; // visual feedback
+    }
+});
+
+document.addEventListener("dragleave", (e) => {
+    e.preventDefault();
+    if (el.emptyState) el.emptyState.style.opacity = "1";
+});
+
+document.addEventListener("drop", (e) => {
+    e.preventDefault();
+    if (el.emptyState) el.emptyState.style.opacity = "1";
+    
+    // Get text or URL data from the dropped item
+    const droppedText = e.dataTransfer.getData("text/plain") || e.dataTransfer.getData("text/uri-list");
+    
+    if (droppedText && droppedText.trim().startsWith("http")) {
+        // It's a URL
+        el.urlInput.value = droppedText.trim();
+        // Trigger analysis automatically
+        if (el.analyzeBtn && !el.analyzeBtn.disabled) {
+            el.analyzeBtn.click();
+        }
+    }
+});
