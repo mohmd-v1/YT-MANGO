@@ -174,18 +174,67 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 });
 
 function getCodecBadgeHTML(codec) {
-    if (!codec || codec === 'none') return '<span class="badge codec-pro badge-codec-default">NONE</span>';
-    const c = codec.split('.')[0].toLowerCase();
-    let colorClass = 'badge-codec-default';
-    if (c === 'av01') colorClass = 'badge-codec-av1';
-    else if (c === 'vp9') colorClass = 'badge-codec-vp9';
-    else if (c === 'vp09') colorClass = 'badge-codec-vp9';
-    else if (c === 'hevc' || c === 'h265') colorClass = 'badge-codec-hevc';
-    else if (c === 'avc' || c === 'h264' || c === 'avc1') colorClass = 'badge-codec-avc';
-    else if (c === 'opus') colorClass = 'badge-codec-opus';
-    else if (c === 'mp4a' || c === 'aac') colorClass = 'badge-codec-aac';
+    if (!codec || codec === 'none') {
+        return '<span class="badge codec-pro badge-codec-default">NONE</span>';
+    }
 
-    return `<span class="badge codec-pro ${colorClass}">${codec.toUpperCase()}</span>`;
+    const vc = codec.toLowerCase();
+
+    // Normalize codec name
+    let normalizedCodec = 'OTHER';
+    let colorClass = 'badge-codec-default';
+
+    // AV1: av01 / av1
+    if (
+        vc.includes('av01') ||
+        vc.includes('av1')
+    ) {
+        normalizedCodec = 'AV1';
+        colorClass = 'badge-codec-av1';
+
+    // HEVC: hevc / h265 / h.265 / hvc1 / hev1
+    } else if (
+        vc.includes('hevc') ||
+        vc.includes('h265') ||
+        vc.includes('h.265') ||
+        vc.includes('hvc1') ||
+        vc.includes('hev1')
+    ) {
+        normalizedCodec = 'HEVC';
+        colorClass = 'badge-codec-hevc';
+
+    // H.264: avc / h264 / h.264 / avc1
+    } else if (
+        vc.includes('avc') ||
+        vc.includes('h264') ||
+        vc.includes('h.264') ||
+        vc.includes('avc1')
+    ) {
+        normalizedCodec = 'H.264';
+        colorClass = 'badge-codec-avc';
+
+    // VP9: vp9 / vp09
+    } else if (
+        vc.includes('vp9') ||
+        vc.includes('vp09')
+    ) {
+        normalizedCodec = 'VP9';
+        colorClass = 'badge-codec-vp9';
+
+    // Audio codecs
+    } else if (vc.includes('opus')) {
+        normalizedCodec = 'OPUS';
+        colorClass = 'badge-codec-opus';
+
+    } else if (
+        vc.includes('mp4a') ||
+        vc.includes('aac')
+    ) {
+        normalizedCodec = 'AAC';
+        colorClass = 'badge-codec-aac';
+    }
+
+    return `<span class="badge codec-pro ${colorClass}">${normalizedCodec}</span>`;
 }
 
 function showStatus(text, type = 'info') {
@@ -1813,59 +1862,216 @@ function renderGrid() {
     }
 }
 
+// Normalize all resolution naming styles into one quality group.
+// Examples: 480, 480p, 854x480 -> 480p
+function getNormalizedResolution(fmt) {
+    const width = Number(fmt?.width) || 0;
+    const height = Number(fmt?.height) || 0;
+
+    // If yt-dlp gives us the real height, use it as the quality.
+    if (height > 0) {
+        return `${height}p`;
+    }
+
+    const candidates = [
+        fmt?.format_note,
+        fmt?.resolution,
+        fmt?.format,
+        fmt?.format_id
+    ].filter(Boolean).join(' ');
+
+    // Handle text such as 854x480 or 1920x1080
+    const dimensionMatch = candidates.match(
+        /(?:^|\D)(\d{2,5})\s*[x×]\s*(\d{2,5})(?:\D|$)/i
+    );
+
+    if (dimensionMatch) {
+        return `${Number(dimensionMatch[2])}p`;
+    }
+
+    // Handle both 480p and 480
+    const qualityMatch = candidates.match(
+        /(?:^|\D)(\d{2,5})\s*p?(?:\D|$)/i
+    );
+
+    if (qualityMatch) {
+        const h = Number(qualityMatch[1]);
+
+        if (h >= 100 && h <= 4320) {
+            return `${h}p`;
+        }
+    }
+
+    return 'Unknown';
+}
+
+function getResolutionSortValue(resKey) {
+    const match = String(resKey).match(/(\d{2,5})p$/i);
+    return match ? Number(match[1]) : 0;
+}
+
 function renderDualColumn(type, filtered, container = null) {
     const groups = {};
-    const codecPriority = { 'av01': 5, 'hevc': 4, 'vp9': 3, 'avc': 2, 'unknown': 1, 'other': 0 };
+    const codecPriority = {
+        'av01': 5,
+        'hevc': 4,
+        'vp9': 3,
+        'avc': 2,
+        'unknown': 1,
+        'other': 0
+    };
 
     filtered.forEach(f => {
-        const resKey = f.width ? `${f.width}x${f.height}` : (f.format_note || f.format_id || 'Unknown');
-        if (!groups[resKey]) groups[resKey] = {};
+        const resKey = getNormalizedResolution(f);
+        if (!groups[resKey]) {
+            groups[resKey] = {};
+        }
 
+        // Normalize codec name
         const vc = (f.vcodec || '').toLowerCase();
-        let cType = 'unknown';
-        if (vc.includes('av01')) cType = 'av01';
-        else if (vc.includes('vp9')) cType = 'vp9';
-        else if (vc.includes('vp09')) cType = 'vp9';
-        else if (vc.includes('avc') || vc.includes('h264') || vc.includes('mp4v')) cType = 'avc';
-        else if (vc.includes('hev') || vc.includes('hvc') || vc.includes('h265')) cType = 'hevc';
-        else if (vc && vc !== 'none' && vc !== 'unknown') cType = 'other';
 
-        if (!groups[resKey][cType]) groups[resKey][cType] = [];
+        let cType = 'unknown';
+
+        // AV1: av01 / av1
+        if (
+            vc.includes('av01') ||
+            vc.includes('av1')
+        ) {
+            cType = 'av01';
+
+        // HEVC: hevc / h265 / h.265 / hvc1 / hev1
+        } else if (
+            vc.includes('hevc') ||
+            vc.includes('h265') ||
+            vc.includes('h.265') ||
+            vc.includes('hvc1') ||
+            vc.includes('hev1')
+        ) {
+            cType = 'hevc';
+
+        // H.264: avc / h264 / h.264
+        } else if (
+            vc.includes('avc') ||
+            vc.includes('h264') ||
+            vc.includes('h.264')
+        ) {
+            cType = 'avc';
+
+        // VP9: vp9 / vp09
+        } else if (
+            vc.includes('vp9') ||
+            vc.includes('vp09')
+        ) {
+            cType = 'vp9';
+
+        // Other known codec
+        } else if (
+            vc &&
+            vc !== 'none' &&
+            vc !== 'unknown'
+        ) {
+            cType = 'other';
+        }
+
+        if (!groups[resKey][cType]) {
+            groups[resKey][cType] = [];
+        }
+
         groups[resKey][cType].push(f);
     });
 
+    // Sort resolutions from highest to lowest
     const sortedResKeys = Object.keys(groups).sort((a, b) => {
         const [w1, h1] = a.split('x').map(Number);
         const [w2, h2] = b.split('x').map(Number);
-        return (w2 * h2 || 0) - (w1 * h1 || 0);
+
+        return getResolutionSortValue(b) - getResolutionSortValue(a);
     });
 
     sortedResKeys.forEach(resKey => {
         const resGroup = groups[resKey];
-        const availableCTypes = Object.keys(resGroup).sort((a, b) => codecPriority[b] - codecPriority[a]);
 
+        // Sort codecs according to priority
+        const availableCTypes = Object.keys(resGroup).sort(
+            (a, b) => codecPriority[b] - codecPriority[a]
+        );
+
+        // Restore previous codec selection if available
         let currentCType = resolutionSelections[resKey]?.cType;
-        if (!currentCType || !availableCTypes.includes(currentCType)) {
+
+        if (
+            !currentCType ||
+            !availableCTypes.includes(currentCType)
+        ) {
             currentCType = availableCTypes[0];
         }
 
-        const variants = resGroup[currentCType].sort((a, b) => (b.tbr || b.vbr || 0) - (a.tbr || a.vbr || 0));
+        // Sort formats by bitrate
+        const variants = resGroup[currentCType].sort(
+            (a, b) =>
+                (b.tbr || b.vbr || 0) -
+                (a.tbr || a.vbr || 0)
+        );
 
-        // Ensure resolutionSelections is initialized for this key
+        // Initialize resolution selection
         if (!resolutionSelections[resKey]) {
-            resolutionSelections[resKey] = { cType: currentCType, formatId: variants[0].format_id };
+            resolutionSelections[resKey] = {
+                cType: currentCType,
+                formatId: variants[0].format_id
+            };
         }
 
-        let currentFormatId = resolutionSelections[resKey].formatId;
-        let activeFmt = variants.find(f => f.format_id === currentFormatId) || variants[0];
+        // Get currently selected format
+        const currentFormatId =
+            resolutionSelections[resKey].formatId;
 
+        const activeFmt =
+            variants.find(
+                f => f.format_id === currentFormatId
+            ) || variants[0];
+
+        // Render row
         if (type === 'video') {
-            renderCompactRow(activeFmt, el.videoGridBody, { resKey, ctypes: availableCTypes, activeCType: currentCType, variants, resGroup });
+            renderCompactRow(
+                activeFmt,
+                el.videoGridBody,
+                {
+                    resKey,
+                    ctypes: availableCTypes,
+                    activeCType: currentCType,
+                    variants,
+                    resGroup
+                }
+            );
+
         } else if (type === 'mixed') {
-            renderCompactRow(activeFmt, container, { resKey, ctypes: availableCTypes, activeCType: currentCType, variants, resGroup, isMixed: true, isMultiLang: true });
+            renderCompactRow(
+                activeFmt,
+                container,
+                {
+                    resKey,
+                    ctypes: availableCTypes,
+                    activeCType: currentCType,
+                    variants,
+                    resGroup,
+                    isMixed: true,
+                    isMultiLang: true
+                }
+            );
+
         } else {
             // Fallback
-            renderCompactRow(activeFmt, container || el.gridBody, { resKey, ctypes: availableCTypes, activeCType: currentCType, variants, resGroup });
+            renderCompactRow(
+                activeFmt,
+                container || el.gridBody,
+                {
+                    resKey,
+                    ctypes: availableCTypes,
+                    activeCType: currentCType,
+                    variants,
+                    resGroup
+                }
+            );
         }
     });
 }
