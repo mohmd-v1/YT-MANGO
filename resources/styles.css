@@ -68,7 +68,7 @@ body {
 .app-container {
     display: flex;
     flex-direction: column;
-    min-height: 93vh;
+    min-height: 99vh;
     background: transparent;
 }
 
@@ -82,6 +82,7 @@ body {
     gap: 20px;
     box-shadow: 0 4px 12px var(--shadow);
     justify-content: space-between;
+    /*padding-top: 49px;*/
 
 }
 
@@ -184,7 +185,7 @@ body {
     overflow: hidden; */
     display: flex;
     flex-direction: column;
-    padding: 24px;
+    padding: 0px 24px 24px 24px;
     gap: 20px;
     min-height: 0;
     /* Important for flex scrolling */
@@ -198,12 +199,14 @@ body {
     gap: 16px;
     align-items: center;
     background: rgba(18, 18, 18, 0.5) !important;
-    /* padding: 16px 20px;*/
     border-radius: var(--radius);
     border: 1px solid rgba(255, 255, 255, 0.06) !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(20px);
+    */ backdrop-filter: blur(20px);
     flex-shrink: 0;
+    padding: 25px 24px;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+    mask-image: linear-gradient(to bottom, transparent, black 25%, black 75%, transparent);
 }
 
 [data-theme="light"] .video-info-container {
@@ -216,13 +219,16 @@ body {
     position: relative;
     display: inline-block;
     flex-shrink: 0;
-    height: 125px;
-    /* Same as thumbnail height to contain it */
+    height: 134px;
+    /* Same as thumbnail height to contain it 
     border-radius: var(--radius-sm);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    border: 2px solid var(--border);
+    border: 2px solid var(--border);*/
     mask-image: linear-gradient(to right, black 65%, transparent 99%);
+
 }
+
+
 
 .video-thumbnail {
     display: block;
@@ -233,7 +239,7 @@ body {
 
 .video-duration-overlay {
     position: absolute;
-    bottom: 6px;
+    bottom: 19px;
     left: 6px;
     background: rgba(0, 0, 0, 0.8);
     color: #fff;
@@ -245,6 +251,7 @@ body {
     line-height: 1;
     z-index: 2;
     backdrop-filter: blur(2px);
+    mask-image: linear-gradient(to bottom, #000000 78%, #00000014 92%);
 }
 
 #videoInfo {
@@ -336,7 +343,7 @@ body {
 #contentArea {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 9px;
     min-height: 0;
     /*     flex: 1;
     overflow: hidden; */
@@ -541,7 +548,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(255, 255, 255, 0.05);
+    /*background: rgba(255, 255, 255, 0.05);*/
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
     padding: 6px 12px;
@@ -2002,37 +2009,32 @@ body::-webkit-scrollbar-thumb {
 }
 
 [data-theme="light"] .badge-codec-av1 {
-    background: rgba(14, 165, 233, 0.1);
     color: #0284c7;
     border-color: rgba(14, 165, 233, 0.3);
 }
 
 [data-theme="light"] .badge-codec-vp9 {
-    background: rgba(34, 197, 94, 0.1);
     color: #16a34a;
     border-color: rgba(34, 197, 94, 0.3);
 }
 
 [data-theme="light"] .badge-codec-hevc {
-    background: rgba(168, 85, 247, 0.1);
     color: #9333ea;
     border-color: rgba(168, 85, 247, 0.3);
 }
 
 [data-theme="light"] .badge-codec-avc {
-    background: rgba(249, 115, 22, 0.1);
     color: #ea580c;
     border-color: rgba(249, 115, 22, 0.3);
 }
 
 [data-theme="light"] .badge-codec-opus {
-    background: rgba(234, 179, 8, 0.1);
     color: #ca8a04;
     border-color: rgba(234, 179, 8, 0.3);
 }
 
 [data-theme="light"] .badge-codec-aac {
-    background: rgba(99, 102, 241, 0.1);
+    color: #4f46e5;
     color: #4f46e5;
     border-color: rgba(99, 102, 241, 0.3);
 }
@@ -2167,8 +2169,8 @@ body::-webkit-scrollbar-thumb {
 /* Custom Select Codec Integration */
 .codec-select-container .custom-select-trigger {
     background: transparent !important;
-    border: 1px solid #1f1f1f !important;
-    padding: 0 4px !important;
+    /* border: 1px solid #1f1f1f !important;
+    padding: 0 4px !important;*/
 }
 
 .codec-select-container.active .custom-select-trigger {
@@ -2197,6 +2199,7 @@ body::-webkit-scrollbar-thumb {
     transition: background-image 0.8s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.8s ease-in-out;
     pointer-events: none;
     opacity: 0;
+
 }
 
 .info-bg.active {
@@ -2204,11 +2207,11 @@ body::-webkit-scrollbar-thumb {
 }
 
 [data-theme="light"] .info-bg {
-    filter: blur(25px) brightness(1.15) contrast(0.85);
+    filter: blur(3px) brightness(1.15) contrast(0.85);
 }
 
 [data-theme="light"] .info-bg.active {
-    opacity: 0.3;
+    opacity: 0.4;
     /* Soft blend in light mode */
 }
 
@@ -2319,168 +2322,4 @@ body::-webkit-scrollbar-thumb {
     border-color: var(--accent) !important;
     position: relative;
     z-index: 10;
-}
-
-/* ========================================================= CUSTOM WINDOW TITLE BAR ========================================================= */
-:root {
-    --titlebar-height: 42px;
-}
-
-/* --------------------------------------------------------- TITLE BAR --------------------------------------------------------- */
-.custom-titlebar {
-    position: relative;
-    width: 100%;
-    height: var(--titlebar-height);
-    display: flex;
-    align-items: center;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border);
-    user-select: none;
-    z-index: 9999;
-}
-
-/* --------------------------------------------------------- DRAG AREA --------------------------------------------------------- */
-.titlebar-drag-area {
-    flex: 1;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    min-width: 0;
-}
-
-/* --------------------------------------------------------- APP BRAND --------------------------------------------------------- */
-.app-brand {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-left: 14px;
-    pointer-events: none;
-}
-
-/* --------------------------------------------------------- APP ICON --------------------------------------------------------- */
-.app-icon {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    color: #ffffff;
-    font-family: var(--font-ui);
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    box-shadow: 0 2px 8px rgba(238, 55, 0, 0.25);
-}
-
-.app-title {
-    color: var(--text-primary);
-    font-family: var(--font-ui);
-    font-size: 13px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* --------------------------------------------------------- WINDOW CONTROLS --------------------------------------------------------- */
-.window-controls {
-    height: 100%;
-    display: flex;
-    align-items: stretch;
-    flex-shrink: 0;
-}
-
-/* --------------------------------------------------------- WINDOW BUTTON --------------------------------------------------------- */
-.window-btn {
-    width: 46px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: background 120ms ease, color 120ms ease;
-}
-
-.window-btn:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-}
-
-.window-btn:active {
-    background: var(--border-light);
-}
-
-/* --------------------------------------------------------- ICONS --------------------------------------------------------- */
-.window-btn svg {
-    width: 15px;
-    height: 15px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-/* --------------------------------------------------------- CLOSE BUTTON --------------------------------------------------------- */
-.close-btn:hover {
-    background: var(--danger);
-    color: #ffffff;
-}
-
-.close-btn:active {
-    background: #dc2626;
-    border-bottom: 1px solid var(--border);
-}
-
-/* --------------------------------------------------------- LIGHT THEME --------------------------------------------------------- */
-[data-theme="light"] .custom-titlebar {
-    background: var(--bg-secondary);
-    border-bottom-color: var(--border);
-}
-
-[data-theme="light"] .window-btn {
-    color: var(--text-secondary);
-}
-
-[data-theme="light"] .window-btn:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-}
-
-[data-theme="light"] .close-btn:hover {
-    background: var(--danger);
-    color: #ffffff;
-}
-
-/* --------------------------------------------------------- FOCUS --------------------------------------------------------- */
-.window-btn:focus-visible {
-    box-shadow: inset 0 0 0 2px var(--accent);
-}
-.custom-titlebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-
-    height: 42px;
-
-    display: flex;
-    align-items: center;
-
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border);
-
-    user-select: none;
-    z-index: 99999;
-}
-body {
-    margin: 0;
-    padding-top: 42px;
 }

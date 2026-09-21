@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YT-DLP GUI</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body style="padding-top: 0;">
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-container">
+        <img src="icon.png" alt="Logo" class="app-logo">
+      </div>
+      <div class="input-group">
+        <input type="text" id="urlInput" placeholder="Paste Video URL here..." spellcheck="false">
+        <button id="analyzeBtn" class="primary-btn">Analyze</button>
+        <button id="analyzePlaylistBtn" class="primary-btn"
+          style="background: linear-gradient(135deg, #b9101037 0%, #9605057b 100%);"
+          title="Analyze as Playlist">Playlist</button>
+        <button id="quickM4aBtn" class="secondary-btn" title="Quick Download Audio"
+          style="min-width: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: center; gap: 8px; border-color: var(--warning); color: var(--warning);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+          <span id="quickAudioLabel"
+            style="font-size: 10px; font-weight: 900; background: var(--warning); color: #000; padding: 2px 5px; border-radius: 4px; line-height: 1;">M4A</span>
+        </button>
+      </div>
+    </header>
+    <div class="video-info-container">
+      <div id="infoBg" class="info-bg"></div>
+      <div id="thumbnailWrapper" class="thumbnail-wrapper hidden">
+        <img id="videoThumbnail" class="video-thumbnail" alt="Video Thumbnail">
+        <div id="videoDurationOverlay" class="video-duration-overlay"></div>
+      </div>
+      <div id="videoInfo"></div>
+    </div>
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Loading Overlay -->
+      <div id="loadingOverlay" class="loading-overlay hidden" style="flex-direction: column; gap: 20px;">
+        <div class="spinner"></div>
+        <button id="cancelAnalyzeBtn" class="cancel-analyze-btn">Cancel Analysis</button>
+      </div>
+
+
+      <!-- Content Area -->
+      <div id="contentArea" class="hidden">
+        <!-- Video Info with Thumbnail -->
+
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="combined">Video + Audio</button>
+          <button class="tab-btn" data-tab="mixed">Mixed</button>
+        </div>
+
+        <!-- Note for Video Only -->
+        <div id="videoOnlyNote" class="info-note hidden">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span>These formats contain <strong>Video Only</strong>. Please select an <strong>Audio</strong> format from
+            the "Audio Only" tab to include sound.</span>
+        </div>
+
+        <!-- Dual View (Video + Audio) -->
+        <div id="dualView" class="dual-grid hidden">
+          <!-- Left: Video -->
+          <div class="split-col">
+            <div class="split-header video-header">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);">
+                  <path d="M23 7l-7 5 7 5V7z"></path>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
+                <span>Video Streams</span>
+              </div>
+              <span class="info-sub">Quality & Codec</span>
+            </div>
+            <div id="videoGridBody" class="split-body custom-scrollbar"></div>
+          </div>
+          <!-- Right: Audio -->
+          <div class="split-col">
+            <div class="split-header audio-header">
+              <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round" style="color: var(--warning);">
+                  <path d="M9 18V5l12-2v13"></path>
+                  <circle cx="6" cy="18" r="3"></circle>
+                  <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+                <span style="font-weight: 700; font-size: 13px;">Audio</span>
+              </div>
+
+              <!-- Subtitle Multi-Select (Compact) -->
+              <div id="subSelectorWrapper" class="hidden" style="display: flex; align-items: center; gap: 6px;">
+                <div class="custom-select-container" id="subMultiSelect" style="min-width: 110px;">
+                  <div class="custom-select-trigger"
+                    style="padding: 4px 8px; font-size: 11px; height: 26px; border-color: rgba(168, 85, 247, 0.4);">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      style="color: #a855f7; margin-right: 4px;">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span id="subCountText">Subs (0)</span>
+                    <svg class="chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="3">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </div>
+                  <div class="custom-options custom-scrollbar" id="subOptionsList"
+                    style="max-height: 250px; width: 180px; right: 0;">
+                    <!-- Subtitle options with checkboxes -->
+                  </div>
+                </div>
+              </div>
+
+              <span class="info-sub" style="margin-left: 8px; font-size: 11px;">Ext & Bitrate</span>
+            </div>
+            <div id="audioGridBody" class="split-body custom-scrollbar"></div>
+          </div>
+        </div>
+
+        <!-- Data Grid (For Mixed/Standalone) -->
+        <div id="standardView" class="split-col hidden">
+          <div class="split-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);">
+                <path d="M23 7l-7 5 7 5V7z"></path>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+              </svg>
+              <span>Mixed Formats (Video + Audio)</span>
+            </div>
+            <span class="info-sub">Integrated Streams</span>
+          </div>
+          <div id="gridBody" class="split-body custom-scrollbar"></div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <!-- Empty State -->
+      <div id="emptyState" class="empty-state">
+        <div class="empty-state-content">
+          <div class="empty-icon-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="2" y="2" width="20" height="20" rx="2.5" ry="2.5"></rect>
+              <polyline points="15 2 15 22"></polyline>
+              <polyline points="2 9 15 9"></polyline>
+              <polyline points="2 15 15 15"></polyline>
+              <polygon points="17 10 21 12 17 14"></polygon>
+            </svg>
+          </div>
+          <h2>Ready to Analyze</h2>
+          <p>Paste a URL above or Drag & Drop here to fetch formats and metadata</p>
+          <div class="empty-badges">
+            <span class="empty-badge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33 2.78 2.78 0 0 0 1.94 2c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z" />
+                <polygon fill="var(--bg-primary)" points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" />
+              </svg>
+              YouTube
+            </span>
+            <span class="empty-badge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M23.95 4.57a10 10 0 0 1-2.82.77 4.96 4.96 0 0 0 2.16-2.72 9.9 9.9 0 0 1-3.13 1.2 4.93 4.93 0 0 0-8.38 4.48A14 14 0 0 1 1.67 3.15 4.93 4.93 0 0 0 3.2 9.73a4.9 4.9 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.9 4.9 0 0 1-2.22.08 4.93 4.93 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.94 13.94 0 0 0 7.55 2.21c9.06 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54z" />
+              </svg>
+              Twitter
+            </span>
+            <span class="empty-badge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+              Instagram
+            </span>
+            <span class="empty-badge">1000+ More</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom Panel -->
+    <section class="bottom-panel">
+      <div class="bottom-left">
+        <button id="toggleSettings" class="icon-btn" title="Settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m-2 2l-4.2 4.2M23 12h-6m-6 0H5m13.2 5.2l-4.2-4.2m-2-2l-4.2-4.2">
+            </path>
+          </svg>
+        </button>
+        <button id="toggleCommand" class="icon-btn" title="View Command">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="4 17 10 11 4 5"></polyline>
+            <line x1="12" y1="19" x2="20" y2="19"></line>
+          </svg>
+        </button>
+        <button id="openGithubBtn" class="icon-btn" title="GitHub Repository">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+          </svg>
+        </button>
+        <span id="statusMsg">Ready</span>
+      </div>
+      <div class="bottom-right">
+        <div style="position: relative; display: inline-block;">
+          <button id="clearSectionBadge" class="hidden" title="Clear Section"
+            style="position: absolute; right: -6px; top: -6px; background: #e53935; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; cursor: pointer; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">✖</button>
+          <button id="downloadSectionBtn" class="secondary-btn" disabled>Sections</button>
+        </div>
+        <div style="position: relative; display: inline-flex; align-items: center;">
+          <!-- Floating Format Tooltip -->
+          <div id="formatTooltip" class="hidden"
+            style="position: absolute; top: -45px; right: 0; background: var(--bg-card); border: 1px solid var(--border-light); padding: 6px 12px; border-radius: 6px; font-size: 0.85em; font-weight: 500; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5); color: var(--text-primary); align-items: center; gap: 8px; z-index: 20; transition: all 0.2s ease;">
+            <span id="selectedFormatInfoText" style="color: var(--accent-light);"></span>
+            <button id="clearFormatBadge" title="Clear Selection"
+              style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px; margin: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: color 0.2s ease;"
+              onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">✖</button>
+            <!-- Down arrow tail -->
+            <div
+              style="position: absolute; bottom: -6px; right: 40px; border-width: 6px 6px 0; border-style: solid; border-color: var(--bg-card) transparent transparent transparent; z-index: 21;">
+            </div>
+            <div
+              style="position: absolute; bottom: -7px; right: 40px; border-width: 6px 6px 0; border-style: solid; border-color: var(--border-light) transparent transparent transparent; z-index: 20;">
+            </div>
+          </div>
+
+          <button id="downloadBtn" class="primary-btn" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal hidden">
+      <div class="modal-content settings-modal-content">
+        <div class="modal-header">
+          <h3>⚙️ Settings</h3>
+          <button id="closeSettingsBtn" class="close-btn">×</button>
+        </div>
+        <div class="settings-wrapper">
+          <!-- Left Sidebar Navigation -->
+          <div class="settings-sidebar">
+            <button class="settings-tab-btn active" data-settings-tab="general">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+              </svg>
+              General
+            </button>
+            <button class="settings-tab-btn" data-settings-tab="downloader">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Downloader
+            </button>
+            <button class="settings-tab-btn" data-settings-tab="runtimes">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              JS Runtimes
+            </button>
+            <button class="settings-tab-btn" data-settings-tab="shortcuts">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                <line x1="6" y1="8" x2="6" y2="8"></line>
+                <line x1="10" y1="8" x2="10" y2="8"></line>
+                <line x1="14" y1="8" x2="14" y2="8"></line>
+                <line x1="18" y1="8" x2="18" y2="8"></line>
+                <line x1="6" y1="12" x2="6" y2="12"></line>
+                <line x1="18" y1="12" x2="18" y2="12"></line>
+                <line x1="7" y1="16" x2="17" y2="16"></line>
+              </svg>
+              Shortcuts
+            </button>
+            <button class="settings-tab-btn" data-settings-tab="about">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              About & Tools
+            </button>
+          </div>
+
+          <!-- Right Content Area -->
+          <div class="settings-content custom-scrollbar">
+            <!-- 1. General Pane -->
+            <div id="settings-pane-general" class="settings-pane active">
+              <div class="settings-pane-title">General Settings</div>
+
+              <div class="settings-grid">
+                <!-- Theme selection card -->
+                <div class="settings-card row-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <label>Theme</label>
+                    <small>Choose your preferred app appearance</small>
+                  </div>
+                  <select id="themeSelect" class="res-select"
+                    style="min-width: 140px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm);">
+                    <option value="dark">Dark Mode</option>
+                    <option value="light">Light Mode</option>
+                    <option value="system">System Default</option>
+                  </select>
+                </div>
+
+                <!-- Download location card -->
+                <div class="settings-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px;">
+                    <label>Download Location</label>
+                    <small>Where downloaded video and audio files will be saved.</small>
+                  </div>
+                  <div style="display: flex; gap: 8px; width: 100%;">
+                    <input type="text" id="downloadPath" value="Downloads" readonly
+                      style="flex: 1; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 13px;">
+                    <button id="browseBtn" class="secondary-btn" style="padding: 8px 14px;">Browse</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Downloader Pane -->
+            <div id="settings-pane-downloader" class="settings-pane">
+              <div class="settings-pane-title">Downloader Options</div>
+
+              <div class="settings-grid">
+                <!-- Thread options -->
+                <div class="settings-card row-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <label>Download Threads</label>
+                    <small>Multi-threading speeds up DASH/HLS streams (Default: 1)</small>
+                  </div>
+                  <input type="number" id="concurrentFragments" min="1" max="32" value="1"
+                    style="background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm); font-family: var(--font-ui); font-size: 13px; width: 70px; text-align: center;">
+                </div>
+
+                <!-- Quick download audio options -->
+                <div class="settings-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                      <label>Quick Audio Format</label>
+                      <small>Default format for the quick download audio button</small>
+                    </div>
+                    <select id="quickAudioFormat" class="res-select"
+                      style="min-width: 120px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 6px 12px; border-radius: var(--radius-sm);">
+                      <option value="m4a">M4A (Apple Audio)</option>
+                      <option value="opus">Opus (High Quality)</option>
+                    </select>
+                  </div>
+                  <small style="color: var(--warning); font-weight: 600; margin-top: 4px;">💡 Shortcut: Press [ALT + 1]
+                    anywhere to quick download URL from clipboard!</small>
+                </div>
+
+                <!-- Toggle options grid -->
+                <div class="settings-card" style="gap: 16px;">
+                  <label
+                    style="border-bottom: 1px solid var(--border-light); padding-bottom: 6px; margin-bottom: 4px;">Download
+                    Switches</label>
+
+                  <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; max-width: 80%;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">No Playlist</span>
+                        <small style="margin-top: 0;">Download only the video, not the playlist</small>
+                      </div>
+                      <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                        <input type="checkbox" id="noPlaylist" checked>
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; max-width: 80%;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Embed
+                          Metadata</span>
+                        <small style="margin-top: 0;">Add video details & metadata to output file</small>
+                      </div>
+                      <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                        <input type="checkbox" id="embedMetadata" checked>
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; max-width: 80%;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Embed
+                          Thumbnail</span>
+                        <small style="margin-top: 0;">Set the thumbnail art on the audio/video file</small>
+                      </div>
+                      <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                        <input type="checkbox" id="embedThumbnail" checked>
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; max-width: 80%;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Restrict
+                          Filenames</span>
+                        <small style="margin-top: 0;">Force ASCII filenames (replaces special characters)</small>
+                      </div>
+                      <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                        <input type="checkbox" id="restrictFilenames">
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; max-width: 80%;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Write
+                          Subtitles</span>
+                        <small style="margin-top: 0;">Export subtitle file along with video</small>
+                      </div>
+                      <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                        <input type="checkbox" id="writeSubs">
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; max-width: 80%;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Ignore
+                          Errors</span>
+                        <small style="margin-top: 0;">Force downloading rest of files on warning/failure</small>
+                      </div>
+                      <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                        <input type="checkbox" id="ignoreErrors" checked>
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Runtimes Pane -->
+            <div id="settings-pane-runtimes" class="settings-pane">
+              <div class="settings-pane-title">JS Runtimes & Cookies</div>
+
+              <div class="settings-grid">
+                <!-- Cookies Configuration -->
+                <div class="settings-card">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                      <label>Cookies Authentication</label>
+                      <small>Use browser session cookies for private/member-only videos.</small>
+                      <a href="#" id="cookiesTutorialLink"
+                        style="font-size: 11px; color: var(--accent-light); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; opacity: 0.85; transition: opacity 0.2s;"
+                        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path
+                            d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.549-4.385-8.816zM9 16V8l8 4-8 4z" />
+                        </svg>
+                        How to setup cookies (Tutorial)
+                      </a>
+                    </div>
+                    <label class="toggle-switch" style="margin-bottom: 0; gap: 0;">
+                      <input type="checkbox" id="useCookies" checked>
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div style="display: flex; gap: 8px; width: 100%; margin-top: 4px;">
+                    <input type="text" id="cookiesPath" value="" placeholder="No cookies file"
+                      style="flex: 1; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 13px;">
+                    <button id="browseCookiesBtn" class="secondary-btn" style="padding: 8px 12px;">Browse</button>
+                    <button id="clearCookiesBtn" class="secondary-btn" style="padding: 8px 12px;">Clear</button>
+                  </div>
+                  <!-- Warning for Cookies & JS Runtime -->
+                  <div id="cookiesRuntimeWarning" class="hidden"
+                    style="color: var(--warning, #f59e0b); font-size: 11px; margin-top: 8px; font-weight: 500; display: none; align-items: center; gap: 4px;">
+                    ⚠️ Notice: Using cookies requires an active External JS Runtime (like Node.js) for signature
+                    extraction on many platforms.
+                  </div>
+                </div>
+
+                <!-- JS Runtimes selector -->
+                <div class="settings-card row-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <label>Active JS Runtime</label>
+                    <small>Bypasses signature extraction/player challenges</small>
+                    <a href="#" id="jsRuntimeWikiLink"
+                      style="font-size: 11px; color: var(--accent-light); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; opacity: 0.85; transition: opacity 0.2s;"
+                      onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                          d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                      </svg>
+                      Learn about JS Runtimes (Wiki)
+                    </a>
+                  </div>
+                  <select id="jsRuntimeSelect" class="res-select"
+                    style="min-width: 140px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm);">
+                    <option value="none">None (Default)</option>
+                    <option value="node">Node.js</option>
+                    <option value="deno">Deno</option>
+                    <option value="bun">Bun</option>
+                    <option value="quickjs">QuickJS</option>
+                  </select>
+                </div>
+
+                <!-- JS Runtime list and managers -->
+                <div class="settings-card">
+                  <label style="margin-bottom: 6px;">Runtime Check & Download (Silent Install)</label>
+
+                  <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                    <!-- Node.js Row -->
+                    <div class="runtime-row"
+                      style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                      <span style="font-size: 12px; font-weight: 600;">Node.js</span>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="status-node" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
+                        <button class="secondary-btn check-rt-btn" data-runtime="node"
+                          style="padding: 4px 8px; font-size: 10px; min-width: 50px;">Check</button>
+                        <button class="secondary-btn dl-rt-btn" data-runtime="node"
+                          data-url="https://nodejs.org/en/download"
+                          style="padding: 4px 8px; font-size: 10px;">Download</button>
+                      </div>
+                    </div>
+
+                    <!-- Deno Row -->
+                    <div class="runtime-row"
+                      style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                      <span style="font-size: 12px; font-weight: 600;">Deno</span>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="status-deno" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
+                        <button class="secondary-btn check-rt-btn" data-runtime="deno"
+                          style="padding: 4px 8px; font-size: 10px; min-width: 50px;">Check</button>
+                        <button class="secondary-btn dl-rt-btn" data-runtime="deno" data-url="https://deno.com/"
+                          style="padding: 4px 8px; font-size: 10px;">Download</button>
+                      </div>
+                    </div>
+
+                    <!-- Bun Row -->
+                    <div class="runtime-row"
+                      style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                      <span style="font-size: 12px; font-weight: 600;">Bun</span>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="status-bun" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
+                        <button class="secondary-btn check-rt-btn" data-runtime="bun"
+                          style="padding: 4px 8px; font-size: 10px; min-width: 50px;">Check</button>
+                        <button class="secondary-btn dl-rt-btn" data-runtime="bun" data-url="https://bun.sh/"
+                          style="padding: 4px 8px; font-size: 10px;">Download</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Shortcuts Pane -->
+            <div id="settings-pane-shortcuts" class="settings-pane">
+              <div class="settings-pane-title">Keyboard Shortcuts</div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: -10px;">Click on any shortcut input box
+                and press keys to record a custom hotkey.</p>
+
+              <div class="settings-grid">
+                <!-- Analyze Shortcut -->
+                <div class="settings-card row-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); display: block;">Analyze
+                      URL</span>
+                    <small>Triggers smart video analysis</small>
+                  </div>
+                  <input type="text" id="shortcutAnalyze" value="Ctrl + V" readonly
+                    style="width: 130px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease; font-family: var(--font-ui); font-size: 12px; font-weight: 600;">
+                </div>
+
+                <!-- Quick Audio Shortcut -->
+                <div class="settings-card row-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); display: block;">Quick
+                      Audio Download</span>
+                    <small>Downloads audio directly from clipboard</small>
+                  </div>
+                  <input type="text" id="shortcutQuickAudio" value="Alt + 1" readonly
+                    style="width: 130px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease; font-family: var(--font-ui); font-size: 12px; font-weight: 600;">
+                </div>
+
+                <!-- Analyze Playlist Shortcut -->
+                <div class="settings-card row-card">
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); display: block;">Analyze
+                      Playlist URL</span>
+                    <small>Forces URL to be analyzed as playlist</small>
+                  </div>
+                  <input type="text" id="shortcutPlaylist" value="Alt + 2" readonly
+                    style="width: 130px; text-align: center; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease; font-family: var(--font-ui); font-size: 12px; font-weight: 600;">
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. About & Dependencies Pane -->
+            <div id="settings-pane-about" class="settings-pane">
+              <div class="settings-pane-title">About & Dependencies</div>
+
+              <div class="settings-grid">
+                <!-- App Info -->
+                <div class="settings-card" style="align-items: center; text-align: center; padding: 20px; gap: 8px;">
+                  <img src="icon.png" alt="App Logo" style="height: 50px; filter: drop-shadow(0 2px 6px #ff86007a);">
+                  <span style="font-weight: 700; font-size: 16px; color: var(--text-primary);">YT-MANGO</span>
+                  <span style="font-size: 12px; color: var(--text-muted);">A professional graphical interface for
+                    yt-dlp.</span>
+                  <button id="openGithubBtn" class="secondary-btn"
+                    style="padding: 6px 14px; font-size: 11px; margin-top: 6px;">GitHub Repository</button>
+                </div>
+
+                <!-- Dependencies -->
+                <div class="settings-card" style="gap: 12px;">
+                  <label style="margin-bottom: 0;">Core Dependencies</label>
+
+                  <!-- yt-dlp version & update -->
+                  <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                    <span style="font-size: 13px; font-weight: 600;">yt-dlp version</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span id="ytdlpVersionText"
+                        style="font-weight: 600; color: var(--text-secondary); font-size: 13px;">Checking...</span>
+                      <button id="updateYtdlpBtn" class="secondary-btn"
+                        style="padding: 4px 10px; font-size: 10px; display: flex; align-items: center; gap: 4px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="2.5">
+                          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.25 5.25" />
+                        </svg>
+                        Update
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- FFmpeg version -->
+                  <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                    <span style="font-size: 13px; font-weight: 600;">FFmpeg version</span>
+                    <span id="ffmpegVersionText"
+                      style="font-weight: 600; color: var(--text-secondary); font-size: 13px;">Checking...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Command Preview Modal -->
+    <div id="commandModal" class="modal hidden">
+      <div class="modal-content command-modal-content">
+        <div class="modal-header">
+          <h3>Command Preview</h3>
+          <button id="closeCommandBtn" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <textarea id="cmdPreview" spellcheck="false" readonly></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Download Progress Modal -->
+    <div id="progressModal" class="modal hidden">
+      <div class="modal-content">
+        <div id="processingView">
+          <h3>Downloading...</h3>
+          <div class="progress-track">
+            <div id="progressBar" class="progress-fill" style="width: 0%"></div>
+          </div>
+          <pre id="progressLog" class="terminal-log"></pre>
+        </div>
+
+        <div id="successView" class="success-view hidden">
+          <div class="success-icon">✓</div>
+          <h3>Download Complete!</h3>
+          <p>Your files are ready.</p>
+        </div>
+
+        <div class="modal-actions">
+          <button id="cancelDownloadBtn" class="secondary-btn">Cancel</button>
+          <button id="openFolderBtn" class="primary-btn hidden">Open Folder</button>
+          <button id="closeModalBtn" class="secondary-btn hidden">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sections Modal -->
+    <div id="sectionsModal" class="modal hidden">
+      <div class="modal-content command-modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+          <h3>⏱️ Download Sections</h3>
+          <button id="closeSectionsBtn" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom: 15px; font-size: 0.9em; color: #ccc;">Download a specific part of the video.</p>
+
+          <div id="chapterContainer" class="setting-item hidden" style="margin-bottom: 15px;">
+            <label>Select Chapter:</label>
+            <select id="chapterSelect"
+              style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff; margin-top: 5px;">
+              <option value="">-- Custom Time --</option>
+            </select>
+          </div>
+
+          <div class="time-pickers-wrapper">
+            <!-- Start Time -->
+            <div class="time-picker-wrapper">
+              <label>START TIME:</label>
+              <div class="time-picker-box">
+                <!-- H -->
+                <div class="time-segment">
+                  <button class="t-btn t-up" data-target="startH" data-max="99"><svg viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg></button>
+                  <input type="text" id="startH" value="00" maxlength="2" class="t-val">
+                  <button class="t-btn t-down" data-target="startH" data-max="99"><svg viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg></button>
+                </div>
+                <div class="t-sep">:</div>
+                <!-- M -->
+                <div class="time-segment">
+                  <button class="t-btn t-up" data-target="startM" data-max="59"><svg viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg></button>
+                  <input type="text" id="startM" value="00" maxlength="2" class="t-val">
+                  <button class="t-btn t-down" data-target="startM" data-max="59"><svg viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg></button>
+                </div>
+                <div class="t-sep">:</div>
+                <!-- S -->
+                <div class="time-segment">
+                  <button class="t-btn t-up" data-target="startS" data-max="59"><svg viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg></button>
+                  <input type="text" id="startS" value="00" maxlength="2" class="t-val">
+                  <button class="t-btn t-down" data-target="startS" data-max="59"><svg viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- End Time -->
+            <div class="time-picker-wrapper">
+              <label>END TIME:</label>
+              <div class="time-picker-box">
+                <!-- H -->
+                <div class="time-segment">
+                  <button class="t-btn t-up" data-target="endH" data-max="99"><svg viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg></button>
+                  <input type="text" id="endH" value="00" maxlength="2" class="t-val">
+                  <button class="t-btn t-down" data-target="endH" data-max="99"><svg viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg></button>
+                </div>
+                <div class="t-sep">:</div>
+                <!-- M -->
+                <div class="time-segment">
+                  <button class="t-btn t-up" data-target="endM" data-max="59"><svg viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg></button>
+                  <input type="text" id="endM" value="00" maxlength="2" class="t-val">
+                  <button class="t-btn t-down" data-target="endM" data-max="59"><svg viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg></button>
+                </div>
+                <div class="t-sep">:</div>
+                <!-- S -->
+                <div class="time-segment">
+                  <button class="t-btn t-up" data-target="endS" data-max="59"><svg viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg></button>
+                  <input type="text" id="endS" value="00" maxlength="2" class="t-val">
+                  <button class="t-btn t-down" data-target="endS" data-max="59"><svg viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+            <button id="clearSectionBtn" class="secondary-btn">Clear</button>
+            <button id="applySectionBtn" class="primary-btn">Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Playlist Selection Modal -->
+    <div id="playlistModal" class="modal hidden">
+      <div class="modal-content" style="max-width: 600px; width: 90%;">
+        <div class="modal-header">
+          <h3>Select Playlist Videos</h3>
+          <button id="closePlaylistBtn" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom: 15px; font-size: 0.9em; color: #ccc;">Select which videos from the playlist you want
+            to download.</p>
+          <div style="margin-bottom: 15px; display: flex; gap: 8px;">
+            <button id="selectAllPlaylistBtn" class="secondary-btn" style="padding: 4px 10px; font-size: 12px;">Select
+              All</button>
+            <button id="deselectAllPlaylistBtn" class="secondary-btn"
+              style="padding: 4px 10px; font-size: 12px;">Deselect All</button>
+          </div>
+          <div id="playlistItems"
+            style="display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: auto; background: var(--bg-secondary); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <!-- Items injected here -->
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+            <button id="confirmPlaylistBtn" class="primary-btn">Confirm & Load Formats</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+  </div>
+
+  <!-- yt-dlp Installation Modal -->
+  <div id="installModal" class="modal hidden">
+    <div class="modal-content" style="max-width: 450px; text-align: center;">
+      <div id="installPromptView">
+        <div class="success-icon"
+          style="background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </div>
+        <h3 id="installTitle">yt-dlp Required</h3>
+        <p id="installDesc"
+          style="color: var(--text-secondary); font-size: 14px; margin-bottom: 25px; line-height: 1.5;">
+          The core engine (yt-dlp) is missing. It's required to analyze and download videos. Download it now to
+          continue?
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button id="exitAppBtn" class="secondary-btn" style="padding: 10px 24px;">Exit</button>
+          <button id="skipInstallBtn" class="secondary-btn hidden" style="padding: 10px 24px;">Skip</button>
+          <button id="startInstallBtn" class="primary-btn" style="padding: 10px 24px;">Download Now</button>
+        </div>
+      </div>
+
+      <div id="installProgressView" class="hidden">
+        <h3 id="progressTitle">Downloading...</h3>
+        <p id="progressDesc" style="color: var(--text-secondary); font-size: 13px; margin-bottom: 20px;">Fetching the
+          latest version from GitHub</p>
+        <div class="progress-track" style="height: 8px;">
+          <div id="installProgressBar" class="progress-fill"
+            style="width: 100%; animation: indeterminate 2s infinite linear;"></div>
+        </div>
+        <div id="installStatusText" style="font-size: 12px; color: var(--accent-light); margin-top: 10px;">Connecting...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Alert Modal -->
+  <div id="alertModal" class="modal hidden">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+      <div class="success-icon"
+        style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2);">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <h3 id="alertTitle" style="margin-top: 15px;">Notice</h3>
+      <div style="max-height: 250px; overflow-y: auto; margin: 15px 0 25px; padding-right: 5px;"
+        class="custom-scrollbar">
+        <p id="alertMsg"
+          style="color: var(--text-secondary); font-size: 14px; line-height: 1.5; text-align: left; white-space: pre-wrap; word-break: break-word;">
+        </p>
+      </div>
+      <div id="alertFixWrapper" class="hidden" style="margin-bottom: 15px;">
+        <button id="alertFixBtn" class="primary-btn"
+          style="width: 100%; padding: 12px; background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); border: none; font-weight: 700; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
+          🔧 Fix Issue
+        </button>
+      </div>
+      <button id="closeAlertBtn" class="primary-btn" style="width: 100%; padding: 12px;">OK</button>
+    </div>
+  </div>
+
+  <script src="js/neutralino.js"></script>
+  <script src="js/main.js"></script>
+</body>
+
+</html>

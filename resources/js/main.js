@@ -181,7 +181,10 @@ function getCodecBadgeHTML(codec) {
     const vc = codec.toLowerCase();
 
     // Normalize codec name
-    let normalizedCodec = 'OTHER';
+    let normalizedCodec = codec.toUpperCase();
+    if (normalizedCodec.length > 20) {
+        normalizedCodec = normalizedCodec.substring(0, 17) + '...';
+    }
     let colorClass = 'badge-codec-default';
 
     // AV1: av01 / av1
@@ -1677,6 +1680,10 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
         currentData = data;
         metadata = data;
         formats = data.formats || [];
+        
+        if (data.title && typeof updateTabTitle === 'function') {
+            updateTabTitle(data.title);
+        }
 
         if (data.thumbnail && data.thumbnail !== 'N/A') {
             el.videoThumbnail.src = data.thumbnail;
@@ -2093,7 +2100,8 @@ function renderAudioColumn(filtered) {
         const codecMatch = ac.match(/^[a-z0-9]+/);
         if (ac.includes('opus')) codecKey = 'opus';
         else if (ac.includes('mp4a')) codecKey = 'mp4a';
-        else if (codecMatch) codecKey = codecMatch[0];
+        else if (codecMatch && codecMatch[0] !== 'none' && codecMatch[0] !== 'null' && codecMatch[0] !== '0') codecKey = codecMatch[0];
+        else codecKey = 'other';
 
         // Unique key for grouping: Codec + DRC status only
         const groupKey = `${isDRC ? 'DRC_' : ''}${codecKey}`;
@@ -2196,7 +2204,9 @@ function renderCompactRow(fmt, container, smartData = null) {
     }
 
     const size = getFormatDisplaySize(fmt);
-    const bitrate = Math.round(fmt.tbr || fmt.vbr || 0) + 'k';
+    let tbr = Math.round(fmt.tbr || fmt.vbr || 0);
+    const fallbackText = fmt.format_note || fmt.format || 'Unknown';
+    const bitrateDisplay = tbr > 0 ? tbr + 'k' : fallbackText;
 
     // Main Title
     let mainTitle = '';
@@ -2204,14 +2214,21 @@ function renderCompactRow(fmt, container, smartData = null) {
     let icon = '';
 
     if (isAudioOnly) {
-        const codecName = (fmt.acodec || '').split('.')[0].toUpperCase();
-        mainTitle = codecName;
-
-        subTitle = (fmt.acodec || '').split('.')[0];
+        let codecNameRaw = (fmt.acodec || '').split('.')[0];
+        if (!codecNameRaw || codecNameRaw.toLowerCase() === 'none' || codecNameRaw.toLowerCase() === 'null') codecNameRaw = 'Unknown';
+        
+        mainTitle = codecNameRaw.toUpperCase();
+        subTitle = codecNameRaw;
         icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--warning);"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>`;
     } else {
-        mainTitle = smartData ? smartData.resKey : (fmt.width ? `${fmt.width}x${fmt.height}` : 'Video');
-        subTitle = (fmt.vcodec || '').split('.')[0];
+        let w = Number(fmt.width) || 0;
+        let h = Number(fmt.height) || 0;
+        mainTitle = smartData ? smartData.resKey : ((w > 0 && h > 0) ? `${w}x${h}` : fallbackText);
+        
+        let vcRaw = (fmt.vcodec || '').split('.')[0];
+        if (!vcRaw || vcRaw.toLowerCase() === 'none' || vcRaw.toLowerCase() === 'null') vcRaw = fallbackText;
+        subTitle = vcRaw;
+        
         if (isMixed) {
             icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #a855f7;"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect><path d="M9 18V5l12-2v13"></path></svg>`;
         } else {
@@ -2314,10 +2331,13 @@ function renderCompactRow(fmt, container, smartData = null) {
     const filteredVars = smartData ? ((isAudioOnly || isMixed) ? smartData.variants.filter(v => getLangInfo(v).code === getLangInfo(fmt).code) : smartData.variants) : [];
 
     if (smartData && filteredVars.length > 1) {
-        const bitOptions = filteredVars.map(v => ({
-            value: v.format_id,
-            label: Math.round(v.tbr || v.vbr || 0) + 'k'
-        }));
+        const bitOptions = filteredVars.map(v => {
+            const vTbr = Math.round(v.tbr || v.vbr || 0);
+            return {
+                value: v.format_id,
+                label: vTbr > 0 ? vTbr + 'k' : (v.format_note || v.format || 'Unknown')
+            };
+        });
 
         bitrateSelectContainer = createCustomSelect(bitOptions, fmt.format_id, (newId) => {
             if (fmt.format_id === selectedVideoId || fmt.format_id === selectedAudioId) {
@@ -2332,7 +2352,7 @@ function renderCompactRow(fmt, container, smartData = null) {
     } else {
         const span = document.createElement('span');
         span.className = 'info-sub';
-        span.textContent = Math.round(fmt.tbr || fmt.vbr || 0) + 'k';
+        span.textContent = bitrateDisplay;
         bitrateSelectContainer = span;
     }
 
@@ -2342,7 +2362,7 @@ function renderCompactRow(fmt, container, smartData = null) {
             ${smartData?.isDRC ? `<div class="info-sub" style="color: var(--warning); font-size: 9px; margin-top: -2px; font-weight: 800; letter-spacing: 0.5px;">DRC ACTIVE</div>` : ''}
             <div class="info-details">
                 ${!isAudioOnly && fmt.fps ? `<span class="info-sub">${fmt.fps} FPS</span>` : ''}
-                ${isAudioOnly ? `<span class="info-sub">${Math.round(fmt.tbr || fmt.vbr || 0)}k</span>` : ''}
+                ${isAudioOnly ? `<span class="info-sub">${bitrateDisplay}</span>` : ''}
                 <span class="info-sub size-sub">${size}</span>
             </div>
         </div>
@@ -3339,83 +3359,14 @@ async function downloadSubtitle(langCode, langName, btnElement, isAuto = false) 
 loadSettings();
 ensureToolsInstalled();
 /* =========================================================
-   CUSTOM WINDOW CONTROLS
+   CUSTOM WINDOW CONTROLS (Handled by tabs shell now)
 ========================================================= */
-document.addEventListener("DOMContentLoaded", async () => {
-    const minimizeBtn = document.getElementById("minimize-btn");
-    const maximizeBtn = document.getElementById("maximize-btn");
-    const closeBtn = document.getElementById("close-btn");
-    const maximizeIcon = document.getElementById("maximize-icon");
-
-    /* -----------------------------------------------------
-       MINIMIZE
-    ----------------------------------------------------- */
-    minimizeBtn.addEventListener("click", async () => {
-        await Neutralino.window.minimize();
-    });
-
-    /* -----------------------------------------------------
-       MAXIMIZE / RESTORE
-    ----------------------------------------------------- */
-    maximizeBtn.addEventListener("click", async () => {
-        const maximized = await Neutralino.window.isMaximized();
-        if (maximized) {
-            await Neutralino.window.unmaximize();
-        } else {
-            await Neutralino.window.maximize();
-        }
-        updateMaximizeIcon();
-    });
-
-    /* -----------------------------------------------------
-       CLOSE
-    ----------------------------------------------------- */
-    closeBtn.addEventListener("click", async () => {
-        await Neutralino.app.exit();
-    });
-
-    /* -----------------------------------------------------
-       UPDATE MAXIMIZE ICON
-    ----------------------------------------------------- */
-    async function updateMaximizeIcon() {
-        const maximized = await Neutralino.window.isMaximized();
-        if (maximized) {
-            maximizeIcon.innerHTML = ` <path d="M8 8h10v10"/> <path d="M6 6h10v10"/> `;
-        } else {
-            maximizeIcon.innerHTML = ` <rect x="5" y="5" width="14" height="14" rx="1" /> `;
-        }
+// Instead of managing minimize/maximize here, we just update the tab title
+function updateTabTitle(title) {
+    if (window.parent !== window) {
+        window.parent.postMessage({ type: 'UPDATE_TAB_TITLE', title: title }, '*');
     }
-
-    /* -----------------------------------------------------
-       DRAG WINDOW
-    ----------------------------------------------------- */
-    await Neutralino.window.setDraggableRegion("titlebar-drag-area", {
-        exclusions: ["minimize-btn", "maximize-btn", "close-btn"]
-    });
-
-    /* -----------------------------------------------------
-       NATIVE WINDOW EVENTS
-    ----------------------------------------------------- */
-    Neutralino.events.on("windowMaximize", updateMaximizeIcon);
-    Neutralino.events.on("windowRestore", updateMaximizeIcon);
-
-    /* -----------------------------------------------------
-       RESTORE RESIZABLE BORDERS (WORKAROUND)
-    ----------------------------------------------------- */
-    // In Neutralinojs, borderless windows might lose native edge/corner resize handles.
-    // Setting the window size to its current size explicitly restores the OS resize behavior.
-    try {
-        const currentSize = await Neutralino.window.getSize();
-        await Neutralino.window.setSize(currentSize);
-    } catch (e) {
-        console.error("Failed to restore borderless resize handles", e);
-    }
-
-    /* -----------------------------------------------------
-       INITIAL STATE
-    ----------------------------------------------------- */
-    updateMaximizeIcon();
-});
+}
 
 /* =========================================================
    DRAG AND DROP SUPPORT FOR URLs
