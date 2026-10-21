@@ -114,8 +114,9 @@ function createNewTab() {
         closeTab(tabId);
     });
 
-    // Append elements
-    tabsList.appendChild(tabBtn);
+    // Append elements (insert tab before the new tab button)
+    const newTabButton = document.getElementById("newTabBtn");
+    tabsList.insertBefore(tabBtn, newTabButton);
     iframesContainer.appendChild(iframe);
 
     // Switch to new tab
@@ -150,9 +151,12 @@ function closeTab(tabId) {
 
     // Determine which tab to switch to if we're closing the active one
     if (activeTabId === tabId) {
-        const nextTab = tabBtn.nextElementSibling || tabBtn.previousElementSibling;
-        if (nextTab) {
-            const nextTabId = nextTab.id.replace('btn-', '');
+        let fallbackTab = tabBtn.previousElementSibling;
+        if (!fallbackTab || !fallbackTab.classList.contains('browser-tab')) {
+            fallbackTab = tabBtn.nextElementSibling;
+        }
+        if (fallbackTab && fallbackTab.classList.contains('browser-tab')) {
+            const nextTabId = fallbackTab.id.replace('btn-', '');
             switchToTab(nextTabId);
         } else {
             activeTabId = null; // No tabs left

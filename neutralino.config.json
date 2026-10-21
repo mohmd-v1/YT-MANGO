@@ -24,10 +24,10 @@
   "modes": {
     "window": {
       "title": "YT MANGO",
-      "width": 1200,
-      "height": 800,
-      "minWidth": 910,
-      "minHeight": 650,
+      "width": 934,
+      "height": 600,
+      "minWidth": 934,
+      "minHeight": 600,
       "center": true,
       "fullScreen": false,
       "alwaysOnTop": false,

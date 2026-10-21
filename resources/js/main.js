@@ -125,7 +125,13 @@ const el = {
         applyBtn: document.getElementById('applySectionBtn'),
         clearBtn: document.getElementById('clearSectionBtn'),
         chapterContainer: document.getElementById('chapterContainer'),
-        chapterSelect: document.getElementById('chapterSelect')
+        chapterSelect: document.getElementById('chapterSelect'),
+        sliderContainer: document.getElementById('sliderContainer'),
+        startSlider: document.getElementById('startSlider'),
+        endSlider: document.getElementById('endSlider'),
+        sliderTrackFill: document.getElementById('sliderTrackFill'),
+        startTimeDisp: document.getElementById('sliderStartTimeDisplay'),
+        endTimeDisp: document.getElementById('sliderEndTimeDisplay')
     },
     playlist: {
         modal: document.getElementById('playlistModal'),
@@ -195,7 +201,7 @@ function getCodecBadgeHTML(codec) {
         normalizedCodec = 'AV1';
         colorClass = 'badge-codec-av1';
 
-    // HEVC: hevc / h265 / h.265 / hvc1 / hev1
+        // HEVC: hevc / h265 / h.265 / hvc1 / hev1
     } else if (
         vc.includes('hevc') ||
         vc.includes('h265') ||
@@ -206,7 +212,7 @@ function getCodecBadgeHTML(codec) {
         normalizedCodec = 'HEVC';
         colorClass = 'badge-codec-hevc';
 
-    // H.264: avc / h264 / h.264 / avc1
+        // H.264: avc / h264 / h.264 / avc1
     } else if (
         vc.includes('avc') ||
         vc.includes('h264') ||
@@ -216,7 +222,7 @@ function getCodecBadgeHTML(codec) {
         normalizedCodec = 'H.264';
         colorClass = 'badge-codec-avc';
 
-    // VP9: vp9 / vp09
+        // VP9: vp9 / vp09
     } else if (
         vc.includes('vp9') ||
         vc.includes('vp09')
@@ -224,7 +230,7 @@ function getCodecBadgeHTML(codec) {
         normalizedCodec = 'VP9';
         colorClass = 'badge-codec-vp9';
 
-    // Audio codecs
+        // Audio codecs
     } else if (vc.includes('opus')) {
         normalizedCodec = 'OPUS';
         colorClass = 'badge-codec-opus';
@@ -453,15 +459,55 @@ Neutralino.events.on("windowClose", () => {
 
 // Protocol Handler Logic (Moved here to ensure registration before init if possible, but init should be last)
 Neutralino.events.on("ready", async () => {
-    // Focus the window when app becomes ready (useful if launched via protocol)
+
+    // ==========================================
+    // Windows Scaling Fix
+    // ==========================================
+    try {
+        const baseWidth = 920;
+        const baseHeight = 700;
+
+        // Windows display scaling
+        const scale = window.devicePixelRatio || 1;
+
+        // Calculate window size according to scaling
+        const targetWidth = Math.round(baseWidth * scale);
+        const targetHeight = Math.round(baseHeight * scale);
+
+        await Neutralino.window.setSize({
+            width: targetWidth,
+            height: targetHeight
+        });
+
+        console.log(
+            `Windows Scaling: ${Math.round(scale * 100)}%`
+        );
+
+        console.log(
+            `Window Size: ${targetWidth}x${targetHeight}`
+        );
+
+    } catch (error) {
+        console.error("Scaling fix failed:", error);
+    }
+
+
+    // Focus the window when app becomes ready
     await Neutralino.window.focus();
 
     if (window.NL_ARGS && window.NL_ARGS.length > 0) {
         for (const arg of window.NL_ARGS) {
+
             if (arg.startsWith("ytdlp://")) {
-                let url = arg.replace("ytdlp://", "").replace("ytdlp:", "");
-                // Decode URL (in case Chrome sent encoded characters)
-                try { url = decodeURIComponent(url); } catch (e) { }
+
+                let url = arg
+                    .replace("ytdlp://", "")
+                    .replace("ytdlp:", "");
+
+                // Decode URL
+                try {
+                    url = decodeURIComponent(url);
+                } catch (e) {}
 
                 if (url) {
                     el.urlInput.value = url;
@@ -693,6 +739,20 @@ window.addEventListener('keydown', async (e) => {
 });
 
 // Check YT-DLP Installation and Version
+// Global cache helper across iframes/tabs
+function getSharedCache() {
+    try {
+        if (window.parent && window.parent !== window) {
+            if (!window.parent._toolCache) {
+                window.parent._toolCache = {};
+            }
+            return window.parent._toolCache;
+        }
+    } catch (e) { }
+    if (!window._toolCache) window._toolCache = {};
+    return window._toolCache;
+}
+
 // Check Tools Installation
 async function ensureToolsInstalled() {
     const hasYtdlp = await checkYtdlp();
@@ -708,11 +768,20 @@ async function ensureToolsInstalled() {
 }
 
 async function checkYtdlp() {
+    const cache = getSharedCache();
+    if (cache.ytdlpVersion) {
+        el.ytdlpVersionText.textContent = cache.ytdlpVersion;
+        el.ytdlpVersionText.style.color = 'var(--success)';
+        return true;
+    }
+
     try {
         let output = await Neutralino.os.execCommand('yt-dlp --version');
         if (output.exitCode === 0) {
-            el.ytdlpVersionText.textContent = `v${output.stdOut.trim()}`;
+            const ver = `v${output.stdOut.trim()}`;
+            el.ytdlpVersionText.textContent = ver;
             el.ytdlpVersionText.style.color = 'var(--success)';
+            cache.ytdlpVersion = ver;
             return true;
         }
     } catch (err) { }
@@ -720,6 +789,13 @@ async function checkYtdlp() {
 }
 
 async function checkFfmpeg() {
+    const cache = getSharedCache();
+    if (cache.ffmpegVersion) {
+        el.ffmpegVersionText.textContent = cache.ffmpegVersion;
+        el.ffmpegVersionText.style.color = cache.ffmpegVersion === 'Not Found' ? 'var(--danger)' : 'var(--success)';
+        return cache.ffmpegVersion !== 'Not Found';
+    }
+
     try {
         let output = await Neutralino.os.execCommand('ffmpeg -version');
         if (output.exitCode === 0) {
@@ -728,11 +804,13 @@ async function checkFfmpeg() {
             const version = match ? match[1] : 'Installed';
             el.ffmpegVersionText.textContent = version;
             el.ffmpegVersionText.style.color = 'var(--success)';
+            cache.ffmpegVersion = version;
             return true;
         }
     } catch (err) { }
     el.ffmpegVersionText.textContent = 'Not Found';
     el.ffmpegVersionText.style.color = 'var(--danger)';
+    cache.ffmpegVersion = 'Not Found';
     return false;
 }
 
@@ -1035,7 +1113,78 @@ el.playlist.confirmBtn.addEventListener('click', async () => {
 
 // Sections Listeners
 if (el.downloadSectionBtn) {
+    // Helper to get time in seconds from inputs
+    function getTimeFromInputs(prefix) {
+        const h = parseInt(el.sections[prefix + 'H'].value) || 0;
+        const m = parseInt(el.sections[prefix + 'M'].value) || 0;
+        const s = parseInt(el.sections[prefix + 'S'].value) || 0;
+        return h * 3600 + m * 60 + s;
+    }
+
+    function updateSliderVisualsOnly() {
+        const currentStart = parseInt(el.sections.startSlider.value) || 0;
+        const currentEnd = parseInt(el.sections.endSlider.value) || 0;
+        const max = parseInt(el.sections.startSlider.max) || 100;
+
+        el.sections.startTimeDisp.textContent = formatDuration(currentStart);
+        el.sections.endTimeDisp.textContent = formatDuration(currentEnd);
+
+        const startPercent = (currentStart / max) * 100;
+        const endPercent = (currentEnd / max) * 100;
+
+        el.sections.sliderTrackFill.style.left = `${startPercent}%`;
+        el.sections.sliderTrackFill.style.width = `${endPercent - startPercent}%`;
+    }
+
+    function onSliderInput(e) {
+        let startVal = parseInt(el.sections.startSlider.value) || 0;
+        let endVal = parseInt(el.sections.endSlider.value) || 0;
+
+        // Prevent overlap (thumbs pushing each other)
+        if (e.target === el.sections.startSlider && startVal > endVal) {
+            el.sections.startSlider.value = endVal;
+            startVal = endVal;
+        }
+        if (e.target === el.sections.endSlider && endVal < startVal) {
+            el.sections.endSlider.value = startVal;
+            endVal = startVal;
+        }
+
+        updateSliderVisualsOnly();
+        setTimePicker('start', formatDuration(startVal));
+        setTimePicker('end', formatDuration(endVal));
+    }
+
+    function syncSlidersFromInputs() {
+        const startSec = getTimeFromInputs('start');
+        const endSec = getTimeFromInputs('end');
+        el.sections.startSlider.value = startSec;
+        el.sections.endSlider.value = endSec;
+        updateSliderVisualsOnly();
+    }
+
+    el.sections.startSlider.addEventListener('input', onSliderInput);
+    el.sections.endSlider.addEventListener('input', onSliderInput);
+
     el.downloadSectionBtn.addEventListener('click', () => {
+        let videoDuration = currentData?.duration || 0;
+        if (videoDuration === 0) videoDuration = 3600; // Fallback to 1 hour if unknown
+
+        el.sections.startSlider.max = videoDuration;
+        el.sections.endSlider.max = videoDuration;
+
+        let startSec = getTimeFromInputs('start');
+        let endSec = getTimeFromInputs('end');
+
+        if (endSec === 0) {
+            endSec = videoDuration;
+            setTimePicker('end', formatDuration(endSec));
+        }
+
+        el.sections.startSlider.value = startSec;
+        el.sections.endSlider.value = endSec;
+        updateSliderVisualsOnly();
+
         el.sections.modal.classList.remove('hidden');
     });
 }
@@ -1061,6 +1210,7 @@ document.querySelectorAll('.t-btn').forEach(btn => {
         if (val > max) val = 0;
 
         input.value = val.toString().padStart(2, '0');
+        syncSlidersFromInputs();
     });
 });
 
@@ -1071,6 +1221,7 @@ document.querySelectorAll('.t-val').forEach(input => {
         if (val < 0) val = 0;
         if (val > max) val = max;
         e.target.value = val.toString().padStart(2, '0');
+        syncSlidersFromInputs();
     });
 });
 
@@ -1135,6 +1286,9 @@ if (el.sections.clearBtn) {
         setTimePicker('start', '');
         setTimePicker('end', '');
         el.sections.chapterSelect.value = '';
+        const durSpan = document.getElementById('chapterTotalDuration');
+        if (durSpan) durSpan.textContent = '';
+        syncSlidersFromInputs();
         updateCommand();
         el.sections.modal.classList.add('hidden');
         el.statusMsg.textContent = 'Section Cleared';
@@ -1154,15 +1308,34 @@ if (el.clearSectionBadge) {
 }
 if (el.sections.chapterSelect) {
     el.sections.chapterSelect.addEventListener('change', () => {
-        const val = el.sections.chapterSelect.value;
-        if (val) {
-            const parts = val.split('-');
-            setTimePicker('start', formatDuration(parseFloat(parts[0])));
-            setTimePicker('end', formatDuration(parseFloat(parts[1])));
+        const selectedOptions = Array.from(el.sections.chapterSelect.selectedOptions);
+        const durationSpan = document.getElementById('chapterTotalDuration');
+
+        if (selectedOptions.length > 0) {
+            el.sections.chapterSelect.setAttribute('dir', selectedOptions[0].getAttribute('dir') || 'ltr');
+
+            let minStart = Infinity;
+            let maxEnd = 0;
+
+            selectedOptions.forEach(opt => {
+                const parts = opt.value.split('-');
+                const s = parseFloat(parts[0]);
+                const e = parseFloat(parts[1]);
+                if (s < minStart) minStart = s;
+                if (e > maxEnd) maxEnd = e;
+            });
+
+            setTimePicker('start', formatDuration(minStart));
+            setTimePicker('end', formatDuration(maxEnd));
+
+            const totalSec = maxEnd - minStart;
+            if (durationSpan) durationSpan.textContent = `Total: ${formatDuration(totalSec)}`;
         } else {
             setTimePicker('start', '');
             setTimePicker('end', '');
+            if (durationSpan) durationSpan.textContent = '';
         }
+        syncSlidersFromInputs();
     });
 }
 
@@ -1560,15 +1733,16 @@ async function smartAnalyze(forcePlaylist = false) {
     try {
         let cookiesArg = settings.cookiesPath ? `--cookies "${settings.cookiesPath}"` : '';
 
-        // Optimization: If URL doesn't look like a playlist, skip the flat-playlist check
+        // Optimization: If URL doesn't look like a playlist, skip the flat-playlist check entirely
         const looksLikePlaylist = url.includes('list=') || url.includes('/playlist?') || forcePlaylist;
 
         if (!looksLikePlaylist) {
+            // Single video: go directly to full analysis (1 yt-dlp call only)
             await analyzeUrl();
             return;
         }
 
-        // Speed Boost: --no-check-certificates, --no-warnings, --no-call-home
+        // URL might be a playlist: use --flat-playlist first (fast, no format data)
         let jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${settings.jsRuntime}` : '';
         let command = `yt-dlp -J --flat-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} "${url}"`;
         console.log("Smart Analysis (Playlist Check):", command);
@@ -1581,22 +1755,23 @@ async function smartAnalyze(forcePlaylist = false) {
                 setLoading(false);
                 return;
             }
-            showAlert(output.stdErr, 'Analysis Error');
-            setLoading(false);
+            // Flat-playlist failed → fall back to direct analysis
+            await analyzeUrl();
             return;
         }
 
         const data = JSON.parse(output.stdOut);
 
-        // Check if it's a playlist with multiple entries
+        // Real playlist with multiple entries → show playlist picker modal
         if (data.entries && data.entries.length > 1) {
             currentPlaylistData = data;
             populatePlaylistModal(data);
             el.playlist.modal.classList.remove('hidden');
             setLoading(false);
         } else {
-            // It's a single video or a 1-item playlist
-            // Proceed to full analysis for formats
+            // Single video (even with list= in URL) → full analysis
+            // Note: --flat-playlist doesn't include formats, so we need a second call here.
+            // This is unavoidable for list= URLs until we know it's a single video.
             await analyzeUrl();
         }
 
@@ -1680,7 +1855,7 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
         currentData = data;
         metadata = data;
         formats = data.formats || [];
-        
+
         if (data.title && typeof updateTabTitle === 'function') {
             updateTabTitle(data.title);
         }
@@ -1701,6 +1876,7 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
                 const opt = document.createElement('option');
                 opt.value = `${ch.start_time}-${ch.end_time}`;
                 opt.textContent = `${idx + 1}. ${ch.title} (${formatDuration(ch.start_time)} - ${formatDuration(ch.end_time)})`;
+                applySmartDir(opt, ch.title);
                 el.sections.chapterSelect.appendChild(opt);
             });
             el.sections.chapterContainer.classList.remove('hidden');
@@ -1715,9 +1891,8 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
         }
         let duration = data.duration ? formatDuration(data.duration) : 'N/A';
         let uploader = data.uploader || 'Unknown';
-        // Smart RTL detection for Arabic characters
-        const containsArabic = /[\u0600-\u06FF]/.test(title);
-        const dir = containsArabic ? 'rtl' : 'ltr';
+        // Smart RTL detection for Arabic characters using unified helper
+        const dir = getTextDir(title);
 
         // Formatter helpers
         const formatCompact = (num) => {
@@ -1848,11 +2023,15 @@ function renderGrid() {
         // Filter Video Only
         const videoOnly = formats.filter(f => (f.acodec === 'video only' || f.acodec === 'none') && (f.vcodec !== 'none' && f.vcodec !== 'audio only'));
         // Group and render Video
-        renderDualColumn('video', videoOnly);
+        const videoFrag = document.createDocumentFragment();
+        renderDualColumn('video', videoOnly, videoFrag);
+        el.videoGridBody.appendChild(videoFrag);
 
         // Filter Audio Only
         const audioOnly = formats.filter(f => (f.vcodec === 'audio only' || f.vcodec === 'none') && (f.acodec !== 'none' && f.acodec !== 'video only'));
-        renderAudioColumn(audioOnly);
+        const audioFrag = document.createDocumentFragment();
+        renderAudioColumn(audioOnly, audioFrag);
+        el.audioGridBody.appendChild(audioFrag);
 
     } else if (activeTab === 'mixed') {
         el.dualView.classList.add('hidden');
@@ -1865,7 +2044,9 @@ function renderGrid() {
         });
 
         // Use resolution grouping for Mixed
-        renderDualColumn('mixed', mixedFormats, el.gridBody);
+        const mixedFrag = document.createDocumentFragment();
+        renderDualColumn('mixed', mixedFormats, mixedFrag);
+        el.gridBody.appendChild(mixedFrag);
     }
 }
 
@@ -1946,7 +2127,7 @@ function renderDualColumn(type, filtered, container = null) {
         ) {
             cType = 'av01';
 
-        // HEVC: hevc / h265 / h.265 / hvc1 / hev1
+            // HEVC: hevc / h265 / h.265 / hvc1 / hev1
         } else if (
             vc.includes('hevc') ||
             vc.includes('h265') ||
@@ -1956,7 +2137,7 @@ function renderDualColumn(type, filtered, container = null) {
         ) {
             cType = 'hevc';
 
-        // H.264: avc / h264 / h.264
+            // H.264: avc / h264 / h.264
         } else if (
             vc.includes('avc') ||
             vc.includes('h264') ||
@@ -1964,14 +2145,14 @@ function renderDualColumn(type, filtered, container = null) {
         ) {
             cType = 'avc';
 
-        // VP9: vp9 / vp09
+            // VP9: vp9 / vp09
         } else if (
             vc.includes('vp9') ||
             vc.includes('vp09')
         ) {
             cType = 'vp9';
 
-        // Other known codec
+            // Other known codec
         } else if (
             vc &&
             vc !== 'none' &&
@@ -2083,7 +2264,7 @@ function renderDualColumn(type, filtered, container = null) {
     });
 }
 
-function renderAudioColumn(filtered) {
+function renderAudioColumn(filtered, container = el.audioGridBody) {
     const groups = {}; // codecKey -> [formats]
     const codecPriority = { 'opus': 10, 'mp4a': 5 };
 
@@ -2129,7 +2310,7 @@ function renderAudioColumn(filtered) {
         const currentFormatId = resolutionSelections[gKey].formatId;
         const activeFmt = variants.find(f => f.format_id === currentFormatId) || variants[0];
 
-        renderCompactRow(activeFmt, el.audioGridBody, {
+        renderCompactRow(activeFmt, container, {
             resKey: gKey,
             variants,
             isAudioGrouping: true,
@@ -2216,7 +2397,7 @@ function renderCompactRow(fmt, container, smartData = null) {
     if (isAudioOnly) {
         let codecNameRaw = (fmt.acodec || '').split('.')[0];
         if (!codecNameRaw || codecNameRaw.toLowerCase() === 'none' || codecNameRaw.toLowerCase() === 'null') codecNameRaw = 'Unknown';
-        
+
         mainTitle = codecNameRaw.toUpperCase();
         subTitle = codecNameRaw;
         icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--warning);"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>`;
@@ -2224,11 +2405,11 @@ function renderCompactRow(fmt, container, smartData = null) {
         let w = Number(fmt.width) || 0;
         let h = Number(fmt.height) || 0;
         mainTitle = smartData ? smartData.resKey : ((w > 0 && h > 0) ? `${w}x${h}` : fallbackText);
-        
+
         let vcRaw = (fmt.vcodec || '').split('.')[0];
         if (!vcRaw || vcRaw.toLowerCase() === 'none' || vcRaw.toLowerCase() === 'null') vcRaw = fallbackText;
         subTitle = vcRaw;
-        
+
         if (isMixed) {
             icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #a855f7;"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect><path d="M9 18V5l12-2v13"></path></svg>`;
         } else {
@@ -2936,6 +3117,17 @@ function setLoading(isLoading) {
     else el.loadingOverlay.classList.add('hidden');
 }
 
+function getTextDir(text) {
+    if (!text) return 'ltr';
+    return /[\u0600-\u06FF]/.test(text) ? 'rtl' : 'ltr';
+}
+
+function applySmartDir(element, text) {
+    if (element) {
+        element.setAttribute('dir', getTextDir(text));
+    }
+}
+
 function resetSelection() {
     selectedVideoId = null;
     selectedAudioId = null;
@@ -3017,7 +3209,14 @@ function parseSizeToBytes(val) {
 }
 
 // Check if a specific JS runtime command is available on the machine
-async function checkRuntime(name) {
+async function checkRuntime(name, force = false) {
+    const cache = getSharedCache();
+    if (!cache.runtimes) cache.runtimes = {};
+
+    if (!force && cache.runtimes[name] !== undefined) {
+        return cache.runtimes[name];
+    }
+
     let cmd = '';
     if (name === 'node') cmd = 'node -v';
     else if (name === 'deno') cmd = 'deno --version';
@@ -3028,8 +3227,11 @@ async function checkRuntime(name) {
 
     try {
         let output = await Neutralino.os.execCommand(cmd);
-        return output.exitCode === 0;
+        const exists = output.exitCode === 0;
+        cache.runtimes[name] = exists;
+        return exists;
     } catch (e) {
+        cache.runtimes[name] = false;
         return false;
     }
 }
@@ -3042,7 +3244,7 @@ async function handleCheckRuntime(name) {
     statusSpan.textContent = 'Checking...';
     statusSpan.style.color = 'var(--text-muted)';
 
-    const exists = await checkRuntime(name);
+    const exists = await checkRuntime(name, true); // force re-check on manual click
     if (exists) {
         statusSpan.textContent = 'Installed ✔️';
         statusSpan.style.color = '#4caf50';
@@ -3083,12 +3285,15 @@ function rebuildRuntimeSelect() {
     }
 }
 
-// Check all runtimes on settings page load
-function checkAllRuntimes() {
+// Check all runtimes on settings page load (uses shared cache across tabs)
+function checkAllRuntimes(force = false) {
     const runtimes = ['node', 'deno', 'bun', 'quickjs'];
+    const cache = getSharedCache();
+    if (!cache.runtimes) cache.runtimes = {};
+
     let completed = 0;
     runtimes.forEach(rt => {
-        checkRuntime(rt).then(exists => {
+        checkRuntime(rt, force).then(exists => {
             const statusSpan = document.getElementById(`status-${rt}`);
             if (statusSpan) {
                 if (exists) {
@@ -3236,9 +3441,6 @@ function initRuntimeManagers() {
         }
     });
 
-    // Run initial runtime checks
-    checkAllRuntimes();
-
     // Display cookies warning if needed
     toggleCookiesWarning();
 
@@ -3272,6 +3474,10 @@ function initSettingsTabs() {
             const tabName = btn.getAttribute('data-settings-tab');
             const pane = document.getElementById(`settings-pane-${tabName}`);
             if (pane) pane.classList.add('active');
+
+            if (tabName === 'runtimes') {
+                checkAllRuntimes();
+            }
         };
     });
 }
@@ -3372,9 +3578,9 @@ function updateTabTitle(title) {
    DRAG AND DROP SUPPORT FOR URLs
 ========================================================= */
 document.addEventListener("dragover", (e) => {
-    e.preventDefault(); // Prevent default to allow drop
+    e.preventDefault();
     if (el.emptyState && !el.emptyState.classList.contains("hidden")) {
-        el.emptyState.style.opacity = "0.7"; // visual feedback
+        el.emptyState.style.opacity = "0.7";
     }
 });
 
@@ -3383,19 +3589,7 @@ document.addEventListener("dragleave", (e) => {
     if (el.emptyState) el.emptyState.style.opacity = "1";
 });
 
-document.addEventListener("drop", (e) => {
-    e.preventDefault();
-    if (el.emptyState) el.emptyState.style.opacity = "1";
-    
-    // Get text or URL data from the dropped item
-    const droppedText = e.dataTransfer.getData("text/plain") || e.dataTransfer.getData("text/uri-list");
-    
-    if (droppedText && droppedText.trim().startsWith("http")) {
-        // It's a URL
-        el.urlInput.value = droppedText.trim();
-        // Trigger analysis automatically
-        if (el.analyzeBtn && !el.analyzeBtn.disabled) {
-            el.analyzeBtn.click();
-        }
-    }
-});
+// Note: drop is handled by window.addEventListener('drop') above (lines ~509)
+// to avoid double-triggering smartAnalyze.
+
+
