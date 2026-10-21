@@ -87,9 +87,9 @@ Grab the latest release for your platform from
 ###
 ### 📥 Download
 
-[![Windows](https://img.shields.io/badge/Windows-Download-blue?style=for-the-badge&logo=windows)](https://github.com/mohmd-v1/YT-MANGO/releases/download/v5.0.1/YT.MANGO-win_x64.zip)
-[![macOS](https://img.shields.io/badge/macOS-Download-black?style=for-the-badge&logo=apple)](https://github.com/mohmd-v1/YT-MANGO/releases/download/v5.0.1/YT.MANGO-mac.zip)
-[![Linux](https://img.shields.io/badge/Linux-Download-orange?style=for-the-badge&logo=linux)](https://github.com/mohmd-v1/YT-MANGO/releases/download/v5.0.1/YT.MANGO-linux.zip)
+[![Windows](https://img.shields.io/badge/Windows-Download-blue?style=for-the-badge&logo=windows)](https://github.com/mohmd-v1/YT-MANGO/releases/download/v5.0.2/YT.MANGO-win_x64.zip)
+[![macOS](https://img.shields.io/badge/macOS-Download-black?style=for-the-badge&logo=apple)](https://github.com/mohmd-v1/YT-MANGO/releases/download/v5.0.2/YT.MANGO-mac.zip)
+[![Linux](https://img.shields.io/badge/Linux-Download-orange?style=for-the-badge&logo=linux)](https://github.com/mohmd-v1/YT-MANGO/releases/download/v5.0.2/YT.MANGO-linux.zip)
 
 
 
@@ -133,4 +133,4 @@ MIT License - See LICENSE file for details
 
 ## Version
 
-Current Version: 5.0.0
+Current Version: 5.0.2
