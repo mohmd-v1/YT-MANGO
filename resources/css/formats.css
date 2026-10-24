@@ -221,6 +221,14 @@
     background: var(--accent);
 }
 
+/* Audio rows keep the whole bar chain in the warning color,
+   mirroring how plain rows keep it in the accent color.
+   Placed after the shared rules above so it wins the cascade
+   for base, hover and selected states alike. */
+.compact-row.audio-row::before {
+    background: var(--warning);
+}
+
 .compact-row.audio-row.selected {
     background: rgba(245, 158, 11, 0.08);
 }
