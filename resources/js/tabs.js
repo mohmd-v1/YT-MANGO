@@ -53,16 +53,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }).catch(e => console.error(e));
 
     // Theme Management from storage
-    Neutralino.storage.getData('yt_dlp_settings').then(data => {
-        const settings = JSON.parse(data);
-        if (settings.theme === 'light') {
+    function applyShellTheme(theme) {
+        if (theme === 'light') {
             document.documentElement.setAttribute('data-theme', 'light');
-        } else if (settings.theme === 'system') {
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-                document.documentElement.setAttribute('data-theme', 'light');
-            }
+        } else if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else if (theme === 'system') {
+            document.documentElement.setAttribute('data-theme',
+                window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
         }
+    }
+
+    let shellSettings = null;
+    Neutralino.storage.getData('yt_dlp_settings').then(data => {
+        shellSettings = JSON.parse(data);
+        applyShellTheme(shellSettings?.theme);
     }).catch(() => { /* ignore */ });
+
+    // Watch for system theme changes
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+        if (!shellSettings || shellSettings.theme === 'system') applyShellTheme('system');
+    });
+
+    // Live theme sync: a tab broadcasts its theme change to the shell,
+    // and the shell forwards it to every other open tab
+    window.addEventListener('message', (e) => {
+        const theme = e.data && e.data.theme;
+        if (e.data && e.data.type === 'theme-change' && typeof theme === 'string') {
+            applyShellTheme(theme);
+            document.querySelectorAll('.tab-iframe').forEach(frame => {
+                try { frame.contentWindow.postMessage({ type: 'theme-change', theme: theme }, '*'); } catch (err) { }
+            });
+        }
+    });
 
     // Tabs Management
     newTabBtn.addEventListener("click", () => createNewTab());

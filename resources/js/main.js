@@ -179,6 +179,17 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
     }
 });
 
+// Receive theme changes broadcast by the browser shell (when theme is changed in another tab)
+window.addEventListener('message', (e) => {
+    const theme = e.data && e.data.theme;
+    if (e.data && e.data.type === 'theme-change' &&
+        (theme === 'light' || theme === 'dark' || theme === 'system')) {
+        settings.theme = theme;
+        applyTheme(theme);
+        if (el.inputs.themeSelect) el.inputs.themeSelect.value = theme;
+    }
+});
+
 function getCodecBadgeHTML(codec) {
     if (!codec || codec === 'none') {
         return '<span class="badge codec-pro badge-codec-default">NONE</span>';
@@ -1132,8 +1143,8 @@ if (el.downloadSectionBtn) {
         const startPercent = (currentStart / max) * 100;
         const endPercent = (currentEnd / max) * 100;
 
-        el.sections.sliderTrackFill.style.left = `${startPercent}%`;
-        el.sections.sliderTrackFill.style.width = `${endPercent - startPercent}%`;
+        el.sections.sliderTrackFill.style.left = `${Math.max(0, Math.min(100, startPercent))}%`;
+        el.sections.sliderTrackFill.style.width = `${Math.max(0, endPercent - startPercent)}%`;
     }
 
     function onSliderInput(e) {
@@ -1155,12 +1166,33 @@ if (el.downloadSectionBtn) {
         setTimePicker('end', formatDuration(endVal));
     }
 
-    function syncSlidersFromInputs() {
-        const startSec = getTimeFromInputs('start');
-        const endSec = getTimeFromInputs('end');
+    // Enforce START ≤ END at all times. The sides "push" each other:
+    // - Moving START past END drags END with it.
+    // - Moving END below START drags START with it.
+    function reconcileRange(movedSide = null) {
+        let startSec = getTimeFromInputs('start');
+        let endSec = getTimeFromInputs('end');
+
+        if (startSec > endSec) {
+            if (movedSide === 'end') {
+                // END crossed below START → pull START down with it
+                startSec = endSec;
+                setTimePicker('start', formatDuration(startSec));
+            } else {
+                // START crossed above END → push END up with it
+                endSec = startSec;
+                setTimePicker('end', formatDuration(endSec));
+            }
+        }
+        return { startSec, endSec };
+    }
+
+    function syncSlidersFromInputs(movedSide = null) {
+        const { startSec, endSec } = reconcileRange(movedSide);
         el.sections.startSlider.value = startSec;
         el.sections.endSlider.value = endSec;
         updateSliderVisualsOnly();
+        return { startSec, endSec };
     }
 
     el.sections.startSlider.addEventListener('input', onSliderInput);
@@ -1176,9 +1208,18 @@ if (el.downloadSectionBtn) {
         let startSec = getTimeFromInputs('start');
         let endSec = getTimeFromInputs('end');
 
+        // Treat 00:00:00 end as "unset" → full video length
         if (endSec === 0) {
             endSec = videoDuration;
+            if (startSec > endSec) startSec = endSec; // video shorter than a stored start time
             setTimePicker('end', formatDuration(endSec));
+        }
+
+        // Clamp to video length, then enforce START ≤ END
+        startSec = Math.min(startSec, videoDuration);
+        endSec = Math.min(endSec, videoDuration);
+        if (startSec > endSec) {
+            ({ startSec, endSec } = reconcileRange('end')); // END is newer/sure → START follows it
         }
 
         el.sections.startSlider.value = startSec;
@@ -1210,7 +1251,7 @@ document.querySelectorAll('.t-btn').forEach(btn => {
         if (val > max) val = 0;
 
         input.value = val.toString().padStart(2, '0');
-        syncSlidersFromInputs();
+        syncSlidersFromInputs(targetId.startsWith('start') ? 'start' : 'end');
     });
 });
 
@@ -1221,7 +1262,7 @@ document.querySelectorAll('.t-val').forEach(input => {
         if (val < 0) val = 0;
         if (val > max) val = max;
         e.target.value = val.toString().padStart(2, '0');
-        syncSlidersFromInputs();
+        syncSlidersFromInputs(e.target.id.startsWith('start') ? 'start' : 'end');
     });
 });
 
@@ -1262,6 +1303,11 @@ if (el.sections.applyBtn) {
         const end = `${endH}:${endM}:${endS}`;
 
         if (end !== "00:00:00") {
+            // Defensive: apply can never produce an empty or reversed section
+            if (getTimeFromInputs('end') <= getTimeFromInputs('start')) {
+                alert('End time must be greater than start time.');
+                return;
+            }
             sectionTime = `*${start}-${end}`;
             updateCommand();
             el.sections.modal.classList.add('hidden');
@@ -1428,6 +1474,12 @@ if (el.inputs.themeSelect) {
         settings.theme = el.inputs.themeSelect.value;
         applyTheme(settings.theme);
         saveSettings();
+        // Broadcast to the browser shell (tab strip) and to sibling tabs via the shell
+        try {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'theme-change', theme: settings.theme }, '*');
+            }
+        } catch (e) { /* not running inside the multi-tab shell */ }
     });
 }
 
@@ -3331,30 +3383,6 @@ function toggleCookiesWarning() {
     }
 }
 
-// Poll to see if runtime is installed
-async function pollCheckRuntime(rt, maxAttempts = 20, delayMs = 3000) {
-    const statusSpan = document.getElementById(`status-${rt}`);
-    for (let i = 0; i < maxAttempts; i++) {
-        const exists = await checkRuntime(rt);
-        if (exists) {
-            if (statusSpan) {
-                statusSpan.textContent = 'Installed ✔️';
-                statusSpan.style.color = '#4caf50';
-            }
-            installedRuntimes.add(rt);
-            rebuildRuntimeSelect();
-
-            let restart = await Neutralino.os.showMessageBox('Restart Required', 'Installation successful. The application needs to restart to update system paths and apply changes. Restart now?', 'YES_NO');
-            if (restart === 'YES') {
-                Neutralino.app.restartProcess();
-            }
-            return;
-        }
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
-    await handleCheckRuntime(rt);
-}
-
 // Initialize runtime download and check listeners
 function initRuntimeManagers() {
     // Bind click events on check buttons
@@ -3365,79 +3393,11 @@ function initRuntimeManagers() {
         }
     });
 
-    // Bind click events on download buttons
+    // Bind click events on download buttons → open the official download page
     document.querySelectorAll('.dl-rt-btn').forEach(btn => {
-        const rt = btn.getAttribute('data-runtime');
         const url = btn.getAttribute('data-url');
-        if (rt === 'node' || rt === 'deno' || rt === 'bun') {
-            btn.onclick = async () => {
-                const rtName = rt === 'node' ? 'Node.js' : (rt === 'deno' ? 'Deno' : 'Bun');
-
-                if (window.NL_OS !== 'Windows') {
-                    let urls = {
-                        'node': 'https://nodejs.org/',
-                        'deno': 'https://deno.land/#installation',
-                        'bun': 'https://bun.sh/'
-                    };
-                    let cmds = {
-                        'node': window.NL_OS === 'Darwin' ? 'brew install node' : 'sudo apt install nodejs',
-                        'deno': 'curl -fsSL https://deno.land/install.sh | sh',
-                        'bun': 'curl -fsSL https://bun.sh/install | bash'
-                    };
-                    await Neutralino.os.showMessageBox(
-                        "Manual Installation",
-                        `Silent install for ${rtName} is optimized for Windows.\n\nFor ${window.NL_OS}, open Terminal and use:\n\n${cmds[rt]}\n\nOr download from:\n${urls[rt]}`,
-                        "OK"
-                    );
-                    return;
-                }
-
-                const buttonSelected = await Neutralino.os.showMessageBox(
-                    `Confirm Installation`,
-                    `Do you want to download and install ${rtName} silently?`,
-                    'YES_NO'
-                );
-
-                if (buttonSelected === 'YES') {
-                    const statusSpan = document.getElementById(`status-${rt}`);
-                    if (statusSpan) {
-                        statusSpan.textContent = 'Installing...';
-                        statusSpan.style.color = '#ff9800'; // Orange
-                    }
-
-                    let cmd = '';
-                    if (rt === 'deno') {
-                        cmd = 'powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://deno.land/install.ps1 | iex"';
-                    } else if (rt === 'bun') {
-                        cmd = 'powershell -NoProfile -ExecutionPolicy Bypass -Command "irm bun.sh/install.ps1 | iex"';
-                    } else if (rt === 'node') {
-                        cmd = `powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process powershell -ArgumentList '-NoProfile', '-Command', 'curl -L https://nodejs.org/dist/v20.11.1/node-v20.11.1-x64.msi -o $env:TEMP\\\\node.msi; Start-Process msiexec.exe -ArgumentList /i, $env:TEMP\\\\node.msi, /qn, /norestart -Wait; Remove-Item $env:TEMP\\\\node.msi' -Verb RunAs"`;
-                    }
-
-                    try {
-                        // Start polling in parallel
-                        pollCheckRuntime(rt);
-
-                        let output = await Neutralino.os.execCommand(cmd);
-                        if (rt !== 'node' && output.exitCode !== 0) {
-                            if (statusSpan) {
-                                statusSpan.textContent = 'Failed ❌';
-                                statusSpan.style.color = '#f44336';
-                            }
-                        }
-                    } catch (e) {
-                        console.error(`Error installing ${rtName}:`, e);
-                        if (statusSpan) {
-                            statusSpan.textContent = 'Failed ❌';
-                            statusSpan.style.color = '#f44336';
-                        }
-                    }
-                }
-            };
-        } else if (url) {
-            btn.onclick = () => {
-                Neutralino.os.open(url);
-            };
+        if (url) {
+            btn.onclick = () => Neutralino.os.open(url);
         }
     });
 

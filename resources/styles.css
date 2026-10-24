@@ -1110,6 +1110,75 @@ body.drag-active {
     background: var(--bg-card);
 }
 
+/* Custom scrollbar used across scrollable panels (settings, grids, options) */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-light) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border-light);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .custom-scrollbar {
+        scrollbar-color: var(--text-muted) transparent;
+    }
+}
+
+/* Sections modal: chapters multi-select */
+.chapter-select {
+    width: 100%;
+    margin-top: 6px;
+    padding: 6px;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    outline: none;
+    overflow-y: auto;
+    transition: border-color 0.2s ease;
+}
+
+.chapter-select:focus {
+    border-color: var(--accent);
+}
+
+.chapter-select option {
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.chapter-select option:hover {
+    background: rgba(128, 128, 128, 0.15);
+}
+
+.chapter-select option:checked {
+    background: var(--accent);
+    color: #fff;
+}
+
 .settings-pane {
     display: none;
     flex-direction: column;
@@ -1167,6 +1236,84 @@ body.drag-active {
     color: var(--text-muted);
     margin-top: 0 !important;
     line-height: 1.4;
+}
+
+/* Settings: divider between grouped card sections */
+.settings-divider {
+    border-top: 1px solid var(--border-light);
+}
+
+/* Settings: inline info/action link (icon + text) */
+.settings-inline-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--accent-light);
+    text-decoration: none;
+    margin-top: 2px;
+    opacity: 0.85;
+    transition: opacity 0.2s ease;
+}
+
+.settings-inline-link:hover {
+    opacity: 1;
+}
+
+/* Settings: runtime check list (JS Runtimes card) */
+.runtime-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.runtime-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.runtime-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: rgba(128, 128, 128, 0.08);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    transition: background 0.2s ease;
+}
+
+.runtime-row:hover {
+    background: rgba(128, 128, 128, 0.14);
+}
+
+.runtime-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.runtime-status {
+    font-size: 11px;
+    color: var(--text-muted);
+    min-width: 80px;
+    text-align: center;
+}
+
+.runtime-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.runtime-actions .secondary-btn {
+    padding: 4px 10px;
+    font-size: 10px;
+    min-width: 58px;
 }
 
 /* Command Modal */

@@ -512,73 +512,65 @@
                   </div>
                 </div>
 
-                <!-- JS Runtimes selector -->
-                <div class="settings-card row-card">
-                  <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <label>Active JS Runtime</label>
-                    <small>Bypasses signature extraction/player challenges</small>
-                    <a href="#" id="jsRuntimeWikiLink"
-                      style="font-size: 11px; color: var(--accent-light); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; opacity: 0.85; transition: opacity 0.2s;"
-                      onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                          d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                      </svg>
-                      Learn about JS Runtimes (Wiki)
-                    </a>
-                  </div>
-                  <select id="jsRuntimeSelect" class="res-select"
-                    style="min-width: 140px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm);">
-                    <option value="none">None (Default)</option>
-                    <option value="node">Node.js</option>
-                    <option value="deno">Deno</option>
-                    <option value="bun">Bun</option>
-                    <option value="quickjs">QuickJS</option>
-                  </select>
-                </div>
-
-                <!-- JS Runtime list and managers -->
+                <!-- JS Runtimes (Selector + Runtime Check) -->
                 <div class="settings-card">
-                  <label style="margin-bottom: 6px;">Runtime Check & Download (Silent Install)</label>
+                  <div class="runtime-header">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                      <label>Active JS Runtime</label>
+                      <small>Bypasses signature extraction / player challenges</small>
+                      <a href="#" id="jsRuntimeWikiLink" class="settings-inline-link">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path
+                            d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                        </svg>
+                        Learn about JS Runtimes (Wiki)
+                      </a>
+                    </div>
+                    <select id="jsRuntimeSelect" class="res-select"
+                      style="min-width: 140px; background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius-sm);">
+                      <option value="none">None (Default)</option>
+                      <option value="node">Node.js</option>
+                      <option value="deno">Deno</option>
+                      <option value="bun">Bun</option>
+                      <option value="quickjs">QuickJS</option>
+                    </select>
+                  </div>
 
-                  <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-                    <!-- Node.js Row -->
-                    <div class="runtime-row"
-                      style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
-                      <span style="font-size: 12px; font-weight: 600;">Node.js</span>
-                      <div style="display: flex; align-items: center; gap: 8px;">
-                        <span id="status-node" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
-                        <button class="secondary-btn check-rt-btn" data-runtime="node"
-                          style="padding: 4px 8px; font-size: 10px; min-width: 50px;">Check</button>
+                  <div class="settings-divider"></div>
+
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <label>Runtime Check</label>
+                    <small>Verify installed runtimes · Download opens the official download page in your browser.</small>
+                  </div>
+
+                  <div class="runtime-list">
+                    <div class="runtime-row">
+                      <span class="runtime-name">Node.js</span>
+                      <div class="runtime-actions">
+                        <span id="status-node" class="runtime-status">Not Checked</span>
+                        <button class="secondary-btn check-rt-btn" data-runtime="node">Check</button>
                         <button class="secondary-btn dl-rt-btn" data-runtime="node"
-                          data-url="https://nodejs.org/en/download"
-                          style="padding: 4px 8px; font-size: 10px;">Download</button>
+                          data-url="https://nodejs.org/en/download/" title="https://nodejs.org/en/download/">Download</button>
                       </div>
                     </div>
 
-                    <!-- Deno Row -->
-                    <div class="runtime-row"
-                      style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
-                      <span style="font-size: 12px; font-weight: 600;">Deno</span>
-                      <div style="display: flex; align-items: center; gap: 8px;">
-                        <span id="status-deno" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
-                        <button class="secondary-btn check-rt-btn" data-runtime="deno"
-                          style="padding: 4px 8px; font-size: 10px; min-width: 50px;">Check</button>
-                        <button class="secondary-btn dl-rt-btn" data-runtime="deno" data-url="https://deno.com/"
-                          style="padding: 4px 8px; font-size: 10px;">Download</button>
+                    <div class="runtime-row">
+                      <span class="runtime-name">Deno</span>
+                      <div class="runtime-actions">
+                        <span id="status-deno" class="runtime-status">Not Checked</span>
+                        <button class="secondary-btn check-rt-btn" data-runtime="deno">Check</button>
+                        <button class="secondary-btn dl-rt-btn" data-runtime="deno"
+                          data-url="https://docs.deno.com/runtime/getting_started/installation/" title="https://docs.deno.com/runtime/getting_started/installation/">Download</button>
                       </div>
                     </div>
 
-                    <!-- Bun Row -->
-                    <div class="runtime-row"
-                      style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
-                      <span style="font-size: 12px; font-weight: 600;">Bun</span>
-                      <div style="display: flex; align-items: center; gap: 8px;">
-                        <span id="status-bun" style="font-size: 11px; color: var(--text-muted);">Not Checked</span>
-                        <button class="secondary-btn check-rt-btn" data-runtime="bun"
-                          style="padding: 4px 8px; font-size: 10px; min-width: 50px;">Check</button>
-                        <button class="secondary-btn dl-rt-btn" data-runtime="bun" data-url="https://bun.sh/"
-                          style="padding: 4px 8px; font-size: 10px;">Download</button>
+                    <div class="runtime-row">
+                      <span class="runtime-name">Bun</span>
+                      <div class="runtime-actions">
+                        <span id="status-bun" class="runtime-status">Not Checked</span>
+                        <button class="secondary-btn check-rt-btn" data-runtime="bun">Check</button>
+                        <button class="secondary-btn dl-rt-btn" data-runtime="bun"
+                          data-url="https://bun.com/docs/installation" title="https://bun.com/docs/installation">Download</button>
                       </div>
                     </div>
                   </div>
@@ -649,7 +641,7 @@
 
                   <!-- yt-dlp version & update -->
                   <div
-                    style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(128,128,128,0.08); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
                     <span style="font-size: 13px; font-weight: 600;">yt-dlp version</span>
                     <div style="display: flex; align-items: center; gap: 10px;">
                       <span id="ytdlpVersionText"
@@ -667,7 +659,7 @@
 
                   <!-- FFmpeg version -->
                   <div
-                    style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: rgba(128,128,128,0.08); border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
                     <span style="font-size: 13px; font-weight: 600;">FFmpeg version</span>
                     <span id="ffmpegVersionText"
                       style="font-weight: 600; color: var(--text-secondary); font-size: 13px;">Checking...</span>
@@ -748,16 +740,15 @@
           <button id="closeSectionsBtn" class="close-btn">×</button>
         </div>
         <div class="modal-body">
-          <p style="margin-bottom: 15px; font-size: 0.9em; color: #ccc;">Download a specific part of the video.</p>
+          <p style="margin-bottom: 15px; font-size: 0.9em; color: var(--text-muted);">Download a specific part of the video.</p>
 
-          <div id="chapterContainer" class="setting-item hidden" style="margin-bottom: 15px;">
+          <div id="chapterContainer" class="setting-item hidden">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <label>Select Chapter(s) <span style="font-size: 10px; color: #aaa;">(Hold Ctrl for multiple)</span>:</label>
+                <label>Select Chapter(s) <span style="font-size: 10px; color: var(--text-muted);">(Hold Ctrl for
+                    multiple)</span>:</label>
                 <span id="chapterTotalDuration" style="font-size: 12px; color: var(--accent); font-weight: bold;"></span>
             </div>
-            <select id="chapterSelect" multiple size="5"
-              style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff; margin-top: 5px; overflow-y: auto;">
-            </select>
+            <select id="chapterSelect" class="chapter-select custom-scrollbar" multiple size="5"></select>
           </div>
 
           <!-- Professional Range Slider -->
@@ -882,7 +873,7 @@
           <button id="closePlaylistBtn" class="close-btn">×</button>
         </div>
         <div class="modal-body">
-          <p style="margin-bottom: 15px; font-size: 0.9em; color: #934b34;">Select which videos from the playlist you want
+          <p style="margin-bottom: 15px; font-size: 0.9em; color: var(--text-muted);">Select which videos from the playlist you want
             to download.</p>
           <div style="margin-bottom: 15px; display: flex; gap: 8px;">
             <button id="selectAllPlaylistBtn" class="secondary-btn" style="padding: 4px 10px; font-size: 12px;">Select
