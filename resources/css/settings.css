@@ -1,0 +1,468 @@
+/* =========================================================
+   SETTINGS MODAL — sidebar, panes, cards, runtime rows,
+   dependency rows, shortcut inputs
+   ========================================================= */
+
+/* Settings Modal */
+.settings-modal-content {
+    width: 95%;
+    max-width: 625px;
+    height: 580px;
+    padding: 0 !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-modal-content .modal-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-card);
+    flex-shrink: 0;
+}
+
+.settings-wrapper {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100% - 58px);
+}
+
+.settings-sidebar {
+    width: 200px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 8px;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.settings-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.settings-tab-btn svg {
+    flex-shrink: 0;
+}
+
+.settings-tab-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.settings-tab-btn.active {
+    background: rgba(238, 55, 0, 0.1);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.settings-content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    background: var(--bg-card);
+}
+
+.settings-pane {
+    display: none;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.settings-pane.active {
+    display: flex;
+}
+
+.settings-pane-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 10px;
+}
+
+/* Settings Cards */
+.settings-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.settings-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.settings-card.row-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.settings-card label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0 !important;
+}
+
+.settings-card small {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 0 !important;
+    line-height: 1.4;
+}
+
+/* Settings: divider between grouped card sections */
+.settings-divider {
+    border-top: 1px solid var(--border-light);
+}
+
+/* Settings: inline info/action link (icon + text) */
+.settings-inline-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--accent-light);
+    text-decoration: none;
+    margin-top: 2px;
+    opacity: 0.85;
+    transition: opacity 0.2s ease;
+}
+
+.settings-inline-link:hover {
+    opacity: 1;
+}
+
+/* Settings: runtime check list (JS Runtimes card) */
+.runtime-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.runtime-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.runtime-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: rgba(128, 128, 128, 0.08);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    transition: background 0.2s ease;
+}
+
+.runtime-row:hover {
+    background: rgba(128, 128, 128, 0.14);
+}
+
+.runtime-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.runtime-status {
+    font-size: 11px;
+    color: var(--text-muted);
+    min-width: 80px;
+    text-align: center;
+}
+
+.runtime-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.runtime-actions .secondary-btn {
+    padding: 4px 10px;
+    font-size: 10px;
+    min-width: 58px;
+}
+
+/* Settings Items */
+.setting-item {
+    margin-bottom: 20px;
+}
+
+.setting-item:last-child {
+    margin-bottom: 0;
+}
+
+.setting-item label:not(.toggle-switch) {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.setting-item input[type="text"] {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    transition: border-color 0.2s ease;
+}
+
+.setting-item input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.setting-item small {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+/* ---- Settings panes ---- */
+.card-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.card-heading.mb8 {
+    margin-bottom: 8px;
+}
+
+.input-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+.input-row.mt4 {
+    margin-top: 4px;
+}
+
+.settings-select {
+    min-width: 140px;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+}
+
+.settings-select.sm {
+    min-width: 120px;
+    padding: 6px 12px;
+}
+
+.settings-text-input {
+    flex: 1;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+}
+
+.settings-number-input {
+    background: var(--bg-hover);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    width: 70px;
+    text-align: center;
+}
+
+.shortcut-hint {
+    color: var(--warning);
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.settings-card.gap-lg {
+    gap: 16px;
+}
+
+.settings-card.gap-md {
+    gap: 12px;
+}
+
+.card-label-underlined {
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+}
+
+.switch-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.setting-row.mb8 {
+    margin-bottom: 8px;
+}
+
+.setting-row-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-width: 80%;
+}
+
+.setting-row small {
+    margin-top: 0;
+}
+
+.setting-row .toggle-switch {
+    margin-bottom: 0;
+    gap: 0;
+}
+
+.setting-row-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.runtime-warning {
+    color: var(--warning, #f59e0b);
+    font-size: 11px;
+    margin-top: 8px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 4px;
+}
+
+.settings-pane-note {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: -10px;
+}
+
+.shortcut-input {
+    width: 130px;
+    text-align: center;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ---- About & Tools pane ---- */
+.about-card {
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+    gap: 8px;
+}
+
+.about-logo {
+    height: 50px;
+    filter: drop-shadow(0 2px 6px #ff86007a);
+}
+
+.about-title {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.about-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.about-github-btn {
+    padding: 6px 14px;
+    font-size: 11px;
+    margin-top: 6px;
+}
+
+/* ---- Dependencies rows ---- */
+.dep-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    background: rgba(128, 128, 128, 0.08);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-light);
+}
+
+.dep-row.lg {
+    padding: 8px 10px;
+}
+
+.dep-name {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.dep-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.version-text {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 13px;
+}

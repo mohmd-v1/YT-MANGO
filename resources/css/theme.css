@@ -1,0 +1,141 @@
+/* =========================================================
+   THEME — CSS variables, base elements, global scrollbars
+   Loaded first: every other file depends on these variables
+   ========================================================= */
+
+/* استيراد الخطوط */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Modern Professional Theme - Optimized for Performance */
+:root {
+    --bg-primary: #000000;
+    --bg-secondary: #0b0b0b;
+    --bg-card: #121212;
+    --bg-hover: #1a1a1a;
+
+    --accent: #ee3700;
+    --accent-hover: #ffac00;
+    --accent-light: #ff6b6b;
+
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+
+    --text-primary: #f5f5f5;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+
+    --border: #1f1f1f;
+    --border-light: #2a2a2a;
+
+    --shadow: rgba(0, 0, 0, 0.6);
+
+    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+
+    --radius: 12px;
+    --radius-sm: 8px;
+
+    --bg-gradient: linear-gradient(135deg, #000000 0%, #000000 100%);
+}
+
+[data-theme="light"] {
+    --bg-primary: #e2e8f0;
+    --bg-secondary: #f1f5f9;
+    --bg-card: #f8fafc;
+    --bg-hover: #cbd5e1;
+
+    --text-primary: #3d3d3d;
+    --text-secondary: #334155;
+    --text-muted: #475569;
+
+    --border: #94a3b8;
+    --border-light: #cbd5e1;
+
+    --shadow: rgba(15, 23, 42, 0.12);
+
+    --bg-gradient: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
+}
+
+body {
+    font-family: var(--font-ui);
+    background: var(--bg-gradient);
+    color: var(--text-primary);
+    overflow: auto;
+    height: auto;
+}
+
+/* Custom scrollbar used across scrollable panels (settings, grids, options) */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-light) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--border-light);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .custom-scrollbar {
+        scrollbar-color: var(--text-muted) transparent;
+    }
+}
+
+/* Scrollbar */
+body {
+    --sb-track-color: #000000;
+    --sb-thumb-color: var(--accent);
+    --sb-size: 5px;
+}
+
+body::-webkit-scrollbar {
+    width: var(--sb-size);
+}
+
+body::-webkit-scrollbar-track {
+    background: var(--sb-track-color);
+    border-radius: 4px;
+}
+
+body::-webkit-scrollbar-thumb {
+    background: var(--sb-thumb-color);
+    border-radius: 4px;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    body {
+        scrollbar-color: var(--sb-thumb-color) var(--sb-track-color);
+    }
+}
+
+/* =========================================================
+   PAGE COMPONENTS (extracted from app.html inline styles)
+   ========================================================= */
+/* ---- Header / URL bar area ---- */
+body {
+    padding-top: 0;
+}
