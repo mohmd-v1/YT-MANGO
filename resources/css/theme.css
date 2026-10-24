@@ -67,8 +67,9 @@ body {
     font-family: var(--font-ui);
     background: var(--bg-gradient);
     color: var(--text-primary);
-    overflow: auto;
-    height: auto;
+    /* Page itself never scrolls (layout fits the window) */
+    overflow: hidden;
+    height: 100vh;
 }
 
 /* Custom scrollbar used across scrollable panels (settings, grids, options) */

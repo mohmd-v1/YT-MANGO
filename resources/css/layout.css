@@ -6,7 +6,9 @@
 .app-container {
     display: flex;
     flex-direction: column;
-    min-height: 99vh;
+    /* Fit the window exactly: the bottom panel is always visible,
+       scrolling happens inside .main-content */
+    height: 100vh;
     background: transparent;
 }
 
@@ -69,7 +71,24 @@
     flex-direction: column;
     padding: 0px 24px 24px 24px;
     gap: 20px;
+    /* Absorb all free space between the header and the bottom panel;
+       only scrolls when analyzed content is taller than the window */
+    flex: 1 1 0;
     min-height: 0;
+    overflow-y: auto;
+}
+
+.main-content::-webkit-scrollbar {
+    width: var(--sb-size, 5px);
+}
+
+.main-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 4px;
 }
 
 /* Video Info Banner - Optimized (No backdrop-filter) */
@@ -243,7 +262,9 @@ body.drag-active {
     flex-direction: column;
     gap: 16px;
     color: var(--text-muted);
-    padding: 60px;
+    /* Can shrink on small windows so the bottom panel is never pushed away */
+    min-height: 0;
+    padding: 32px 24px;
 }
 
 .empty-state svg {
