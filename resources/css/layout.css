@@ -91,6 +91,28 @@
     border-radius: 4px;
 }
 
+/* ---------------------------------------------------------
+   ANALYZED STATE — natural page scrolling
+   (#contentArea is hidden on the empty/startup state; once
+   JS reveals it, the whole page scrolls together like the
+   original design: app-header and video-info-container are
+   NOT pinned, and .bottom-panel reuses its own sticky-mode)
+   --------------------------------------------------------- */
+body:has(#contentArea:not(.hidden)) {
+    height: auto;
+    overflow: auto;
+}
+
+body:has(#contentArea:not(.hidden)) .app-container {
+    height: auto;
+    min-height: 100vh;
+}
+
+body:has(#contentArea:not(.hidden)) .main-content {
+    flex: 0 1 auto;
+    overflow: visible;
+}
+
 /* Video Info Banner - Optimized (No backdrop-filter) */
 .video-info-container {
         position: relative;
