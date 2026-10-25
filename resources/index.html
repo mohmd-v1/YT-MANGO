@@ -5,6 +5,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>YT-DLP GUI</title>
+  <script>
+  /* Anti-flash (FOUC) bootstrap — mirrors applyShellTheme() in tabs.js (untouched). */
+  (function () {
+    try {
+      var cached = localStorage.getItem('theme-cache');
+      if (cached === 'light' || cached === 'dark') {
+        document.documentElement.setAttribute('data-theme', cached);
+      } else if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+      new MutationObserver(function () {
+        try { localStorage.setItem('theme-cache', document.documentElement.getAttribute('data-theme')); } catch (e) { }
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    } catch (e) { }
+  })();
+  </script>
   <link rel="stylesheet" href="css/theme.css">
   <link rel="stylesheet" href="css/titlebar.css">
   <link rel="stylesheet" href="css/tabs.css">
