@@ -305,6 +305,7 @@
 }
 input[type="text"]#cookiesPath {
     direction: rtl;
+}
 
 .settings-number-input {
     background: var(--bg-hover);
