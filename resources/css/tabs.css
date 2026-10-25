@@ -3,7 +3,7 @@
    Used by index.html (the browser shell)
 ========================================================= */
 
-/* --------------------------------------------------------- SHELL BODY --------------------------------------------------------- */
+/* --------------------------- SHELL BODY --*/
 body.tabs-shell {
     margin: 0;
     padding: 0;
@@ -14,7 +14,7 @@ body.tabs-shell {
     background: var(--bg-primary, #0f172a);
 }
 
-/* --------------------------------------------------------- TITLEBAR OVERRIDES (for tab mode) --------------------------------------------------------- */
+/* ------- TITLEBAR OVERRIDES (for tab mode) -------------- */
 .tabs-shell .custom-titlebar {
     display: flex;
     align-items: flex-end;
@@ -23,7 +23,7 @@ body.tabs-shell {
     height: 48px;
 }
 
-/* --------------------------------------------------------- DRAG AREA --------------------------------------------------------- */
+/* ------- DRAG AREA ---------------- */
 .tabs-shell #titlebar-drag-area {
     position: absolute;
     top: 0;
@@ -33,9 +33,9 @@ body.tabs-shell {
     z-index: 5;
 }
 
-/* --------------------------------------------------------- TABS CONTAINER --------------------------------------------------------- */
+/* ------- TABS CONTAINER -------- */
 .browser-tabs-container {
-        display: flex;
+    display: flex;
     align-items: center;
     gap: 4px;
     padding-left: 12px;
@@ -53,7 +53,7 @@ body.tabs-shell {
     display: none;
 }
 
-/* --------------------------------------------------------- SINGLE TAB --------------------------------------------------------- */
+/* ------- SINGLE TAB ---------------- */
 .browser-tab {
     display: flex;
     align-items: center;
@@ -91,7 +91,7 @@ body.tabs-shell {
     background: rgba(0, 0, 0, 0.08);
 }
 
-/* --------------------------------------------------------- ACTIVE TAB --------------------------------------------------------- */
+/* -------- ACTIVE TAB -------- */
 .browser-tab.active {
     background: #75717170;
     color: var(--text-primary, #ffffff);
@@ -106,7 +106,7 @@ body.tabs-shell {
     border-color: #cbd5e1;
 }
 
-/* --------------------------------------------------------- TAB TITLE --------------------------------------------------------- */
+/* -------- TAB TITLE -------- */
 .browser-tab-title {
     flex: 1;
     overflow: hidden;
@@ -114,7 +114,7 @@ body.tabs-shell {
     white-space: nowrap;
 }
 
-/* --------------------------------------------------------- TAB CLOSE BUTTON --------------------------------------------------------- */
+/* -------- TAB CLOSE BUTTON -------- */
 .browser-tab-close {
     display: flex;
     align-items: center;
@@ -136,7 +136,7 @@ body.tabs-shell {
     background: rgba(0, 0, 0, 0.1);
 }
 
-/* --------------------------------------------------------- NEW TAB BUTTON --------------------------------------------------------- */
+/* --------- NEW TAB BUTTON ---------- */
 .new-tab-btn {
     display: flex;
     align-items: center;
@@ -165,7 +165,7 @@ body.tabs-shell {
     color: #0f172a;
 }
 
-/* --------------------------------------------------------- IFRAME CONTAINER --------------------------------------------------------- */
+/* -------- IFRAME CONTAINER -------- */
 .tab-iframes {
     flex: 1;
     position: relative;
