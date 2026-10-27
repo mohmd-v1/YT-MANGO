@@ -3151,123 +3151,136 @@ if (el.clearFormatBadge) {
 async function startDownload() {
     if (!el.cmdPreview.value) return;
 
-    // Show modal
-    el.modal.self.classList.remove('hidden');
-    el.modal.log.textContent = 'Starting download...\n';
-    el.modal.log.classList.remove('expanded');
-    currentDownloadDestination = null;
-    const _toggleLogBtn = document.getElementById('toggleLogBtn');
-    if (_toggleLogBtn) _toggleLogBtn.textContent = 'Details';
-    el.modal.bar.style.width = '0%';
-    el.modal.cancel.classList.remove('hidden'); // Show cancel button
-    el.modal.close.classList.add('hidden');
-    el.modal.open.classList.add('hidden');
+    const panelsContainer = document.getElementById('downloadPanels');
+    const panel = document.createElement('div');
+    panel.className = 'download-panel';
+    panel.innerHTML = `
+        <div class="dp-header">
+            <div class="dp-title">Downloading...</div>
+            <button class="dp-close" aria-label="Close">×</button>
+        </div>
+        <div class="dp-bar"><div class="dp-bar-fill"></div></div>
+        <div class="dp-actions">
+            <button class="dp-toggle secondary-btn">Details</button>
+            <button class="dp-cancel secondary-btn">Cancel</button>
+        </div>
+        <div class="dp-log"></div>
+    `;
+    if (panelsContainer) panelsContainer.appendChild(panel);
+    requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add('show')));
+
+    const titleEl = panel.querySelector('.dp-title');
+    const barFill = panel.querySelector('.dp-bar-fill');
+    const logEl = panel.querySelector('.dp-log');
+    const toggleBtn = panel.querySelector('.dp-toggle');
+    const cancelBtn = panel.querySelector('.dp-cancel');
+    const closeBtn = panel.querySelector('.dp-close');
+
+    let panelDestination = null;
+    let procPid = null;
+
+    toggleBtn.addEventListener('click', () => {
+        logEl.classList.toggle('expanded');
+        toggleBtn.textContent = logEl.classList.contains('expanded') ? 'Hide' : 'Details';
+    });
+    closeBtn.addEventListener('click', () => removePanel(panel));
+
     el.statusMsg.textContent = 'Downloading...';
 
     let cmd = el.cmdPreview.value;
 
     try {
         let proc = await Neutralino.os.spawnProcess(cmd);
-        currentDownloadProcess = proc.id; // Store process ID for tracking
-        currentDownloadProcessPid = proc.pid; // Store OS process ID for tree kill
+        currentDownloadProcess = proc.id;
+        currentDownloadProcessPid = proc.pid;
+        procPid = proc.pid;
 
-        // Ensure correct view
-        el.modal.processing.classList.remove('hidden');
-        el.modal.success.classList.add('hidden');
-
-        el.modal.bar.style.width = '0%';
-
-        // Use os.spawn for real-time output
-        // We need to split command into cmd and args?
-        // Neutralino.os.spawn(command: string) -> Process
-
-        Neutralino.events.on('spawnedProcess', (evt) => {
-            if (evt.detail.id == proc.id) {
-                if (evt.detail.action == 'stdOut') {
-                    const text = evt.detail.data;
-                    el.modal.log.textContent += text;
-                    el.modal.log.scrollTop = el.modal.log.scrollHeight;
-
-                    // Parse progress
-                    // [download]  45.0% of 10.00MiB at 2.00MiB/s ETA 00:05
-                    const match = text.match(/(\d+(\.\d+)?)%/);
-                    if (match) {
-                        el.modal.bar.style.width = match[1] + '%';
-                    }
-                    // Capture destination file path for history title
-                    const destMatch = text.match(/\[download\]\s+Destination:\s+(.+)/);
-                    if (destMatch) {
-                        currentDownloadDestination = destMatch[1].trim();
-                    }
-                }
-                if (evt.detail.action == 'stdErr') {
-                    // yt-dlp sends progress to stdout usually, but sometimes stderr
-                    const text = evt.detail.data;
-                    el.modal.log.textContent += text;
-                    el.modal.log.scrollTop = el.modal.log.scrollHeight;
-
-                    const match = text.match(/(\d+(\.\d+)?)%/);
-                    if (match) {
-                        el.modal.bar.style.width = match[1] + '%';
-                    }
-                    const destMatch = text.match(/\[download\]\s+Destination:\s+(.+)/);
-                    if (destMatch) {
-                        currentDownloadDestination = destMatch[1].trim();
-                    }
-                }
-                if (evt.detail.action == 'exit') {
-                    const code = evt.detail.data;
-                    el.modal.log.textContent += `\nProcess exited with code ${code}`;
-
-                    if (code === 0) {
-                        el.modal.bar.style.width = '100%';
-                        currentDownloadProcess = null; // Clear process
-
-                        // Success State — lightweight side toast instead of full-page success view
-                        setTimeout(() => {
-                            el.modal.self.classList.add('hidden');
-
-                            // Reset modal for the next download
-                            el.modal.processing.classList.remove('hidden');
-                            el.modal.success.classList.add('hidden');
-                            el.modal.cancel.classList.remove('hidden');
-                            el.modal.open.classList.add('hidden');
-                            el.modal.close.classList.add('hidden');
-
-                            playClickSound();
-                            let histTitle = (typeof currentData !== 'undefined' && currentData && currentData.title) ? currentData.title : null;
-                            if (!histTitle && currentDownloadDestination) {
-                                const base = currentDownloadDestination.replace(/\\/g, '/').split('/').pop() || '';
-                                histTitle = base.replace(/\.[^.]+$/, '');
-                            }
-                            addNotif(histTitle || 'Download');
-                            showToast('Download complete', histTitle || 'Your files are ready.', {
-                                actionLabel: 'Open Folder',
-                                onAction: () => { el.modal.open.click(); },
-                                duration: 6000
-                            });
-                        }, 500);
-                    } else {
-                        // Error State
-                        currentDownloadProcess = null; // Clear process
-                        el.modal.cancel.classList.add('hidden'); // Hide cancel
-                        el.modal.close.classList.remove('hidden');
-
-                        // Intelligent troubleshooting for download failure
-                        const logContent = el.modal.log.textContent || '';
-                        const hasFix = detectErrorFix(logContent);
-                        if (hasFix) {
-                            showAlert(logContent, 'Download Failed');
-                        }
-                    }
-                }
+        cancelBtn.addEventListener('click', async () => {
+            if (!procPid) return;
+            try {
+                let killCmd = window.NL_OS === 'Windows'
+                    ? `taskkill /F /T /PID ${procPid}`
+                    : `kill -9 ${procPid}`;
+                await Neutralino.os.execCommand(killCmd);
+                logEl.textContent += '\n\n[CANCELLED] Download cancelled by user.';
+                el.statusMsg.textContent = 'Download cancelled';
+            } catch (err) {
+                console.error('Failed to cancel download:', err);
+                logEl.textContent += '\n\n[CANCELLED] Download process terminated.';
+            } finally {
+                cancelBtn.classList.add('hidden');
+                closeBtn.classList.remove('hidden');
             }
         });
 
+        Neutralino.events.on('spawnedProcess', (evt) => {
+            if (evt.detail.id != proc.id) return;
+            if (evt.detail.action == 'stdOut' || evt.detail.action == 'stdErr') {
+                const text = evt.detail.data;
+                logEl.textContent += text;
+                logEl.scrollTop = logEl.scrollHeight;
+
+                const match = text.match(/(\d+(\.\d+)?)%/);
+                if (match) barFill.style.width = match[1] + '%';
+
+                const destMatch = text.match(/\[download\]\s+Destination:\s+(.+)/);
+                if (destMatch) panelDestination = destMatch[1].trim();
+            }
+            if (evt.detail.action == 'exit') {
+                const code = evt.detail.data;
+                logEl.textContent += `\nProcess exited with code ${code}`;
+
+                if (code === 0) {
+                    barFill.style.width = '100%';
+                    cancelBtn.classList.add('hidden');
+                    closeBtn.classList.remove('hidden');
+
+                    setTimeout(() => {
+                        removePanel(panel);
+                        playClickSound();
+                        let histTitle = (typeof currentData !== 'undefined' && currentData && currentData.title) ? currentData.title : null;
+                        if (!histTitle && panelDestination) {
+                            const base = panelDestination.replace(/\\/g, '/').split('/').pop() || '';
+                            histTitle = base.replace(/\.[^.]+$/, '');
+                        }
+                        addNotif(histTitle || 'Download');
+                        showToast('Download complete', histTitle || 'Your files are ready.', {
+                            actionLabel: 'Open Folder',
+                            onAction: () => {
+                                let p = settings.downloadPath;
+                                if (!p || p === 'Downloads') {
+                                    Neutralino.os.getPath('downloads').then(x => { p = x; }).catch(() => { p = './Downloads'; });
+                                }
+                                let openCmd = '';
+                                if (window.NL_OS === 'Windows') openCmd = `explorer "${String(p).replace(/\//g, '\\')}"`;
+                                else if (window.NL_OS === 'Darwin') openCmd = `open "${p}"`;
+                                else openCmd = `xdg-open "${p}"`;
+                                Neutralino.os.execCommand(openCmd).catch(() => {});
+                            },
+                            duration: 6000
+                        });
+                    }, 500);
+                } else {
+                    cancelBtn.classList.add('hidden');
+                    closeBtn.classList.remove('hidden');
+                    el.statusMsg.textContent = 'Download failed';
+                    const logContent = logEl.textContent || '';
+                    const hasFix = detectErrorFix(logContent);
+                    if (hasFix) showAlert(logContent, 'Download Failed');
+                }
+            }
+        });
     } catch (err) {
-        el.modal.log.textContent += `\nError launching process: ${err.message}`;
-        el.modal.close.classList.remove('hidden');
+        logEl.textContent += `\nError launching process: ${err.message}`;
+        cancelBtn.classList.add('hidden');
+        closeBtn.classList.remove('hidden');
     }
+}
+
+function removePanel(panel) {
+    if (!panel || !panel.parentNode) return;
+    panel.classList.remove('show');
+    setTimeout(() => { try { panel.remove(); } catch (e) { } }, 260);
 }
 
 async function copyDirectLink(formatId, btnElement) {
