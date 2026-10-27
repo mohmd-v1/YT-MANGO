@@ -1915,9 +1915,13 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
         if (data.thumbnail && data.thumbnail !== 'N/A') {
             el.videoThumbnail.src = data.thumbnail;
             el.thumbnailWrapper.classList.remove('hidden');
+            el.thumbnailWrapper.classList.remove('no-thumb');
+            el.videoThumbnail.classList.remove('hidden');
             updateDynamicBackground(data.thumbnail);
         } else {
-            el.thumbnailWrapper.classList.add('hidden'); el.videoThumbnail.classList.add('hidden');
+            el.thumbnailWrapper.classList.remove('hidden');
+            el.thumbnailWrapper.classList.add('no-thumb');
+            el.videoThumbnail.classList.add('hidden');
             updateDynamicBackground(null);
         }
 

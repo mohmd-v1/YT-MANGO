@@ -133,8 +133,16 @@ body:has(#contentArea:not(.hidden)) .main-content {
     -webkit-mask: linear-gradient(90deg, #000000 89%, #00000000 99%) right;
 }
 
-.video-thumbnail {
-    display: block;
+.thumbnail-wrapper.no-thumb {
+    width: 238px;
+    background: transparent;
+    -webkit-mask: none;
+    mask: none;
+}
+
+.thumbnail-wrapper.no-thumb .video-thumbnail {
+    display: none;
+}
     height: 100%;
     object-fit: cover;
     border-radius: calc(var(--radius-sm) - 2px);
