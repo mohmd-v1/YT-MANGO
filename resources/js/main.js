@@ -7,6 +7,7 @@ let selectedVideoId = null;
 let selectedAudioId = null;
 let activeTab = 'combined'; // combined, mixed
 let currentDownloadProcess = null; // Track current download process
+let currentDownloadDestination = null; // Last destination file path from yt-dlp log
 let currentDownloadProcessPid = null; // Track OS PID
 let currentAnalyzeProcess = null; // Track current analyze process ID
 let currentAnalyzeProcessPid = null; // Track OS PID for analyze process
@@ -3154,6 +3155,7 @@ async function startDownload() {
     el.modal.self.classList.remove('hidden');
     el.modal.log.textContent = 'Starting download...\n';
     el.modal.log.classList.remove('expanded');
+    currentDownloadDestination = null;
     const _toggleLogBtn = document.getElementById('toggleLogBtn');
     if (_toggleLogBtn) _toggleLogBtn.textContent = 'Details';
     el.modal.bar.style.width = '0%';
@@ -3192,6 +3194,11 @@ async function startDownload() {
                     if (match) {
                         el.modal.bar.style.width = match[1] + '%';
                     }
+                    // Capture destination file path for history title
+                    const destMatch = text.match(/\[download\]\s+Destination:\s+(.+)/);
+                    if (destMatch) {
+                        currentDownloadDestination = destMatch[1].trim();
+                    }
                 }
                 if (evt.detail.action == 'stdErr') {
                     // yt-dlp sends progress to stdout usually, but sometimes stderr
@@ -3202,6 +3209,10 @@ async function startDownload() {
                     const match = text.match(/(\d+(\.\d+)?)%/);
                     if (match) {
                         el.modal.bar.style.width = match[1] + '%';
+                    }
+                    const destMatch = text.match(/\[download\]\s+Destination:\s+(.+)/);
+                    if (destMatch) {
+                        currentDownloadDestination = destMatch[1].trim();
                     }
                 }
                 if (evt.detail.action == 'exit') {
@@ -3224,7 +3235,12 @@ async function startDownload() {
                             el.modal.close.classList.add('hidden');
 
                             playClickSound();
-                            addNotif((typeof currentData !== 'undefined' && currentData && currentData.title) ? currentData.title : 'Download');
+                            let histTitle = (typeof currentData !== 'undefined' && currentData && currentData.title) ? currentData.title : null;
+                            if (!histTitle && currentDownloadDestination) {
+                                const base = currentDownloadDestination.replace(/\\/g, '/').split('/').pop() || '';
+                                histTitle = base.replace(/\.[^.]+$/, '');
+                            }
+                            addNotif(histTitle || 'Download');
                             showToast('Download complete', 'Your files are ready.', {
                                 actionLabel: 'Open Folder',
                                 onAction: () => { el.modal.open.click(); },
