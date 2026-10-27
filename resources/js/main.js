@@ -1714,7 +1714,9 @@ function saveNotifHistory() {
     try { localStorage.setItem(NOTIF_KEY, JSON.stringify(notifHistory.slice(0, 30))); } catch (e) { }
 }
 
-function formatNotifTime(ts) {
+function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
     try {
         const d = new Date(ts);
         return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -1743,7 +1745,7 @@ function renderNotifPanel() {
         <div class="notif-item" data-idx="${idx}">
             <div class="notif-item-icon">✓</div>
             <div class="notif-item-body">
-                <div class="notif-item-title" title="${(n.title || '').replace(/"/g, '&quot;')}">${n.title || 'Download'}</div>
+                <div class="notif-item-title" title="${escapeHtml(n.title)}">${escapeHtml(n.title || 'Download')}</div>
                 <div class="notif-item-time">${formatNotifTime(n.time)}</div>
             </div>
             <button class="notif-item-open" data-idx="${idx}">Open</button>
