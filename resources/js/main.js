@@ -3241,7 +3241,7 @@ async function startDownload() {
                                 histTitle = base.replace(/\.[^.]+$/, '');
                             }
                             addNotif(histTitle || 'Download');
-                            showToast('Download complete', 'Your files are ready.', {
+                            showToast('Download complete', histTitle || 'Your files are ready.', {
                                 actionLabel: 'Open Folder',
                                 onAction: () => { el.modal.open.click(); },
                                 duration: 6000
