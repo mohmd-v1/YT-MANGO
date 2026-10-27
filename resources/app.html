@@ -69,16 +69,6 @@
         </div>
       </div>
     </header>
-    <div class="quick-options-bar">
-      <label class="quick-toggle">
-        <input type="checkbox" id="mainEmbedMetadata">
-        <span>Embed Metadata</span>
-      </label>
-      <label class="quick-toggle">
-        <input type="checkbox" id="mainEmbedThumbnail">
-        <span>Embed Thumbnail</span>
-      </label>
-    </div>
     <div class="video-info-container">
       <div id="infoBg" class="info-bg"></div>
       <div id="thumbnailWrapper" class="thumbnail-wrapper hidden">
@@ -166,6 +156,17 @@
                     <!-- Subtitle options with checkboxes -->
                   </div>
                 </div>
+              </div>
+
+              <div class="embed-toggles">
+                <label class="quick-toggle">
+                  <input type="checkbox" id="mainEmbedMetadata">
+                  <span>Meta</span>
+                </label>
+                <label class="quick-toggle">
+                  <input type="checkbox" id="mainEmbedThumbnail">
+                  <span>Thumb</span>
+                </label>
               </div>
 
               <span class="info-sub info-sub-sm">Ext & Bitrate</span>

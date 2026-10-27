@@ -672,3 +672,9 @@
     accent-color: var(--accent);
     cursor: pointer;
 }
+
+.embed-toggles {
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+}
