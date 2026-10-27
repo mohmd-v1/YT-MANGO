@@ -3072,15 +3072,23 @@ async function startDownload() {
                         el.modal.bar.style.width = '100%';
                         currentDownloadProcess = null; // Clear process
 
-                        // Success State
+                        // Success State — lightweight side toast instead of full-page success view
                         setTimeout(() => {
-                            el.modal.processing.classList.add('hidden');
-                            el.modal.success.classList.remove('hidden');
-                            el.modal.cancel.classList.add('hidden'); // Hide cancel
-                            el.modal.open.classList.remove('hidden');
-                            el.modal.close.classList.remove('hidden');
+                            el.modal.self.classList.add('hidden');
 
-                            // No Windows notification - only in-app success screen
+                            // Reset modal for the next download
+                            el.modal.processing.classList.remove('hidden');
+                            el.modal.success.classList.add('hidden');
+                            el.modal.cancel.classList.remove('hidden');
+                            el.modal.open.classList.add('hidden');
+                            el.modal.close.classList.add('hidden');
+
+                            playClickSound();
+                            showToast('Download complete', 'Your files are ready.', {
+                                actionLabel: 'Open Folder',
+                                onAction: () => { el.modal.open.click(); },
+                                duration: 6000
+                            });
                         }, 500);
                     } else {
                         // Error State
@@ -3205,8 +3213,61 @@ function formatDuration(seconds) {
     return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-// yt-dlp sometimes omits `duration` (or returns 0/null) while still providing
-// `duration_string` (e.g. "9:49" or "5:50:40"). Resolve a seconds value robustly.
+// ---------- Toast notifications + subtle click sound ----------
+function playClickSound() {
+    try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        const ctx = new Ctx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 740;
+        gain.gain.setValueAtTime(0.07, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.09);
+        osc.onended = () => { try { ctx.close(); } catch (e) { } };
+    } catch (e) { }
+}
+
+function removeToast(toast) {
+    if (!toast || !toast.parentNode) return;
+    clearTimeout(toast._timer);
+    toast.classList.remove('show');
+    setTimeout(() => { try { toast.remove(); } catch (e) { } }, 260);
+}
+
+function showToast(title, message, opts) {
+    opts = opts || {};
+    const container = document.getElementById('toastContainer');
+    if (!container) return null;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML =
+        '<div class="toast-icon">✓</div>' +
+        '<div class="toast-body">' +
+            '<div class="toast-title"></div>' +
+            (message ? '<div class="toast-msg"></div>' : '') +
+        '</div>' +
+        (opts.actionLabel ? '<button class="toast-action"></button>' : '') +
+        '<button class="toast-close" aria-label="Close">×</button>';
+    toast.querySelector('.toast-title').textContent = title || '';
+    if (message) toast.querySelector('.toast-msg').textContent = message;
+    if (opts.actionLabel) {
+        const ab = toast.querySelector('.toast-action');
+        ab.textContent = opts.actionLabel;
+        if (typeof opts.onAction === 'function') {
+            ab.addEventListener('click', (e) => { e.stopPropagation(); try { opts.onAction(); } catch (err) { console.error(err); } });
+        }
+    }
+    toast.querySelector('.toast-close').addEventListener('click', () => removeToast(toast));
+    container.appendChild(toast);
+    requestAnimationFrame(() => { requestAnimationFrame(() => toast.classList.add('show')); });
+    toast._timer = setTimeout(() => removeToast(toast), opts.duration || 5000);
+    return toast;
+}
 function getDurationSeconds(obj) {
     if (!obj) return 0;
     let d = obj.duration;

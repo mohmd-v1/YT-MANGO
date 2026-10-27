@@ -262,7 +262,100 @@
     box-shadow: 0 0 10px rgba(238, 55, 0, 0.5);
 }
 
-/* Utility */
+/* =========================================================
+   TOAST NOTIFICATIONS — lightweight side toasts
+   ========================================================= */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.toast {
+    pointer-events: auto;
+    min-width: 260px;
+    max-width: 360px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-left: 4px solid var(--success);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-primary);
+    font-size: 13px;
+    opacity: 0;
+    transform: translateX(120%);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--success);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.toast-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.toast-title {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.toast-msg {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.toast-action {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--accent-light);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.toast-action:hover {
+    background: var(--bg-hover);
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 2px;
+}
 .hidden {
     display: none !important;
 }
