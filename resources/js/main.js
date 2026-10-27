@@ -1811,6 +1811,16 @@ document.addEventListener('click', (e) => {
 
 loadNotifHistory();
 
+const toggleLogBtn = document.getElementById('toggleLogBtn');
+if (toggleLogBtn) {
+    toggleLogBtn.addEventListener('click', () => {
+        const log = document.getElementById('progressLog');
+        if (!log) return;
+        log.classList.toggle('expanded');
+        toggleLogBtn.textContent = log.classList.contains('expanded') ? 'Hide' : 'Details';
+    });
+}
+
 async function loadSettings() {
     try {
         const data = await Neutralino.storage.getData('settings');
@@ -3133,6 +3143,9 @@ async function startDownload() {
     // Show modal
     el.modal.self.classList.remove('hidden');
     el.modal.log.textContent = 'Starting download...\n';
+    el.modal.log.classList.remove('expanded');
+    const _toggleLogBtn = document.getElementById('toggleLogBtn');
+    if (_toggleLogBtn) _toggleLogBtn.textContent = 'Details';
     el.modal.bar.style.width = '0%';
     el.modal.cancel.classList.remove('hidden'); // Show cancel button
     el.modal.close.classList.add('hidden');
