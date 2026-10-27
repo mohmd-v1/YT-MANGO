@@ -54,6 +54,8 @@ const el = {
     thumbnailWrapper: document.getElementById('thumbnailWrapper'),
     videoThumbnail: document.getElementById('videoThumbnail'),
     videoDurationOverlay: document.getElementById('videoDurationOverlay'),
+    mainEmbedMeta: document.getElementById('mainEmbedMetadata'),
+    mainEmbedThumb: document.getElementById('mainEmbedThumbnail'),
     gridBody: document.getElementById('gridBody'),
     videoGridBody: document.getElementById('videoGridBody'),
     audioGridBody: document.getElementById('audioGridBody'),
@@ -1431,6 +1433,20 @@ const checkboxes = [
     'embedMeta', 'embedThumb', 'restrict', 'noPlaylist', 'writeSubs', 'ignoreErrors', 'useCookies'
 ];
 
+// Main-page quick toggles for embed options
+['mainEmbedMeta', 'mainEmbedThumb'].forEach(key => {
+    const cb = el[key];
+    if (cb) {
+        cb.addEventListener('change', () => {
+            settings.embedMetadata = el.mainEmbedMeta ? el.mainEmbedMeta.checked : settings.embedMetadata;
+            settings.embedThumbnail = el.mainEmbedThumb ? el.mainEmbedThumb.checked : settings.embedThumbnail;
+            if (el.inputs.embedMeta) el.inputs.embedMeta.checked = settings.embedMetadata;
+            if (el.inputs.embedThumb) el.inputs.embedThumb.checked = settings.embedThumbnail;
+            updateCommand();
+            saveSettings();
+        });
+    }
+});
 checkboxes.forEach(key => {
     const checkbox = el.inputs[key];
     if (checkbox) {
@@ -1891,6 +1907,8 @@ function syncSettingsUI() {
     if (el.inputs && el.inputs.themeSelect) el.inputs.themeSelect.value = settings.theme || 'system';
     applyTheme(settings.theme || 'system');
     if (el.quickAudioLabel) el.quickAudioLabel.textContent = (settings.quickAudioFormat || 'm4a').toUpperCase();
+    if (el.mainEmbedMeta) el.mainEmbedMeta.checked = settings.embedMetadata;
+    if (el.mainEmbedThumb) el.mainEmbedThumb.checked = settings.embedThumbnail;
 }
 
 async function saveSettings() {
