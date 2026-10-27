@@ -1199,7 +1199,7 @@ if (el.downloadSectionBtn) {
     el.sections.endSlider.addEventListener('input', onSliderInput);
 
     el.downloadSectionBtn.addEventListener('click', () => {
-        let videoDuration = currentData?.duration || 0;
+        let videoDuration = getDurationSeconds(currentData) || 0;
         if (videoDuration === 0) videoDuration = 3600; // Fallback to 1 hour if unknown
 
         el.sections.startSlider.max = videoDuration;
@@ -1853,7 +1853,7 @@ function populatePlaylistModal(data) {
             <label for="pl-item-${index}" style="flex: 1; cursor: pointer; font-size: 13px;">
                 <span style="color: var(--accent-light); font-weight: bold; margin-right: 5px;">${index}.</span>
                 ${entry.title || 'Unknown Title'}
-                ${entry.duration ? `<span style="color: var(--text-muted); font-size: 11px; margin-left: 10px;">(${formatDuration(entry.duration)})</span>` : ''}
+                ${getDurationSeconds(entry) ? `<span style="color: var(--text-muted); font-size: 11px; margin-left: 10px;">(${formatDuration(getDurationSeconds(entry))})</span>` : ''}
             </label>
         `;
         el.playlist.items.appendChild(item);
@@ -1941,7 +1941,7 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
         if (isPlaylistFormatMode) {
             title = `[Playlist Selection] ${title}`;
         }
-        let duration = data.duration ? formatDuration(data.duration) : 'N/A';
+        let duration = getDurationSeconds(data) ? formatDuration(getDurationSeconds(data)) : 'N/A';
         let uploader = data.uploader || 'Unknown';
         // Smart RTL detection for Arabic characters using unified helper
         const dir = getTextDir(title);
@@ -2044,7 +2044,7 @@ function renderGrid() {
     el.videoGridBody.innerHTML = '';
     el.audioGridBody.innerHTML = '';
 
-    const duration = currentData?.duration || 1;
+    const duration = getDurationSeconds(currentData) || 1;
 
     // Tab Visibility Logic (Auto-switch if needed)
     const counts = {
@@ -2866,7 +2866,7 @@ function updateCommand() {
             }
             // 2. Fallback to estimation based on bitrate and duration
             const bitrate = fmt.tbr || fmt.vbr || fmt.abr || 0;
-            const duration = currentData?.duration || 0;
+            const duration = getDurationSeconds(currentData) || 0;
             if (bitrate > 0 && duration > 0) {
                 return ((bitrate * 1024) / 8) * duration;
             }
@@ -3201,6 +3201,27 @@ function formatDuration(seconds) {
     return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+// yt-dlp sometimes omits `duration` (or returns 0/null) while still providing
+// `duration_string` (e.g. "9:49" or "5:50:40"). Resolve a seconds value robustly.
+function getDurationSeconds(obj) {
+    if (!obj) return 0;
+    let d = obj.duration;
+    if (typeof d === 'number' && d > 0) return d;
+    if (typeof d === 'string' && d.trim() !== '' && !isNaN(Number(d))) {
+        const n = Number(d);
+        if (n > 0) return n;
+    }
+    const ds = obj.duration_string || obj.durationString || obj.durationStr;
+    if (typeof ds === 'string' && ds.trim()) {
+        const parts = ds.trim().split(':').map(p => parseInt(p, 10));
+        if (parts.length && parts.every(n => !isNaN(n))) {
+            while (parts.length < 3) parts.unshift(0);
+            return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        }
+    }
+    return 0;
+}
+
 // Robust size helpers to parse and format values returned by yt-dlp (which can be strings or numbers)
 function formatSizeValue(val) {
     if (val === undefined || val === null || val === '') return '';
@@ -3237,7 +3258,7 @@ function getFormatDisplaySize(fmt) {
 
     // 2. Fallback to estimation based on bitrate and duration
     const bitrate = fmt.tbr || fmt.vbr || fmt.abr || 0;
-    const duration = currentData?.duration || 0;
+    const duration = getDurationSeconds(currentData) || 0;
     if (bitrate > 0 && duration > 0) {
         const estimatedBytes = ((bitrate * 1024) / 8) * duration;
         return '≈' + formatBytes(estimatedBytes);
