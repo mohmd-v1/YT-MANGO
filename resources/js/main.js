@@ -1461,6 +1461,7 @@ checkboxes.forEach(key => {
             settings.useCookies = el.inputs.useCookies.checked;
             toggleCookiesWarning();
             updateCommand();
+            syncSettingsUI();
             saveSettings();
         });
     }
