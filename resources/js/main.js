@@ -1763,12 +1763,14 @@ function renderNotifPanel() {
 }
 
 function addNotif(title) {
-    notifHistory.unshift({ title: title || 'Download', time: Date.now() });
+    const entry = { title: title || 'Download', time: Date.now() };
+    notifHistory.unshift(entry);
     if (notifHistory.length > 30) notifHistory = notifHistory.slice(0, 30);
     saveNotifHistory();
     notifUnread += 1;
     updateNotifBadge();
     renderNotifPanel();
+    try { if (window.__bc) window.__bc.postMessage({ type: 'notif', sender: window.__tabId, payload: entry }); } catch (e) { }
 }
 
 function clearNotifHistory() {
@@ -1843,19 +1845,7 @@ async function loadSettings() {
     }
 
     // Sync UI - Make sure cookies path is displayed
-    el.inputs.path.value = settings.downloadPath;
-    el.inputs.useCookies.checked = settings.useCookies || false;
-    el.inputs.cookiesPath.value = settings.cookiesPath || '';
-    el.inputs.embedMeta.checked = settings.embedMetadata;
-    el.inputs.embedThumb.checked = settings.embedThumbnail;
-    el.inputs.restrict.checked = settings.restrictFilenames;
-    el.inputs.noPlaylist.checked = settings.noPlaylist;
-    el.inputs.writeSubs.checked = settings.writeSubs;
-    el.inputs.ignoreErrors.checked = settings.ignoreErrors;
-    el.inputs.concurrentFragments.value = settings.concurrentFragments || 1;
-    el.inputs.quickAudioFormat.value = settings.quickAudioFormat || 'm4a';
-    el.inputs.jsRuntimeSelect.value = settings.jsRuntime || 'none';
-    el.inputs.themeSelect.value = settings.theme || 'system';
+    syncSettingsUI();
 
     // Migrate older shortcuts if any
     if (settings.shortcuts) {
@@ -1884,11 +1874,31 @@ async function loadSettings() {
     updateCommand();
 }
 
+function syncSettingsUI() {
+    if (el.inputs && el.inputs.path) el.inputs.path.value = settings.downloadPath;
+    if (el.inputs && el.inputs.useCookies) el.inputs.useCookies.checked = settings.useCookies || false;
+    if (el.inputs && el.inputs.cookiesPath) el.inputs.cookiesPath.value = settings.cookiesPath || '';
+    if (el.inputs && el.inputs.embedMeta) el.inputs.embedMeta.checked = settings.embedMetadata;
+    if (el.inputs && el.inputs.embedThumb) el.inputs.embedThumb.checked = settings.embedThumbnail;
+    if (el.inputs && el.inputs.restrict) el.inputs.restrict.checked = settings.restrictFilenames;
+    if (el.inputs && el.inputs.noPlaylist) el.inputs.noPlaylist.checked = settings.noPlaylist;
+    if (el.inputs && el.inputs.writeSubs) el.inputs.writeSubs.checked = settings.writeSubs;
+    if (el.inputs && el.inputs.ignoreErrors) el.inputs.ignoreErrors.checked = settings.ignoreErrors;
+    if (el.inputs && el.inputs.concurrentFragments) el.inputs.concurrentFragments.value = settings.concurrentFragments || 1;
+    if (el.inputs && el.inputs.quickAudioFormat) el.inputs.quickAudioFormat.value = settings.quickAudioFormat || 'm4a';
+    if (el.inputs && el.inputs.jsRuntimeSelect) el.inputs.jsRuntimeSelect.value = settings.jsRuntime || 'none';
+    if (el.inputs && el.inputs.themeSelect) el.inputs.themeSelect.value = settings.theme || 'system';
+    applyTheme(settings.theme || 'system');
+    if (el.quickAudioLabel) el.quickAudioLabel.textContent = (settings.quickAudioFormat || 'm4a').toUpperCase();
+}
+
 async function saveSettings() {
     try {
         await Neutralino.storage.setData('settings', JSON.stringify(settings));
         showStatus('Settings Saved', 'success');
         setTimeout(() => showStatus('Ready'), 2000);
+        // Broadcast to other tabs
+        try { if (window.__bc) window.__bc.postMessage({ type: 'settings', sender: window.__tabId, payload: settings }); } catch (e) { }
     } catch (err) {
         console.error("Failed to save settings:", err);
     }
@@ -3738,6 +3748,36 @@ async function downloadSubtitle(langCode, langName, btnElement, isAuto = false) 
         showStatus("Error saving subtitle", "error");
     }
 }
+
+// Cross-tab sync (settings + download history)
+window.__tabId = 'tab_' + Math.random().toString(36).slice(2);
+try {
+    window.__bc = new BroadcastChannel('yt-dlp-gui');
+    window.__bc.onmessage = (e) => {
+        const msg = e.data;
+        if (!msg || msg.sender === window.__tabId) return;
+        if (msg.type === 'settings' && msg.payload) {
+            settings = msg.payload;
+            syncSettingsUI();
+            if (settings.shortcuts) {
+                settings.shortcuts.analyze = migrateShortcut(settings.shortcuts.analyze || 'Ctrl+KeyV');
+                settings.shortcuts.quickAudio = migrateShortcut(settings.shortcuts.quickAudio || 'Alt+Digit1');
+                settings.shortcuts.playlist = migrateShortcut(settings.shortcuts.playlist || 'Alt+Digit2');
+            }
+        }
+        if (msg.type === 'notif' && msg.payload) {
+            const n = msg.payload;
+            if (!notifHistory.some(x => x.time === n.time && x.title === n.title)) {
+                notifHistory.unshift(n);
+                if (notifHistory.length > 30) notifHistory = notifHistory.slice(0, 30);
+                saveNotifHistory();
+                notifUnread += 1;
+                updateNotifBadge();
+                renderNotifPanel();
+            }
+        }
+    };
+} catch (e) { window.__bc = null; }
 
 loadSettings();
 ensureToolsInstalled();
