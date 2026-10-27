@@ -135,9 +135,6 @@ body:has(#contentArea:not(.hidden)) .main-content {
 
 .thumbnail-wrapper.no-thumb {
     width: 238px;
-    background: transparent;
-    -webkit-mask: none;
-    mask: none;
 }
 
 .thumbnail-wrapper.no-thumb .video-thumbnail {
