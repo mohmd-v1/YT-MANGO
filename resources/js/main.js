@@ -1694,6 +1694,119 @@ el.modal.open.addEventListener('click', async () => {
     }
 });
 
+// ---------- Notification history (bell) ----------
+const NOTIF_KEY = 'download-history';
+let notifHistory = [];
+let notifUnread = 0;
+
+function loadNotifHistory() {
+    try {
+        const raw = localStorage.getItem(NOTIF_KEY);
+        notifHistory = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(notifHistory)) notifHistory = [];
+    } catch (e) { notifHistory = []; }
+    notifUnread = 0;
+    updateNotifBadge();
+    renderNotifPanel();
+}
+
+function saveNotifHistory() {
+    try { localStorage.setItem(NOTIF_KEY, JSON.stringify(notifHistory.slice(0, 30))); } catch (e) { }
+}
+
+function formatNotifTime(ts) {
+    try {
+        const d = new Date(ts);
+        return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return ''; }
+}
+
+function updateNotifBadge() {
+    const badge = document.getElementById('notifBadge');
+    if (!badge) return;
+    if (notifUnread > 0) {
+        badge.textContent = notifUnread > 9 ? '9+' : String(notifUnread);
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+function renderNotifPanel() {
+    const list = document.getElementById('notifList');
+    if (!list) return;
+    if (!notifHistory.length) {
+        list.innerHTML = '<div class="notif-empty">No downloads yet.</div>';
+        return;
+    }
+    list.innerHTML = notifHistory.map((n, idx) => `
+        <div class="notif-item" data-idx="${idx}">
+            <div class="notif-item-icon">✓</div>
+            <div class="notif-item-body">
+                <div class="notif-item-title" title="${(n.title || '').replace(/"/g, '&quot;')}">${n.title || 'Download'}</div>
+                <div class="notif-item-time">${formatNotifTime(n.time)}</div>
+            </div>
+            <button class="notif-item-open" data-idx="${idx}">Open</button>
+        </div>
+    `).join('');
+    list.querySelectorAll('.notif-item-open').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const elOpen = document.getElementById('openFolderBtn');
+            if (elOpen) elOpen.click();
+        });
+    });
+}
+
+function addNotif(title) {
+    notifHistory.unshift({ title: title || 'Download', time: Date.now() });
+    if (notifHistory.length > 30) notifHistory = notifHistory.slice(0, 30);
+    saveNotifHistory();
+    notifUnread += 1;
+    updateNotifBadge();
+    renderNotifPanel();
+}
+
+function clearNotifHistory() {
+    notifHistory = [];
+    notifUnread = 0;
+    saveNotifHistory();
+    updateNotifBadge();
+    renderNotifPanel();
+}
+
+function toggleNotifPanel() {
+    const panel = document.getElementById('notifPanel');
+    if (!panel) return;
+    const willShow = panel.classList.contains('hidden');
+    if (willShow) {
+        panel.classList.remove('hidden');
+        notifUnread = 0;
+        updateNotifBadge();
+    } else {
+        panel.classList.add('hidden');
+    }
+}
+
+// Wire up bell UI
+const notifBtn = document.getElementById('notifBtn');
+if (notifBtn) {
+    notifBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleNotifPanel(); });
+}
+const notifClearBtn = document.getElementById('notifClearBtn');
+if (notifClearBtn) {
+    notifClearBtn.addEventListener('click', (e) => { e.stopPropagation(); clearNotifHistory(); });
+}
+document.addEventListener('click', (e) => {
+    const panel = document.getElementById('notifPanel');
+    const wrap = document.querySelector('.notif-wrap');
+    if (panel && wrap && !wrap.contains(e.target)) {
+        panel.classList.add('hidden');
+    }
+});
+
+loadNotifHistory();
+
 async function loadSettings() {
     try {
         const data = await Neutralino.storage.getData('settings');
@@ -3084,6 +3197,7 @@ async function startDownload() {
                             el.modal.close.classList.add('hidden');
 
                             playClickSound();
+                            addNotif((typeof currentData !== 'undefined' && currentData && currentData.title) ? currentData.title : 'Download');
                             showToast('Download complete', 'Your files are ready.', {
                                 actionLabel: 'Open Folder',
                                 onAction: () => { el.modal.open.click(); },
