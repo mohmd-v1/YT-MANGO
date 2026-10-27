@@ -1717,6 +1717,8 @@ function saveNotifHistory() {
 function escapeHtml(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+function formatNotifTime(ts) {
     try {
         const d = new Date(ts);
         return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
