@@ -1,4 +1,3 @@
-let tabCount = 0;
 let activeTabId = null;
 
 // Initialize Neutralino
@@ -11,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeBtn = document.getElementById("close-btn");
     const maximizeIcon = document.getElementById("maximize-icon");
     const newTabBtn = document.getElementById("newTabBtn");
-    const titlebarDragArea = document.getElementById("titlebar-drag-area");
 
     minimizeBtn.addEventListener("click", async () => {
         await Neutralino.window.minimize();
@@ -95,7 +93,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function createNewTab() {
-    tabCount++;
     const tabId = `tab-${Date.now()}`;
 
     // Create Tab Button

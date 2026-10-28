@@ -2,12 +2,10 @@
 // State
 let currentData = null;
 let formats = [];
-let metadata = null;
 let selectedVideoId = null;
 let selectedAudioId = null;
 let activeTab = 'combined'; // combined, mixed
 let currentDownloadProcess = null; // Track current download process
-let currentDownloadDestination = null; // Last destination file path from yt-dlp log
 let currentDownloadProcessPid = null; // Track OS PID
 let currentAnalyzeProcess = null; // Track current analyze process ID
 let currentAnalyzeProcessPid = null; // Track OS PID for analyze process
@@ -2062,7 +2060,6 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
 
         const data = JSON.parse(output.stdOut);
         currentData = data;
-        metadata = data;
         formats = data.formats || [];
 
         if (data.title && typeof updateTabTitle === 'function') {
@@ -2788,128 +2785,6 @@ function renderCompactRow(fmt, container, smartData = null) {
     };
 
     container.appendChild(row);
-}
-
-function renderSmartRow(resKey, ctypes, activeCType, variants, activeFmt, resGroup) {
-    const row = document.createElement('div');
-    row.className = 'grid-row';
-    if (activeFmt.format_id === selectedVideoId || activeFmt.format_id === selectedAudioId) {
-        row.classList.add('selected');
-    }
-
-    // Determine Res Class
-    let resClass = 'res-sd';
-    if (activeFmt.height >= 2160) resClass = 'res-4k';
-    else if (activeFmt.height >= 1440) resClass = 'res-1440';
-    else if (activeFmt.height >= 1080) resClass = 'res-1080';
-    else if (activeFmt.height >= 720) resClass = 'res-720';
-
-    const size = getFormatDisplaySize(activeFmt);
-
-    const codecHTML = ctypes.length > 1
-        ? `<select class="res-select codec-select">
-            ${ctypes.map(c => `<option value="${c}" ${c === activeCType ? 'selected' : ''}>${c.toUpperCase()}</option>`).join('')}
-           </select>`
-        : `${getCodecBadgeHTML(activeCType)}`;
-
-    const bitrateHTML = variants.length > 1
-        ? `<select class="res-select bitrate-select">
-            ${variants.map(v => `<option value="${v.format_id}" ${v.format_id === activeFmt.format_id ? 'selected' : ''}>${Math.round(v.tbr || v.vbr || 0)}k</option>`).join('')}
-           </select>`
-        : `<span>${Math.round(activeFmt.tbr || activeFmt.vbr || 0)}k</span>`;
-
-    row.innerHTML = `
-        <div class="col">${activeFmt.format_id}</div>
-        <div class="col">${activeFmt.ext}</div>
-        <div class="col"><span class="badge ${resClass}">${resKey}</span></div>
-        <div class="col">${activeFmt.fps || ''}</div>
-        <div class="col">${size}</div>
-        <div class="col">${codecHTML}</div>
-        <div class="col">${activeFmt.acodec || 'none'}</div>
-        <div class="col">${bitrateHTML}</div>
-        <div class="col" style="text-align: center;">
-            <button class="copy-link-btn" title="Copy URL">
-               <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            </button>
-        </div>
-    `;
-
-    // Row Click (Selection)
-    row.addEventListener('click', (e) => {
-        if (e.target.tagName === 'SELECT' || e.target.closest('.copy-link-btn')) return;
-        handleRowClick(activeFmt, row);
-    });
-
-    // Selectors
-    const codecSel = row.querySelector('.codec-select');
-    if (codecSel) {
-        codecSel.addEventListener('change', (e) => {
-            const newCType = e.target.value;
-            const variants = resGroup[newCType].sort((a, b) => (b.tbr || b.vbr || 0) - (a.tbr || a.vbr || 0));
-            const firstVariant = variants[0];
-
-            if (activeFmt.format_id === selectedVideoId) {
-                selectedVideoId = firstVariant.format_id;
-            }
-
-            resolutionSelections[resKey] = { cType: newCType, formatId: firstVariant.format_id };
-            renderGrid();
-            updateCommand();
-        });
-    }
-
-    const bitSel = row.querySelector('.bitrate-select');
-    if (bitSel) {
-        bitSel.addEventListener('change', (e) => {
-            const newId = e.target.value;
-
-            if (activeFmt.format_id === selectedVideoId) {
-                selectedVideoId = newId;
-            }
-
-            resolutionSelections[resKey] = { cType: activeCType, formatId: newId };
-            renderGrid();
-            updateCommand();
-        });
-    }
-
-    const copyBtn = row.querySelector('.copy-link-btn');
-    copyBtn.addEventListener('click', () => copyDirectLink(activeFmt.format_id, copyBtn));
-
-    el.gridBody.appendChild(row);
-}
-
-function renderRow(fmt) {
-    const row = document.createElement('div');
-    row.className = 'grid-row';
-    row.dataset.id = fmt.format_id;
-    if (fmt.format_id === selectedVideoId || fmt.format_id === selectedAudioId) row.classList.add('selected');
-
-    row.onclick = () => handleRowClick(fmt, row);
-
-    const size = getFormatDisplaySize(fmt);
-
-    row.innerHTML = `
-        <div class="col">${fmt.format_id}</div>
-        <div class="col">${fmt.ext}</div>
-        <div class="col"><span class="badge res-audio">Audio</span></div>
-        <div class="col">-</div>
-        <div class="col">${size}</div>
-        <div class="col">-</div>
-        <div class="col">${getCodecBadgeHTML(fmt.acodec)}</div>
-        <div class="col">${Math.round(fmt.tbr || 0)}k</div>
-        <div class="col" style="text-align: center;">
-            <button class="copy-link-btn" title="Copy URL">
-               <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            </button>
-        </div>
-    `;
-    const copyBtn = row.querySelector('.copy-link-btn');
-    copyBtn.onclick = (e) => {
-        e.stopPropagation();
-        copyDirectLink(fmt.format_id, copyBtn);
-    };
-    el.gridBody.appendChild(row);
 }
 
 function handleRowClick(fmt, rowElement) {

@@ -646,16 +646,6 @@
     background: var(--bg-hover);
 }
 
-/* Quick options bar on main page */
-.quick-options-bar {
-    display: flex;
-    gap: 16px;
-    padding: 8px 24px;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-light);
-    flex-wrap: wrap;
-}
-
 .quick-toggle {
     display: inline-flex;
     align-items: center;
