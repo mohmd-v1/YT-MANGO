@@ -1110,6 +1110,7 @@ function updatePlaylistSelectionInfo() {
 
 function renderPlaylistList() {
     const container = el.playlist.list;
+    console.log('[playlist] renderPlaylistList, container=', !!container, 'entries=', playlistData && playlistData.entries && playlistData.entries.length);
     if (!container || !playlistData) return;
     const filter = (el.playlist.searchInput && el.playlist.searchInput.value || '').toLowerCase();
     container.innerHTML = '';
@@ -1242,6 +1243,7 @@ function renderPlaylistDetail(index, data) {
 }
 
 function populatePlaylistModal(data) {
+    console.log('[playlist] populatePlaylistModal', data && data.entries && data.entries.length);
     playlistData = data;
     playlistSelection.clear();
     playlistItemFormats.clear();
@@ -2355,8 +2357,7 @@ async function smartAnalyze(forcePlaylist = false) {
         }
 
         const data = JSON.parse(output.stdOut);
-
-        // Real playlist with multiple entries → show playlist manager modal
+        console.log('[smartAnalyze] exitCode', output.exitCode, 'entries', data.entries && data.entries.length, 'type', data._type);
         if (data.entries && data.entries.length > 1) {
             currentPlaylistData = data;
             populatePlaylistModal(data);
