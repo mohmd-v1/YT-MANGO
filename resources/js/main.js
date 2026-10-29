@@ -1222,30 +1222,41 @@ function buildPlaylistItemCmd(entry, index) {
     let vPart = 'bestvideo';
     if (vq !== 'best') vPart = `bestvideo[height<=${vq}]`;
 
-    const opusIds = ['251', '250', '249'];
-    const m4aIds = ['140', '139'];
-    const isSpecificAudio = opusIds.includes(aq) || m4aIds.includes(aq);
+    // Comprehensive (no fixed IDs): select by codec + abr range.
+    // opus: 249 ~50k, 250 ~64k, 251 ~128k ; m4a: 139 ~48k, 140 ~128k
+    let audioSelector; // yt-dlp format selector for audio
+    let convertTo = null; // target container for audio-only
+    let isOpus = false;
+    switch (aq) {
+        case 'opus-best':
+            audioSelector = 'bestaudio[acodec^=opus]';
+            convertTo = 'opus'; isOpus = true; break;
+        case 'opus-med':
+            audioSelector = 'bestaudio[acodec^=opus][abr<=80]/bestaudio[acodec^=opus]';
+            convertTo = 'opus'; isOpus = true; break;
+        case 'opus-low':
+            audioSelector = 'bestaudio[acodec^=opus][abr<=55]/bestaudio[acodec^=opus]';
+            convertTo = 'opus'; isOpus = true; break;
+        case 'm4a-best':
+            audioSelector = 'bestaudio[acodec^=mp4a]';
+            convertTo = 'm4a'; break;
+        case 'm4a-low':
+            audioSelector = 'bestaudio[acodec^=mp4a][abr<=80]/bestaudio[acodec^=mp4a]';
+            convertTo = 'm4a'; break;
+        default: // auto
+            audioSelector = 'bestaudio';
+            break;
+    }
 
     let formatStr;
     let audioFlags = [];
-
     if (audioOnly) {
-        if (isSpecificAudio) {
-            formatStr = aq;
-            if (opusIds.includes(aq)) {
-                audioFlags.push('-x', '--audio-format', 'opus');
-            } else {
-                audioFlags.push('-x', '--audio-format', 'm4a');
-            }
-        } else {
-            formatStr = 'bestaudio';
+        formatStr = audioSelector;
+        if (convertTo) {
+            audioFlags.push('-x', '--audio-format', convertTo);
         }
     } else {
-        if (isSpecificAudio) {
-            formatStr = `${vPart}+${aq}/${vPart}+bestaudio/best`;
-        } else {
-            formatStr = `${vPart}+bestaudio[acodec^=opus]/${vPart}+bestaudio/best`;
-        }
+        formatStr = `${vPart}+${audioSelector}/${vPart}+bestaudio/best`;
     }
 
     let flags = [];
