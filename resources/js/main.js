@@ -151,6 +151,7 @@ const el = {
         titleEl: document.getElementById('playlistTitle'),
         videoQualitySelect: document.getElementById('playlistVideoQuality'),
         audioQualitySelect: document.getElementById('playlistAudioQuality'),
+        audioLangSelect: document.getElementById('playlistAudioLang'),
         audioOnlyCheckbox: document.getElementById('playlistAudioOnly'),
         embedMetaCheckbox: document.getElementById('playlistEmbedMeta'),
         embedThumbCheckbox: document.getElementById('playlistEmbedThumb'),
@@ -1174,6 +1175,45 @@ function populatePlaylistModal(data) {
     (data.entries || []).forEach((_, i) => playlistSelection.add(i + 1));
     renderPlaylistList();
     if (el.playlist.modal) el.playlist.modal.classList.remove('hidden');
+    fetchPlaylistLanguages(data);
+}
+
+async function fetchPlaylistLanguages(data) {
+    const sel = el.playlist.audioLangSelect;
+    if (!sel || !data || !data.entries || data.entries.length === 0) return;
+    // reset to original
+    sel.innerHTML = '<option value="auto">Lang: Original (auto)</option>';
+    const entry = data.entries[0];
+    const url = entry.url || entry.webpage_url || entry.id;
+    const jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${settings.jsRuntime}` : '';
+    const cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies \"${settings.cookiesPath}\"` : '';
+    const cmd = `yt-dlp -J --no-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} \"${url}\"`;
+    try {
+        const out = await runSpawnalyze(cmd);
+        if (out.exitCode !== 0) return;
+        const info = JSON.parse(out.stdOut);
+        const langs = new Map();
+        (info.formats || []).forEach(f => {
+            const ac = f.acodec; const vc = f.vcodec;
+            if (ac && ac !== 'none' && (vc === 'none' || !vc)) {
+                const code = f.language;
+                if (code && !langs.has(code)) {
+                    const name = f.format_note ? (f.format_note.split(',')[0].trim()) : code;
+                    langs.set(code, name);
+                }
+            }
+        });
+        // sort: original (language_preference high) first; then alphabetical
+        const sorted = [...langs.entries()].sort((a,b) => a[0].localeCompare(b[0]));
+        sorted.forEach(([code, name]) => {
+            const opt = document.createElement('option');
+            opt.value = code;
+            opt.textContent = `Lang: ${name} (${code})`;
+            sel.appendChild(opt);
+        });
+    } catch (e) {
+        // ignore; keep auto
+    }
 }
 
 if (el.playlist.selectAllBtn) {
@@ -1222,31 +1262,41 @@ function buildPlaylistItemCmd(entry, index) {
     let vPart = 'bestvideo';
     if (vq !== 'best') vPart = `bestvideo[height<=${vq}]`;
 
+    const lang = el.playlist.audioLangSelect ? el.playlist.audioLangSelect.value : 'auto';
+
     // Comprehensive (no fixed IDs): select by codec + abr range.
-    // opus: 249 ~50k, 250 ~64k, 251 ~128k ; m4a: 139 ~48k, 140 ~128k
-    let audioSelector; // yt-dlp format selector for audio
-    let convertTo = null; // target container for audio-only
+    let core; // single format filter (no fallbacks)
+    let convertTo = null;
     let isOpus = false;
     switch (aq) {
-        case 'opus-best':
-            audioSelector = 'bestaudio[acodec^=opus]';
-            convertTo = 'opus'; isOpus = true; break;
-        case 'opus-med':
-            audioSelector = 'bestaudio[acodec^=opus][abr<=80]/bestaudio[acodec^=opus]';
-            convertTo = 'opus'; isOpus = true; break;
-        case 'opus-low':
-            audioSelector = 'bestaudio[acodec^=opus][abr<=55]/bestaudio[acodec^=opus]';
-            convertTo = 'opus'; isOpus = true; break;
-        case 'm4a-best':
-            audioSelector = 'bestaudio[acodec^=mp4a]';
-            convertTo = 'm4a'; break;
-        case 'm4a-low':
-            audioSelector = 'bestaudio[acodec^=mp4a][abr<=80]/bestaudio[acodec^=mp4a]';
-            convertTo = 'm4a'; break;
-        default: // auto
-            audioSelector = 'bestaudio';
-            break;
+        case 'opus-best': core = 'bestaudio[acodec^=opus]'; convertTo = 'opus'; isOpus = true; break;
+        case 'opus-med': core = 'bestaudio[acodec^=opus][abr<=80]'; convertTo = 'opus'; isOpus = true; break;
+        case 'opus-low': core = 'bestaudio[acodec^=opus][abr<=55]'; convertTo = 'opus'; isOpus = true; break;
+        case 'm4a-best': core = 'bestaudio[acodec^=mp4a]'; convertTo = 'm4a'; break;
+        case 'm4a-low': core = 'bestaudio[acodec^=mp4a][abr<=80]'; convertTo = 'm4a'; break;
+        default: core = 'bestaudio'; break;
     }
+
+    // Build fallback chain with language preference
+    const cands = [];
+    const addLang = (expr) => (lang !== 'auto') ? `${expr}[language=${lang}]` : null;
+    if (core !== 'bestaudio') {
+        const l = addLang(core); if (l) cands.push(l);
+        cands.push(core);
+        // codec-level fallback
+        const codecPrefix = core.startsWith('bestaudio[acodec^=opus]') ? 'bestaudio[acodec^=opus]' :
+                            (core.startsWith('bestaudio[acodec^=mp4a]') ? 'bestaudio[acodec^=mp4a]' : null);
+        if (codecPrefix) {
+            const l2 = addLang(codecPrefix); if (l2) cands.push(l2);
+            cands.push(codecPrefix);
+        }
+    }
+    if (lang !== 'auto') {
+        const l3 = addLang('bestaudio'); if (l3) cands.push(l3);
+    }
+    cands.push('bestaudio');
+    const uniq = [...new Set(cands)];
+    const audioSelector = uniq.join('/');
 
     let formatStr;
     let audioFlags = [];
@@ -1256,8 +1306,7 @@ function buildPlaylistItemCmd(entry, index) {
             audioFlags.push('-x', '--audio-format', convertTo);
         }
     } else {
-        formatStr = `${vPart}+${audioSelector}/${vPart}+bestaudio/best`;
-    }
+        formatStr = `${vPart}+(${audioSelector})/${vPart}+bestaudio/best`;    }
 
     let flags = [];
     if (embedMeta) flags.push('--embed-metadata');
