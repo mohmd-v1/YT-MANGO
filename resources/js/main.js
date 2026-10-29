@@ -1265,7 +1265,7 @@ function buildPlaylistItemCmd(entry, index) {
     if (settings.restrictFilenames) flags.push('--restrict-filenames');
     flags.push('--no-playlist');
     flags.push('--continue');
-    flags.push(`-S "acodec:opus"`);
+    flags.push(`-S "lang,acodec:opus"`);
     flags.push(`-f "${formatStr}"`);
     flags = flags.concat(audioFlags);
     flags.push('-o "%(title)s.%(ext)s"');
