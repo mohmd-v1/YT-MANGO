@@ -151,6 +151,7 @@ const el = {
         titleEl: document.getElementById('playlistTitle'),
         videoQualitySelect: document.getElementById('playlistVideoQuality'),
         audioQualitySelect: document.getElementById('playlistAudioQuality'),
+        audioOnlyCheckbox: document.getElementById('playlistAudioOnly'),
         selectionInfo: document.getElementById('playlistSelectionInfo'),
         pauseAllBtn: document.getElementById('pauseAllPlaylistBtn'),
         downloadSelectedBtn: document.getElementById('downloadSelectedPlaylistBtn'),
@@ -1209,6 +1210,7 @@ function buildPlaylistItemCmd(entry, index) {
     const cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies "${settings.cookiesPath}"` : '';
     const jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${settings.jsRuntime}` : '';
 
+    const audioOnly = el.playlist.audioOnlyCheckbox ? el.playlist.audioOnlyCheckbox.checked : false;
     const vq = el.playlist.videoQualitySelect ? el.playlist.videoQualitySelect.value : 'best';
     const aq = el.playlist.audioQualitySelect ? el.playlist.audioQualitySelect.value : 'best';
 
@@ -1220,8 +1222,15 @@ function buildPlaylistItemCmd(entry, index) {
     else if (aq === 'medium') aPart = 'bestaudio[abr<=96]';
     else if (aq === 'low') aPart = 'worstaudio';
 
-    // Fallbacks: chosen combo -> video+bestaudio -> best
-    const formatStr = `${vPart}+${aPart}/${vPart}+bestaudio/best`;
+    // Prefer opus codec when available (fallback to any)
+    const aPartOpus = aPart + '[acodec^=opus]';
+
+    let formatStr;
+    if (audioOnly) {
+        formatStr = `${aPartOpus}/${aPart}`;
+    } else {
+        formatStr = `${vPart}+${aPartOpus}/${vPart}+${aPart}/${vPart}+bestaudio/best`;
+    }
 
     let flags = [];
     if (settings.embedMetadata) flags.push('--embed-metadata');
@@ -1229,8 +1238,10 @@ function buildPlaylistItemCmd(entry, index) {
     if (settings.restrictFilenames) flags.push('--restrict-filenames');
     flags.push('--no-playlist');
     flags.push('--continue');
+    flags.push(`-S "acodec:opus"`); // sort preference toward opus
     flags.push(`-f "${formatStr}"`);
     flags.push('-o "%(title)s.%(ext)s"');
+    if (!audioOnly && vq !== 'best') flags.push('--merge-output-format mp4');
 
     const parts = ['yt-dlp', flags.join(' '), jsRuntimeArg, cookiesArg, pathArg, `"${url}"`].filter(Boolean);
     return parts.join(' ').trim();
