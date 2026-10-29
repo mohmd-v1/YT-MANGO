@@ -2263,6 +2263,13 @@ async function smartAnalyze(forcePlaylist = false) {
         forcePlaylist = false;
     }
 
+    // Normal Analyze / drag-drop / Enter: never trigger playlist detection.
+    // Only explicit "Analyze as Playlist" (forcePlaylist=true) uses flat-playlist.
+    if (!forcePlaylist) {
+        await analyzeUrl();
+        return;
+    }
+
     isAnalysisCancelled = false;
     setLoading(true);
     resetSelection();
