@@ -1392,9 +1392,11 @@ async function downloadPlaylistItems(indices) {
                             showToast('Download complete', title, { duration: 5000 });
                         }, 500);
                     } else {
-                        dl.status = 'failed';
-                        pauseBtn.classList.add('hidden');
-                        resumeBtn.classList.remove('hidden');
+                        if (dl.status !== 'paused') {
+                            dl.status = 'failed';
+                            pauseBtn.classList.add('hidden');
+                            resumeBtn.classList.remove('hidden');
+                        }
                     }
                     running.delete(index);
                     renderPlaylistList();
@@ -1415,6 +1417,7 @@ async function downloadPlaylistItems(indices) {
                 resumeBtn.classList.add('hidden');
                 pauseBtn.classList.remove('hidden');
                 dl.status = 'downloading';
+                running.add(index);
                 renderPlaylistList();
                 try {
                     const newProc = await Neutralino.os.spawnProcess(cmd);
@@ -1439,9 +1442,11 @@ async function downloadPlaylistItems(indices) {
                                 closeBtn.classList.remove('hidden');
                                 setTimeout(() => { removePanel(panel); playClickSound(); addNotif(title); showToast('Download complete', title, { duration: 5000 }); }, 500);
                             } else {
-                                dl.status = 'failed';
-                                pauseBtn.classList.add('hidden');
-                                resumeBtn.classList.remove('hidden');
+                                if (dl.status !== 'paused') {
+                                    dl.status = 'failed';
+                                    pauseBtn.classList.add('hidden');
+                                    resumeBtn.classList.remove('hidden');
+                                }
                             }
                             running.delete(index);
                             renderPlaylistList();
