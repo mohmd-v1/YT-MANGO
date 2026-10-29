@@ -824,7 +824,6 @@
     border-right: 1px solid var(--border-light);
     padding: 8px;
     min-height: 0;
-    background: rgba(255, 0, 0, 0.08);
 }
 
 .playlist-detail {

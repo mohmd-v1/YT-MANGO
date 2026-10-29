@@ -901,9 +901,19 @@
             <button id="selectAllPlaylistBtn" class="secondary-btn btn-sm">Select All</button>
             <button id="deselectAllPlaylistBtn" class="secondary-btn btn-sm">Deselect All</button>
             <button id="invertPlaylistBtn" class="secondary-btn btn-sm">Invert</button>
-            <select id="playlistQualitySelect" class="playlist-quality-select">
-              <option value="best">Best Quality</option>
-              <option value="custom">Custom (selected format)</option>
+            <select id="playlistVideoQuality" class="playlist-quality-select" title="Video quality">
+              <option value="best">Video: Best</option>
+              <option value="1080">Video: 1080p</option>
+              <option value="720">Video: 720p</option>
+              <option value="480">Video: 480p</option>
+              <option value="360">Video: 360p</option>
+              <option value="240">Video: 240p</option>
+            </select>
+            <select id="playlistAudioQuality" class="playlist-quality-select" title="Audio quality">
+              <option value="best">Audio: Best</option>
+              <option value="high">Audio: High (≥128k)</option>
+              <option value="medium">Audio: Medium (≤96k)</option>
+              <option value="low">Audio: Low (worst)</option>
             </select>
           </div>
         </div>
@@ -911,14 +921,10 @@
           <div id="playlistList" class="playlist-list custom-scrollbar">
             <!-- Items injected here -->
           </div>
-          <div id="playlistDetail" class="playlist-detail custom-scrollbar">
-            <div class="playlist-detail-empty">Select a video to view available formats.</div>
-          </div>
         </div>
         <div class="modal-footer playlist-footer">
           <div class="playlist-footer-info" id="playlistSelectionInfo">0 selected</div>
           <div class="playlist-footer-actions">
-            <button id="loadPlaylistFormatsBtn" class="secondary-btn">Load Formats</button>
             <button id="pauseAllPlaylistBtn" class="secondary-btn">Pause All</button>
             <button id="downloadSelectedPlaylistBtn" class="primary-btn">Download Selected</button>
             <button id="downloadAllPlaylistBtn" class="primary-btn">Download All</button>
