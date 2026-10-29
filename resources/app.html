@@ -885,27 +885,43 @@
       </div>
     </div>
 
-    <!-- Playlist Selection Modal -->
-    <div id="playlistModal" class="modal hidden">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Select Playlist Videos</h3>
+    <!-- Playlist Selection Modal (Professional Playlist Manager) -->
+    <div id="playlistModal" class="modal hidden playlist-modal-lg">
+      <div class="modal-content playlist-modal-content">
+        <div class="modal-header playlist-modal-header">
+          <div class="playlist-header-info">
+            <h3 id="playlistTitle">Playlist</h3>
+            <span id="playlistCountLabel" class="playlist-count">0 videos</span>
+          </div>
           <button id="closePlaylistBtn" class="close-btn">×</button>
         </div>
-        <div class="modal-body">
-          <p class="modal-note">Select which videos from the playlist you want
-            to download.</p>
-          <div class="playlist-actions">
-            <button id="selectAllPlaylistBtn" class="secondary-btn btn-sm">Select
-              All</button>
-            <button id="deselectAllPlaylistBtn" class="secondary-btn btn-sm">Deselect
-              All</button>
+        <div class="playlist-toolbar">
+          <input type="text" id="playlistSearchInput" class="playlist-search" placeholder="Search videos...">
+          <div class="playlist-toolbar-actions">
+            <button id="selectAllPlaylistBtn" class="secondary-btn btn-sm">Select All</button>
+            <button id="deselectAllPlaylistBtn" class="secondary-btn btn-sm">Deselect All</button>
+            <button id="invertPlaylistBtn" class="secondary-btn btn-sm">Invert</button>
+            <select id="playlistQualitySelect" class="playlist-quality-select">
+              <option value="best">Best Quality</option>
+              <option value="custom">Custom (selected format)</option>
+            </select>
           </div>
-          <div id="playlistItems" class="playlist-items">
+        </div>
+        <div class="playlist-body">
+          <div id="playlistList" class="playlist-list custom-scrollbar">
             <!-- Items injected here -->
           </div>
-          <div class="modal-footer">
-            <button id="confirmPlaylistBtn" class="primary-btn">Confirm & Load Formats</button>
+          <div id="playlistDetail" class="playlist-detail custom-scrollbar">
+            <div class="playlist-detail-empty">Select a video to view available formats.</div>
+          </div>
+        </div>
+        <div class="modal-footer playlist-footer">
+          <div class="playlist-footer-info" id="playlistSelectionInfo">0 selected</div>
+          <div class="playlist-footer-actions">
+            <button id="loadPlaylistFormatsBtn" class="secondary-btn">Load Formats</button>
+            <button id="pauseAllPlaylistBtn" class="secondary-btn">Pause All</button>
+            <button id="downloadSelectedPlaylistBtn" class="primary-btn">Download Selected</button>
+            <button id="downloadAllPlaylistBtn" class="primary-btn">Download All</button>
           </div>
         </div>
       </div>

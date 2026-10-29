@@ -14,6 +14,14 @@ let sectionTime = ''; // Track applied sections time range
 let currentPlaylistData = null;
 let playlistItemsToDownload = []; // Array of indices (1-indexed)
 let isPlaylistMode = false;
+// New playlist manager state
+let playlistData = null;
+let playlistSelection = new Set();
+let playlistItemFormats = new Map();
+let playlistDownloads = new Map();
+let playlistChosenFormat = null;
+let playlistActiveIndex = null;
+let playlistMaxConcurrent = 3;
 let resolutionSelections = {}; // Track user selections per resolution: { '1920x1080': { cType: 'av01', formatId: '...' } }
 let selectedSubtitles = []; // Array of language codes
 let autoSubsEnabled = false;
@@ -136,11 +144,21 @@ const el = {
     },
     playlist: {
         modal: document.getElementById('playlistModal'),
-        items: document.getElementById('playlistItems'),
+        list: document.getElementById('playlistList'),
+        detail: document.getElementById('playlistDetail'),
         closeBtn: document.getElementById('closePlaylistBtn'),
         selectAllBtn: document.getElementById('selectAllPlaylistBtn'),
         deselectAllBtn: document.getElementById('deselectAllPlaylistBtn'),
-        confirmBtn: document.getElementById('confirmPlaylistBtn')
+        invertBtn: document.getElementById('invertPlaylistBtn'),
+        searchInput: document.getElementById('playlistSearchInput'),
+        countLabel: document.getElementById('playlistCountLabel'),
+        titleEl: document.getElementById('playlistTitle'),
+        qualitySelect: document.getElementById('playlistQualitySelect'),
+        selectionInfo: document.getElementById('playlistSelectionInfo'),
+        loadFormatsBtn: document.getElementById('loadPlaylistFormatsBtn'),
+        pauseAllBtn: document.getElementById('pauseAllPlaylistBtn'),
+        downloadSelectedBtn: document.getElementById('downloadSelectedPlaylistBtn'),
+        downloadAllBtn: document.getElementById('downloadAllPlaylistBtn')
     },
     install: {
         modal: document.getElementById('installModal'),
@@ -1077,51 +1095,415 @@ if (openGithubBtn) {
     });
 }
 
-// Playlist Listeners
-el.playlist.closeBtn.addEventListener('click', () => {
-    el.playlist.modal.classList.add('hidden');
-});
-
-el.playlist.selectAllBtn.addEventListener('click', () => {
-    const checks = el.playlist.items.querySelectorAll('input[type="checkbox"]');
-    checks.forEach(c => c.checked = true);
-});
-
-el.playlist.deselectAllBtn.addEventListener('click', () => {
-    const checks = el.playlist.items.querySelectorAll('input[type="checkbox"]');
-    checks.forEach(c => c.checked = false);
-});
-
-el.playlist.confirmBtn.addEventListener('click', async () => {
-    const selected = [];
-    const checks = el.playlist.items.querySelectorAll('input[type="checkbox"]');
-    checks.forEach(c => {
-        if (c.checked) selected.push(parseInt(c.dataset.index));
+// Playlist Listeners (Professional Playlist Manager)
+if (el.playlist.closeBtn) {
+    el.playlist.closeBtn.addEventListener('click', () => {
+        if (el.playlist.modal) el.playlist.modal.classList.add('hidden');
     });
+}
 
-    if (selected.length === 0) {
-        alert("Please select at least one video.");
+function updatePlaylistSelectionInfo() {
+    if (el.playlist.selectionInfo) {
+        el.playlist.selectionInfo.textContent = `${playlistSelection.size} selected`;
+    }
+}
+
+function renderPlaylistList() {
+    const container = el.playlist.list;
+    if (!container || !playlistData) return;
+    const filter = (el.playlist.searchInput && el.playlist.searchInput.value || '').toLowerCase();
+    container.innerHTML = '';
+    playlistData.entries.forEach((entry, idx) => {
+        const index = idx + 1;
+        const title = entry.title || 'Unknown Title';
+        if (filter && !title.toLowerCase().includes(filter)) return;
+        const thumb = entry.thumbnail || (entry.thumbnails && entry.thumbnails[0] && entry.thumbnails[0].url) || '';
+        const dur = getDurationSeconds(entry) ? formatDuration(getDurationSeconds(entry)) : '';
+        const isSelected = playlistSelection.has(index);
+        const dl = playlistDownloads.get(index);
+        const status = dl ? dl.status : 'idle';
+        const item = document.createElement('div');
+        item.className = 'playlist-item' + (playlistActiveIndex === index ? ' active' : '') + (isSelected ? ' selected' : '');
+        item.dataset.index = index;
+        item.innerHTML = `
+            <input type="checkbox" class="playlist-item-check" data-index="${index}" ${isSelected ? 'checked' : ''}>
+            <div class="playlist-item-thumb">
+                ${thumb ? `<img src="${thumb}" alt="" loading="lazy">` : `<div class="playlist-item-thumb-placeholder"></div>`}
+                ${dur ? `<span class="playlist-item-dur">${dur}</span>` : ''}
+            </div>
+            <div class="playlist-item-info">
+                <div class="playlist-item-title" dir="${getTextDir(title)}">${escapeHtml(title)}</div>
+                <div class="playlist-item-meta">
+                    <span class="playlist-item-status status-${status}">${statusLabel(status)}</span>
+                </div>
+            </div>
+        `;
+        const cb = item.querySelector('.playlist-item-check');
+        cb.addEventListener('change', (e) => {
+            e.stopPropagation();
+            if (cb.checked) playlistSelection.add(index); else playlistSelection.delete(index);
+            item.classList.toggle('selected', cb.checked);
+            updatePlaylistSelectionInfo();
+        });
+        item.addEventListener('click', (e) => {
+            if (e.target && e.target.classList && e.target.classList.contains('playlist-item-check')) return;
+            playlistActiveIndex = index;
+            container.querySelectorAll('.playlist-item').forEach(n => n.classList.remove('active'));
+            item.classList.add('active');
+            loadPlaylistItemFormats(index);
+        });
+        container.appendChild(item);
+    });
+    updatePlaylistSelectionInfo();
+}
+
+function statusLabel(status) {
+    switch (status) {
+        case 'queued': return 'Queued';
+        case 'downloading': return 'Downloading';
+        case 'paused': return 'Paused';
+        case 'done': return 'Done';
+        case 'failed': return 'Failed';
+        default: return 'Idle';
+    }
+}
+
+async function loadPlaylistItemFormats(index) {
+    if (!playlistData || !playlistData.entries) return;
+    const entry = playlistData.entries[index - 1];
+    if (!entry) return;
+    const detail = el.playlist.detail;
+    if (!detail) return;
+    if (playlistItemFormats.has(index)) {
+        renderPlaylistDetail(index, playlistItemFormats.get(index));
         return;
     }
+    detail.innerHTML = '<div class="playlist-detail-loading"><div class="spinner"></div><p>Loading formats...</p></div>';
+    try {
+        const url = entry.url || entry.webpage_url || entry.id;
+        const jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${settings.jsRuntime}` : '';
+        const cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies "${settings.cookiesPath}"` : '';
+        const cmd = `yt-dlp -J --no-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} "${url}"`;
+        const out = await runSpawnalyze(cmd);
+        if (out.exitCode !== 0) {
+            detail.innerHTML = `<div class="playlist-detail-error">Failed to load formats.<br><small>${escapeHtml(out.stdErr || '')}</small></div>`;
+            return;
+        }
+        const data = JSON.parse(out.stdOut);
+        playlistItemFormats.set(index, data);
+        renderPlaylistDetail(index, data);
+    } catch (e) {
+        detail.innerHTML = `<div class="playlist-detail-error">Error: ${escapeHtml(e.message || e)}</div>`;
+    }
+}
 
-    playlistItemsToDownload = selected.sort((a, b) => a - b);
-    isPlaylistMode = true;
-    el.playlist.modal.classList.add('hidden');
+function renderPlaylistDetail(index, data) {
+    const detail = el.playlist.detail;
+    if (!detail) return;
+    const formats = (data && data.formats) ? data.formats : [];
+    const title = (data && data.title) ? data.title : (playlistData.entries[index-1].title || '');
+    let html = `<div class="playlist-detail-header"><h4 dir="${getTextDir(title)}">${escapeHtml(title)}</h4></div>`;
+    html += '<div class="playlist-format-groups">';
+    const videoFormats = formats.filter(f => f.vcodec && f.vcodec !== 'none');
+    const audioFormats = formats.filter(f => (!f.vcodec || f.vcodec === 'none') && f.acodec && f.acodec !== 'none');
+    html += '<div class="playlist-format-group"><div class="playlist-format-group-title">Video</div>';
+    if (videoFormats.length === 0) html += '<div class="playlist-format-empty">No video formats</div>';
+    videoFormats.forEach(f => {
+        const label = `${f.format_id} • ${f.ext || ''} • ${f.resolution || (f.height ? f.height + 'p' : '')} • ${f.vcodec}`;
+        const size = f.filesize || f.filesize_approx;
+        const sizeStr = size ? (size / (1024*1024)).toFixed(1) + ' MB' : '';
+        html += `<button class="playlist-format-row" data-idx="${index}" data-fid="${f.format_id}" data-type="video">
+            <span class="pf-label">${escapeHtml(label)}</span>
+            <span class="pf-size">${sizeStr}</span>
+        </button>`;
+    });
+    html += '</div>';
+    html += '<div class="playlist-format-group"><div class="playlist-format-group-title">Audio</div>';
+    if (audioFormats.length === 0) html += '<div class="playlist-format-empty">No audio formats</div>';
+    audioFormats.forEach(f => {
+        const label = `${f.format_id} • ${f.ext || ''} • ${f.acodec} • ${f.abr ? f.abr + 'k' : ''}`;
+        const size = f.filesize || f.filesize_approx;
+        const sizeStr = size ? (size / (1024*1024)).toFixed(1) + ' MB' : '';
+        html += `<button class="playlist-format-row" data-idx="${index}" data-fid="${f.format_id}" data-type="audio">
+            <span class="pf-label">${escapeHtml(label)}</span>
+            <span class="pf-size">${sizeStr}</span>
+        </button>`;
+    });
+    html += '</div></div>';
+    detail.innerHTML = html;
+    detail.querySelectorAll('.playlist-format-row').forEach(btn => {
+        btn.addEventListener('click', () => {
+            detail.querySelectorAll('.playlist-format-row').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            playlistChosenFormat = btn.dataset.fid;
+            if (el.playlist.qualitySelect) el.playlist.qualitySelect.value = 'custom';
+        });
+    });
+}
 
-    // Analyze the first selected item to get formats for quality selection
-    const firstItem = currentPlaylistData.entries[playlistItemsToDownload[0] - 1];
-    const firstUrl = firstItem.url || firstItem.webpage_url || firstItem.id;
+function populatePlaylistModal(data) {
+    playlistData = data;
+    playlistSelection.clear();
+    playlistItemFormats.clear();
+    playlistDownloads.clear();
+    playlistChosenFormat = null;
+    playlistActiveIndex = null;
+    if (el.playlist.titleEl) el.playlist.titleEl.textContent = data.title || 'Playlist';
+    if (el.playlist.countLabel) el.playlist.countLabel.textContent = `${(data.entries||[]).length} videos`;
+    (data.entries || []).forEach((_, i) => playlistSelection.add(i + 1));
+    renderPlaylistList();
+    if (data.entries && data.entries.length > 0) {
+        playlistActiveIndex = 1;
+        renderPlaylistList();
+        loadPlaylistItemFormats(1);
+    }
+    if (el.playlist.modal) el.playlist.modal.classList.remove('hidden');
+}
 
-    // Temporarily set URL input to first item to analyze its formats
-    const originalUrl = el.urlInput.value;
-    el.urlInput.value = firstUrl;
+if (el.playlist.selectAllBtn) {
+    el.playlist.selectAllBtn.addEventListener('click', () => {
+        if (!playlistData) return;
+        playlistData.entries.forEach((_, i) => playlistSelection.add(i + 1));
+        renderPlaylistList();
+    });
+}
+if (el.playlist.deselectAllBtn) {
+    el.playlist.deselectAllBtn.addEventListener('click', () => {
+        playlistSelection.clear();
+        renderPlaylistList();
+    });
+}
+if (el.playlist.invertBtn) {
+    el.playlist.invertBtn.addEventListener('click', () => {
+        if (!playlistData) return;
+        const newSet = new Set();
+        playlistData.entries.forEach((_, i) => {
+            const idx = i + 1;
+            if (!playlistSelection.has(idx)) newSet.add(idx);
+        });
+        playlistSelection = newSet;
+        renderPlaylistList();
+    });
+}
+if (el.playlist.searchInput) {
+    el.playlist.searchInput.addEventListener('input', () => renderPlaylistList());
+}
 
-    // Run normal analyzeUrl but we'll need to restore the original playlist URL for command generation
-    await analyzeUrl(true); // pass true to indicate we're in playlist format mode
+function buildPlaylistItemCmd(entry, index) {
+    const url = entry.url || entry.webpage_url || entry.id;
+    const path = settings.downloadPath;
+    const pathArg = path ? `-P "${path}"` : '';
+    const cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies "${settings.cookiesPath}"` : '';
+    const jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${settings.jsRuntime}` : '';
+    let formatPart = '';
+    const qualityMode = el.playlist.qualitySelect ? el.playlist.qualitySelect.value : 'best';
+    if (qualityMode === 'custom' && playlistChosenFormat) {
+        formatPart = `-f "${playlistChosenFormat}"`;
+    } else {
+        formatPart = '-f "bestvideo+bestaudio/best"';
+    }
+    let flags = [];
+    if (settings.embedMetadata) flags.push('--embed-metadata');
+    if (settings.embedThumbnail) flags.push('--embed-thumbnail');
+    if (settings.restrictFilenames) flags.push('--restrict-filenames');
+    flags.push('--no-playlist');
+    flags.push('--continue');
+    flags.push('-o "%(title)s.%(ext)s"');
+    const parts = ['yt-dlp', formatPart, flags.join(' '), jsRuntimeArg, cookiesArg, pathArg, `"${url}"`].filter(Boolean);
+    return parts.join(' ').trim();
+}
 
-    el.urlInput.value = originalUrl;
-    updateCommand();
-});
+async function downloadPlaylistItems(indices) {
+    if (!playlistData || !indices || indices.length === 0) return;
+    const queue = [...indices];
+    const running = new Set();
+    const runOne = async (index) => {
+        const entry = playlistData.entries[index - 1];
+        if (!entry) return;
+        const title = entry.title || 'Download';
+        const cmd = buildPlaylistItemCmd(entry, index);
+        const dl = { pid: null, panel: null, status: 'queued', cmd };
+        playlistDownloads.set(index, dl);
+        renderPlaylistList();
+        while (running.size >= playlistMaxConcurrent) {
+            await new Promise(r => setTimeout(r, 300));
+        }
+        running.add(index);
+        dl.status = 'downloading';
+        renderPlaylistList();
+        const panelsContainer = document.getElementById('downloadPanels');
+        const panel = document.createElement('div');
+        panel.className = 'download-panel';
+        panel.innerHTML = `
+            <div class="dp-header">
+                <div class="dp-title">${escapeHtml(title)}</div>
+                <button class="dp-close" aria-label="Close">×</button>
+            </div>
+            <div class="dp-bar"><div class="dp-bar-fill"></div></div>
+            <div class="dp-actions">
+                <button class="dp-toggle secondary-btn">Details</button>
+                <button class="dp-pause secondary-btn">Pause</button>
+                <button class="dp-resume secondary-btn hidden">Resume</button>
+            </div>
+            <div class="dp-log"></div>
+        `;
+        if (panelsContainer) panelsContainer.appendChild(panel);
+        requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add('show')));
+        const barFill = panel.querySelector('.dp-bar-fill');
+        const logEl = panel.querySelector('.dp-log');
+        const toggleBtn = panel.querySelector('.dp-toggle');
+        const pauseBtn = panel.querySelector('.dp-pause');
+        const resumeBtn = panel.querySelector('.dp-resume');
+        const closeBtn = panel.querySelector('.dp-close');
+        toggleBtn.addEventListener('click', () => {
+            logEl.classList.toggle('expanded');
+            toggleBtn.textContent = logEl.classList.contains('expanded') ? 'Hide' : 'Details';
+        });
+        closeBtn.addEventListener('click', () => removePanel(panel));
+        dl.panel = panel;
+
+        let procPid = null;
+        try {
+            const proc = await Neutralino.os.spawnProcess(cmd);
+            dl.pid = proc.pid;
+            procPid = proc.pid;
+            Neutralino.events.on('spawnedProcess', (evt) => {
+                if (evt.detail.id != proc.id) return;
+                if (evt.detail.action === 'stdOut' || evt.detail.action === 'stdErr') {
+                    const text = evt.detail.data;
+                    logEl.textContent += text;
+                    logEl.scrollTop = logEl.scrollHeight;
+                    const match = text.match(/(\\d+(\\.\\d+)?)%/);
+                    if (match) barFill.style.width = match[1] + '%';
+                }
+                if (evt.detail.action === 'exit') {
+                    const code = evt.detail.data;
+                    logEl.textContent += `\\nProcess exited with code ${code}`;
+                    if (code === 0) {
+                        barFill.style.width = '100%';
+                        dl.status = 'done';
+                        pauseBtn.classList.add('hidden');
+                        resumeBtn.classList.add('hidden');
+                        closeBtn.classList.remove('hidden');
+                        setTimeout(() => {
+                            removePanel(panel);
+                            playClickSound();
+                            addNotif(title);
+                            showToast('Download complete', title, { duration: 5000 });
+                        }, 500);
+                    } else {
+                        dl.status = 'failed';
+                        pauseBtn.classList.add('hidden');
+                        resumeBtn.classList.remove('hidden');
+                    }
+                    running.delete(index);
+                    renderPlaylistList();
+                }
+            });
+            pauseBtn.addEventListener('click', async () => {
+                if (!procPid) return;
+                try {
+                    const killCmd = window.NL_OS === 'Windows' ? `taskkill /F /T /PID ${procPid}` : `kill -9 ${procPid}`;
+                    await Neutralino.os.execCommand(killCmd);
+                } catch (e) { console.error(e); }
+                dl.status = 'paused';
+                pauseBtn.classList.add('hidden');
+                resumeBtn.classList.remove('hidden');
+                renderPlaylistList();
+            });
+            resumeBtn.addEventListener('click', async () => {
+                resumeBtn.classList.add('hidden');
+                pauseBtn.classList.remove('hidden');
+                dl.status = 'downloading';
+                renderPlaylistList();
+                try {
+                    const newProc = await Neutralino.os.spawnProcess(cmd);
+                    dl.pid = newProc.pid;
+                    procPid = newProc.pid;
+                    Neutralino.events.on('spawnedProcess', (evt) => {
+                        if (evt.detail.id != newProc.id) return;
+                        if (evt.detail.action === 'stdOut' || evt.detail.action === 'stdErr') {
+                            const text = evt.detail.data;
+                            logEl.textContent += text;
+                            logEl.scrollTop = logEl.scrollHeight;
+                            const match = text.match(/(\\d+(\\.\\d+)?)%/);
+                            if (match) barFill.style.width = match[1] + '%';
+                        }
+                        if (evt.detail.action === 'exit') {
+                            const code = evt.detail.data;
+                            if (code === 0) {
+                                barFill.style.width = '100%';
+                                dl.status = 'done';
+                                pauseBtn.classList.add('hidden');
+                                resumeBtn.classList.add('hidden');
+                                closeBtn.classList.remove('hidden');
+                                setTimeout(() => { removePanel(panel); playClickSound(); addNotif(title); showToast('Download complete', title, { duration: 5000 }); }, 500);
+                            } else {
+                                dl.status = 'failed';
+                                pauseBtn.classList.add('hidden');
+                                resumeBtn.classList.remove('hidden');
+                            }
+                            running.delete(index);
+                            renderPlaylistList();
+                        }
+                    });
+                } catch (e) {
+                    console.error(e);
+                    dl.status = 'failed';
+                    renderPlaylistList();
+                }
+            });
+        } catch (err) {
+            console.error(err);
+            dl.status = 'failed';
+            running.delete(index);
+            renderPlaylistList();
+        }
+    };
+    const workers = [];
+    for (let i = 0; i < Math.min(playlistMaxConcurrent, queue.length); i++) {
+        workers.push((async () => {
+            while (queue.length > 0) {
+                const idx = queue.shift();
+                await runOne(idx);
+            }
+        })());
+    }
+    await Promise.all(workers);
+}
+
+if (el.playlist.downloadAllBtn) {
+    el.playlist.downloadAllBtn.addEventListener('click', () => {
+        if (!playlistData) return;
+        const indices = playlistData.entries.map((_, i) => i + 1);
+        downloadPlaylistItems(indices);
+    });
+}
+if (el.playlist.downloadSelectedBtn) {
+    el.playlist.downloadSelectedBtn.addEventListener('click', () => {
+        if (playlistSelection.size === 0) { alert('Please select at least one video.'); return; }
+        downloadPlaylistItems(Array.from(playlistSelection));
+    });
+}
+if (el.playlist.pauseAllBtn) {
+    el.playlist.pauseAllBtn.addEventListener('click', async () => {
+        for (const [idx, dl] of playlistDownloads.entries()) {
+            if (dl.status === 'downloading' && dl.pid) {
+                try {
+                    const killCmd = window.NL_OS === 'Windows' ? `taskkill /F /T /PID ${dl.pid}` : `kill -9 ${dl.pid}`;
+                    await Neutralino.os.execCommand(killCmd);
+                } catch (e) {}
+                dl.status = 'paused';
+            }
+        }
+        renderPlaylistList();
+    });
+}
+if (el.playlist.loadFormatsBtn) {
+    el.playlist.loadFormatsBtn.addEventListener('click', () => {
+        if (playlistActiveIndex) loadPlaylistItemFormats(playlistActiveIndex);
+    });
+}
 
 // Sections Listeners
 if (el.downloadSectionBtn) {
@@ -1969,11 +2351,10 @@ async function smartAnalyze(forcePlaylist = false) {
 
         const data = JSON.parse(output.stdOut);
 
-        // Real playlist with multiple entries → show playlist picker modal
+        // Real playlist with multiple entries → show playlist manager modal
         if (data.entries && data.entries.length > 1) {
             currentPlaylistData = data;
             populatePlaylistModal(data);
-            el.playlist.modal.classList.remove('hidden');
             setLoading(false);
         } else {
             // Single video (even with list= in URL) → full analysis
@@ -1990,29 +2371,6 @@ async function smartAnalyze(forcePlaylist = false) {
         showAlert(e.message, 'Analysis Exception');
         setLoading(false);
     }
-}
-
-function populatePlaylistModal(data) {
-    el.playlist.items.innerHTML = '';
-    data.entries.forEach((entry, idx) => {
-        const item = document.createElement('div');
-        item.style.display = 'flex';
-        item.style.alignItems = 'center';
-        item.style.gap = '10px';
-        item.style.padding = '8px';
-        item.style.borderBottom = '1px solid var(--border-light)';
-
-        const index = idx + 1;
-        item.innerHTML = `
-            <input type="checkbox" id="pl-item-${index}" data-index="${index}" checked style="width: 18px; height: 18px; cursor: pointer;">
-            <label for="pl-item-${index}" style="flex: 1; cursor: pointer; font-size: 13px;">
-                <span style="color: var(--accent-light); font-weight: bold; margin-right: 5px;">${index}.</span>
-                ${entry.title || 'Unknown Title'}
-                ${getDurationSeconds(entry) ? `<span style="color: var(--text-muted); font-size: 11px; margin-left: 10px;">(${formatDuration(getDurationSeconds(entry))})</span>` : ''}
-            </label>
-        `;
-        el.playlist.items.appendChild(item);
-    });
 }
 
 let currentBgThumbnailUrl = null;
