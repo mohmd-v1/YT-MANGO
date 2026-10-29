@@ -909,15 +909,25 @@
               <option value="360">Video: 360p</option>
               <option value="240">Video: 240p</option>
             </select>
-            <select id="playlistAudioQuality" class="playlist-quality-select" title="Audio quality">
-              <option value="best">Audio: Best</option>
-              <option value="high">Audio: High (≥128k)</option>
-              <option value="medium">Audio: Medium (≤96k)</option>
-              <option value="low">Audio: Low (worst)</option>
+            <select id="playlistAudioQuality" class="playlist-quality-select" title="Audio format">
+              <option value="auto">Audio: Auto (best, opus pref)</option>
+              <option value="251">Audio: Opus 251 (medium)</option>
+              <option value="250">Audio: Opus 250 (low)</option>
+              <option value="249">Audio: Opus 249 (very low)</option>
+              <option value="140">Audio: M4A 140 (medium)</option>
+              <option value="139">Audio: M4A 139 (low)</option>
             </select>
             <label class="quick-toggle playlist-audio-only">
               <input type="checkbox" id="playlistAudioOnly">
               <span>Audio only</span>
+            </label>
+            <label class="quick-toggle">
+              <input type="checkbox" id="playlistEmbedMeta" checked>
+              <span>Meta</span>
+            </label>
+            <label class="quick-toggle">
+              <input type="checkbox" id="playlistEmbedThumb" checked>
+              <span>Thumb</span>
             </label>
           </div>
         </div>

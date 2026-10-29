@@ -152,6 +152,8 @@ const el = {
         videoQualitySelect: document.getElementById('playlistVideoQuality'),
         audioQualitySelect: document.getElementById('playlistAudioQuality'),
         audioOnlyCheckbox: document.getElementById('playlistAudioOnly'),
+        embedMetaCheckbox: document.getElementById('playlistEmbedMeta'),
+        embedThumbCheckbox: document.getElementById('playlistEmbedThumb'),
         selectionInfo: document.getElementById('playlistSelectionInfo'),
         pauseAllBtn: document.getElementById('pauseAllPlaylistBtn'),
         downloadSelectedBtn: document.getElementById('downloadSelectedPlaylistBtn'),
@@ -1212,34 +1214,49 @@ function buildPlaylistItemCmd(entry, index) {
 
     const audioOnly = el.playlist.audioOnlyCheckbox ? el.playlist.audioOnlyCheckbox.checked : false;
     const vq = el.playlist.videoQualitySelect ? el.playlist.videoQualitySelect.value : 'best';
-    const aq = el.playlist.audioQualitySelect ? el.playlist.audioQualitySelect.value : 'best';
+    const aq = el.playlist.audioQualitySelect ? el.playlist.audioQualitySelect.value : 'auto';
+
+    const embedMeta = el.playlist.embedMetaCheckbox ? el.playlist.embedMetaCheckbox.checked : true;
+    const embedThumb = el.playlist.embedThumbCheckbox ? el.playlist.embedThumbCheckbox.checked : true;
 
     let vPart = 'bestvideo';
     if (vq !== 'best') vPart = `bestvideo[height<=${vq}]`;
 
-    let aPart = 'bestaudio';
-    if (aq === 'high') aPart = 'bestaudio[abr>=128]';
-    else if (aq === 'medium') aPart = 'bestaudio[abr<=96]';
-    else if (aq === 'low') aPart = 'worstaudio';
-
-    // Prefer opus codec when available (fallback to any)
-    const aPartOpus = aPart + '[acodec^=opus]';
+    const opusIds = ['251', '250', '249'];
+    const m4aIds = ['140', '139'];
+    const isSpecificAudio = opusIds.includes(aq) || m4aIds.includes(aq);
 
     let formatStr;
+    let audioFlags = [];
+
     if (audioOnly) {
-        formatStr = `${aPartOpus}/${aPart}`;
+        if (isSpecificAudio) {
+            formatStr = aq;
+            if (opusIds.includes(aq)) {
+                audioFlags.push('-x', '--audio-format', 'opus');
+            } else {
+                audioFlags.push('-x', '--audio-format', 'm4a');
+            }
+        } else {
+            formatStr = 'bestaudio';
+        }
     } else {
-        formatStr = `${vPart}+${aPartOpus}/${vPart}+${aPart}/${vPart}+bestaudio/best`;
+        if (isSpecificAudio) {
+            formatStr = `${vPart}+${aq}/${vPart}+bestaudio/best`;
+        } else {
+            formatStr = `${vPart}+bestaudio[acodec^=opus]/${vPart}+bestaudio/best`;
+        }
     }
 
     let flags = [];
-    if (settings.embedMetadata) flags.push('--embed-metadata');
-    if (settings.embedThumbnail) flags.push('--embed-thumbnail');
+    if (embedMeta) flags.push('--embed-metadata');
+    if (embedThumb) flags.push('--embed-thumbnail');
     if (settings.restrictFilenames) flags.push('--restrict-filenames');
     flags.push('--no-playlist');
     flags.push('--continue');
-    flags.push(`-S "acodec:opus"`); // sort preference toward opus
+    flags.push(`-S "acodec:opus"`);
     flags.push(`-f "${formatStr}"`);
+    flags = flags.concat(audioFlags);
     flags.push('-o "%(title)s.%(ext)s"');
     if (!audioOnly && vq !== 'best') flags.push('--merge-output-format mp4');
 
