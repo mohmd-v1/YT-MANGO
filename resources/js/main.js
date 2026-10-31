@@ -2899,13 +2899,13 @@ function createCustomSelect(options, selectedValue, onChange, placeholder = 'Sel
     const selectedOption = options.find(o => o.value === selectedValue) || options[0];
 
     container.innerHTML = `
-        <div class="custom-select-trigger" title="${selectedOption ? selectedOption.label : placeholder}">
+        <div class="custom-select-trigger">
             <span>${selectedOption ? selectedOption.label : placeholder}</span>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px; opacity: 0.6; flex-shrink: 0;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
         <div class="custom-options custom-scrollbar">
             ${options.map(o => `
-                <div class="custom-option ${o.value === selectedValue ? 'selected' : ''}" data-value="${o.value}" title="${o.label}">
+                <div class="custom-option ${o.value === selectedValue ? 'selected' : ''}" data-value="${o.value}">
                     ${o.label}
                 </div>
             `).join('')}
