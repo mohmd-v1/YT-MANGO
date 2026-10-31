@@ -2906,7 +2906,7 @@ function createCustomSelect(options, selectedValue, onChange, placeholder = 'Sel
         <div class="custom-options custom-scrollbar">
             ${options.map(o => `
                 <div class="custom-option ${o.value === selectedValue ? 'selected' : ''}" data-value="${o.value}">
-                    ${o.label}
+                    ${o.full !== undefined ? o.full : o.label}
                 </div>
             `).join('')}
         </div>
@@ -3008,7 +3008,8 @@ function renderCompactRow(fmt, container, smartData = null) {
 
         const langOptions = Array.from(langMap).map(([code, name]) => ({
             value: code,
-            label: `[${code.toUpperCase()}]${name ? ' ' + name : ''}`
+            label: `[${code.toUpperCase()}]`,          // compact trigger label
+            full: `[${code.toUpperCase()}]${name ? ' ' + name : ''}` // long label for the dropdown list
         }));
 
         const currentLang = getLangInfo(fmt).code;
@@ -3030,6 +3031,7 @@ function renderCompactRow(fmt, container, smartData = null) {
                 renderGrid();
                 updateCommand();
             });
+            langSelectContainer.classList.add('lang-select-container');
             langSelectContainer.style.marginRight = '5px';
         } else if (isMixed && langOptions.length === 1) {
             const info = getLangInfo(fmt);

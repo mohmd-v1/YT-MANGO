@@ -83,6 +83,7 @@
 }
 
 .col {
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -239,6 +240,7 @@
 }
 
 .compact-row .info-group {
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 6px;

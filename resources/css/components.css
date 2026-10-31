@@ -167,6 +167,12 @@
     font-size: 10px;
 }
 
+/* Language selects carry long names in their option rows:
+   give the open list extra room so names wrap nicely. */
+.lang-select-container .custom-options {
+    min-width: 190px;
+}
+
 /* Toggle Switch */
 .toggle-switch {
     position: relative;
