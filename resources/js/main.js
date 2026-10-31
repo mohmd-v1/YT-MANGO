@@ -3088,9 +3088,12 @@ function renderCompactRow(fmt, container, smartData = null) {
     if (smartData && filteredVars.length > 1) {
         const bitOptions = filteredVars.map(v => {
             const vTbr = Math.round(v.tbr || v.vbr || 0);
+            const shortLabel = vTbr > 0 ? vTbr + 'k'
+                : (typeof v.abr === 'number' ? Math.round(v.abr) + 'k' : 'AUTO');
             return {
                 value: v.format_id,
-                label: vTbr > 0 ? vTbr + 'k' : (v.format_note || v.format || 'Unknown')
+                label: shortLabel, // compact trigger label
+                full: vTbr > 0 ? shortLabel : (v.format_note || v.format || 'Unknown') // long label in dropdown
             };
         });
 
