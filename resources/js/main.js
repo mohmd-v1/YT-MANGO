@@ -595,9 +595,9 @@ window.addEventListener('drop', (e) => {
             if (e.target.closest('#quickM4aBtn')) {
                 quickM4a();
             } else if (e.target.closest('#analyzePlaylistBtn')) {
-                smartAnalyze(true);
+                analyzePlaylist();
             } else {
-                smartAnalyze(false);
+                analyzeUrl();
             }
         }
     }
@@ -755,16 +755,16 @@ window.addEventListener('keydown', async (e) => {
         e.preventDefault();
         try {
             const data = await Neutralino.clipboard.readText();
-            if (data) { el.urlInput.value = data.trim(); smartAnalyze(true); }
-            else if (el.urlInput.value.trim()) smartAnalyze(true);
-        } catch (err) { if (el.urlInput.value.trim()) smartAnalyze(true); }
+            if (data) { el.urlInput.value = data.trim(); analyzePlaylist(); }
+            else if (el.urlInput.value.trim()) analyzePlaylist();
+        } catch (err) { if (el.urlInput.value.trim()) analyzePlaylist(); }
     } else if (matchShortcut(e, settings.shortcuts?.analyze)) {
         e.preventDefault();
         try {
             const data = await Neutralino.clipboard.readText();
-            if (data) { el.urlInput.value = data.trim(); smartAnalyze(false); }
-            else if (el.urlInput.value.trim()) smartAnalyze(false);
-        } catch (err) { if (el.urlInput.value.trim()) smartAnalyze(false); }
+            if (data) { el.urlInput.value = data.trim(); analyzeUrl(); }
+            else if (el.urlInput.value.trim()) analyzeUrl();
+        } catch (err) { if (el.urlInput.value.trim()) analyzeUrl(); }
     }
 });
 
@@ -1046,11 +1046,11 @@ el.updateYtdlpBtn.addEventListener('click', async () => {
 Neutralino.init();
 
 // Event Listeners
-el.analyzeBtn.addEventListener('click', () => smartAnalyze(false));
-el.analyzePlaylistBtn.addEventListener('click', () => smartAnalyze(true));
+el.analyzeBtn.addEventListener('click', () => analyzeUrl());
+el.analyzePlaylistBtn.addEventListener('click', () => analyzePlaylist());
 el.quickM4aBtn.addEventListener('click', quickM4a);
 el.urlInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') smartAnalyze();
+    if (e.key === 'Enter') analyzeUrl();
 });
 
 el.tabs.forEach(btn => {
@@ -2316,19 +2316,19 @@ async function saveSettings() {
 
 // Logic
 async function smartAnalyze(forcePlaylist = false) {
-    const url = el.urlInput.value.trim();
-    if (!url) return;
-
     if (forcePlaylist instanceof Event) {
         forcePlaylist = false;
     }
-
-    // Normal Analyze / drag-drop / Enter: never trigger playlist detection.
-    // Only explicit "Analyze as Playlist" (forcePlaylist=true) uses flat-playlist.
-    if (!forcePlaylist) {
+    if (forcePlaylist) {
+        await analyzePlaylist();
+    } else {
         await analyzeUrl();
-        return;
     }
+}
+
+async function analyzePlaylist() {
+    const url = el.urlInput.value.trim();
+    if (!url) return;
 
     isAnalysisCancelled = false;
     setLoading(true);
@@ -2338,46 +2338,30 @@ async function smartAnalyze(forcePlaylist = false) {
 
     try {
         let cookiesArg = settings.cookiesPath ? `--cookies "${settings.cookiesPath}"` : '';
-
-        // Optimization: If URL doesn't look like a playlist, skip the flat-playlist check entirely
-        const looksLikePlaylist = url.includes('list=') || url.includes('/playlist?') || forcePlaylist;
-
-        if (!looksLikePlaylist) {
-            // Single video: go directly to full analysis (1 yt-dlp call only)
-            await analyzeUrl();
-            return;
-        }
-
-        // URL might be a playlist: use --flat-playlist first (fast, no format data)
         let jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${settings.jsRuntime}` : '';
         let command = `yt-dlp -J --flat-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} "${url}"`;
-        console.log("Smart Analysis (Playlist Check):", command);
+        console.log("Playlist Analysis:", command);
 
         let output = await runSpawnalyze(command);
 
         if (output.exitCode !== 0) {
             if (isAnalysisCancelled) {
-                console.log("Smart Analysis cancelled by user.");
+                console.log("Analysis cancelled by user.");
                 setLoading(false);
                 return;
             }
-            // Flat-playlist failed → fall back to direct analysis
             await analyzeUrl();
             return;
         }
 
         const data = JSON.parse(output.stdOut);
-        if (data.entries && data.entries.length > 1) {
+        if (data.entries && data.entries.length > 0) {
             currentPlaylistData = data;
             populatePlaylistModal(data);
             setLoading(false);
         } else {
-            // Single video (even with list= in URL) → full analysis
-            // Note: --flat-playlist doesn't include formats, so we need a second call here.
-            // This is unavoidable for list= URLs until we know it's a single video.
             await analyzeUrl();
         }
-
     } catch (e) {
         if (isAnalysisCancelled) {
             setLoading(false);
@@ -2406,6 +2390,11 @@ function updateDynamicBackground(url) {
 async function analyzeUrl(isPlaylistFormatMode = false) {
     const url = el.urlInput.value.trim();
     if (!url) return;
+
+    // If the URL contains 'playlist', automatically redirect to playlist analysis
+    if (!isPlaylistFormatMode && url.toLowerCase().includes('playlist')) {
+        return analyzePlaylist();
+    }
 
     isAnalysisCancelled = false;
     setLoading(true);
@@ -2910,13 +2899,13 @@ function createCustomSelect(options, selectedValue, onChange, placeholder = 'Sel
     const selectedOption = options.find(o => o.value === selectedValue) || options[0];
 
     container.innerHTML = `
-        <div class="custom-select-trigger">
+        <div class="custom-select-trigger" title="${selectedOption ? selectedOption.label : placeholder}">
             <span>${selectedOption ? selectedOption.label : placeholder}</span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px; opacity: 0.6;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px; opacity: 0.6; flex-shrink: 0;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
         <div class="custom-options custom-scrollbar">
             ${options.map(o => `
-                <div class="custom-option ${o.value === selectedValue ? 'selected' : ''}" data-value="${o.value}">
+                <div class="custom-option ${o.value === selectedValue ? 'selected' : ''}" data-value="${o.value}" title="${o.label}">
                     ${o.label}
                 </div>
             `).join('')}

@@ -70,6 +70,7 @@
     position: relative;
     display: inline-block;
     min-width: 80px;
+    max-width: 100%;
 }
 
 .custom-select-trigger {
@@ -85,6 +86,17 @@
     cursor: pointer;
     transition: background-color 0.2s ease, border-color 0.2s ease;
     user-select: none;
+    max-width: 100%;
+    overflow: hidden;
+    gap: 6px;
+}
+
+.custom-select-trigger span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 .custom-select-trigger:hover {
@@ -132,6 +144,9 @@
     color: var(--text-secondary);
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .custom-option:hover {
