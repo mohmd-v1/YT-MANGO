@@ -7,7 +7,7 @@
   <title>YT-DLP GUI</title>
   <script>
   /* Anti-flash (FOUC) bootstrap: apply the last used theme before first paint.
-     applyTheme() in main.js is untouched — this only mirrors its output:
+     applyTheme() in js/app/state.js is untouched — this only mirrors its output:
      caches every data-theme change it makes and restores it on next launch. */
   (function () {
     try {
@@ -1023,7 +1023,19 @@
   <div id="downloadPanels" class="download-panels"></div>
 
   <script src="js/neutralino.js"></script>
-  <script src="js/main.js"></script>
+  <!-- Feature modules — load order matters (shared global scope) -->
+  <script src="js/app/state.js?v=20261106"></script>
+  <script src="js/app/utils.js?v=20261106"></script>
+  <script src="js/app/tools.js?v=20261106"></script>
+  <script src="js/app/settings.js?v=20261106"></script>
+  <script src="js/app/sections.js?v=20261106"></script>
+  <script src="js/app/notifs.js?v=20261106"></script>
+  <script src="js/app/analyze.js?v=20261106"></script>
+  <script src="js/app/grid.js?v=20261106"></script>
+  <script src="js/app/command.js?v=20261106"></script>
+  <script src="js/app/download.js?v=20261106"></script>
+  <script src="js/app/playlist.js?v=20261106"></script>
+  <script src="js/app/init.js?v=20261106"></script>
 </body>
 
 </html>
