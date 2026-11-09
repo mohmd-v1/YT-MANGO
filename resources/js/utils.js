@@ -389,8 +389,8 @@ function showToast(title, message, opts) {
     toast.innerHTML =
         '<div class="toast-icon">✓</div>' +
         '<div class="toast-body">' +
-            '<div class="toast-title"></div>' +
-            (message ? '<div class="toast-msg"></div>' : '') +
+        '<div class="toast-title"></div>' +
+        (message ? '<div class="toast-msg"></div>' : '') +
         '</div>' +
         (opts.actionLabel ? '<button class="toast-action"></button>' : '') +
         '<button class="toast-close" aria-label="Close">×</button>';

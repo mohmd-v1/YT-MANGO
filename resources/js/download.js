@@ -185,7 +185,7 @@ async function startDownload() {
                                 if (window.NL_OS === 'Windows') openCmd = `explorer "${String(p).replace(/\//g, '\\')}"`;
                                 else if (window.NL_OS === 'Darwin') openCmd = `open "${p}"`;
                                 else openCmd = `xdg-open "${p}"`;
-                                Neutralino.os.execCommand(openCmd).catch(() => {});
+                                Neutralino.os.execCommand(openCmd).catch(() => { });
                             },
                             duration: 6000
                         });

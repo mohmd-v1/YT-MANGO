@@ -57,7 +57,7 @@ Neutralino.events.on("ready", async () => {
                 // Decode URL
                 try {
                     url = decodeURIComponent(url);
-                } catch (e) {}
+                } catch (e) { }
 
                 if (url) {
                     el.urlInput.value = url;

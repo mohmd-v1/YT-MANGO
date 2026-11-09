@@ -77,7 +77,7 @@ function populatePlaylistModal(data) {
     playlistSelection.clear();
     playlistDownloads.clear();
     if (el.playlist.titleEl) el.playlist.titleEl.textContent = data.title || 'Playlist';
-    if (el.playlist.countLabel) el.playlist.countLabel.textContent = `${(data.entries||[]).length} videos`;
+    if (el.playlist.countLabel) el.playlist.countLabel.textContent = `${(data.entries || []).length} videos`;
     (data.entries || []).forEach((_, i) => playlistSelection.add(i + 1));
     renderPlaylistList();
     if (el.playlist.modal) el.playlist.modal.classList.remove('hidden');
@@ -110,7 +110,7 @@ async function fetchPlaylistLanguages(data) {
             }
         });
         // sort: original (language_preference high) first; then alphabetical
-        const sorted = [...langs.entries()].sort((a,b) => a[0].localeCompare(b[0]));
+        const sorted = [...langs.entries()].sort((a, b) => a[0].localeCompare(b[0]));
         sorted.forEach(([code, name]) => {
             const opt = document.createElement('option');
             opt.value = code;
@@ -191,7 +191,7 @@ function buildPlaylistItemCmd(entry, index) {
         cands.push(core);
         // codec-level fallback
         const codecPrefix = core.startsWith('bestaudio[acodec^=opus]') ? 'bestaudio[acodec^=opus]' :
-                            (core.startsWith('bestaudio[acodec^=mp4a]') ? 'bestaudio[acodec^=mp4a]' : null);
+            (core.startsWith('bestaudio[acodec^=mp4a]') ? 'bestaudio[acodec^=mp4a]' : null);
         if (codecPrefix) {
             const l2 = addLang(codecPrefix); if (l2) cands.push(l2);
             cands.push(codecPrefix);
@@ -212,7 +212,8 @@ function buildPlaylistItemCmd(entry, index) {
             audioFlags.push('-x', '--audio-format', convertTo);
         }
     } else {
-        formatStr = `${vPart}+(${audioSelector})/${vPart}+bestaudio/best`;    }
+        formatStr = `${vPart}+(${audioSelector})/${vPart}+bestaudio/best`;
+    }
 
     let flags = [];
     if (embedMeta) flags.push('--embed-metadata');
@@ -414,7 +415,7 @@ if (el.playlist.pauseAllBtn) {
                 try {
                     const killCmd = window.NL_OS === 'Windows' ? `taskkill /F /T /PID ${dl.pid}` : `kill -9 ${dl.pid}`;
                     await Neutralino.os.execCommand(killCmd);
-                } catch (e) {}
+                } catch (e) { }
                 dl.status = 'paused';
             }
         }

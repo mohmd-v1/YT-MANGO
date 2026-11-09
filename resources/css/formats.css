@@ -163,6 +163,7 @@
     letter-spacing: 0.5px;
     position: relative;
     z-index: 10;
+    gap: 13px;
 }
 
 .split-header.audio-header {

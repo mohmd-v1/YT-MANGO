@@ -210,7 +210,6 @@ body:has(#contentArea:not(.hidden)) .main-content {
 
 [data-theme="light"] .video-info-title {
     color: #ffffff;
-    -webkit-text-stroke: 0.3px #3b3b3b;
 }
 
 .video-info-meta {
@@ -241,7 +240,6 @@ body:has(#contentArea:not(.hidden)) .main-content {
 [data-theme="light"] .meta-item {
     background: rgba(0, 0, 0, 0.05);
     border: 1px solid rgba(0, 0, 0, 0.05);
-    color: #475569;
 }
 
 .meta-item svg {

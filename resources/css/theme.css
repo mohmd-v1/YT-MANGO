@@ -4,7 +4,7 @@
    ========================================================= */
 
 /* استيراد الخطوط */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 * {
     margin: 0;
@@ -21,7 +21,7 @@
 
     --accent: #ee3700;
     --accent-hover: #ffac00;
-    --accent-light: #ff6b6b;
+    --accent-light: #ff4000;
 
     --success: #22c55e;
     --danger: #ef4444;
@@ -43,24 +43,39 @@
     --radius-sm: 8px;
 
     --bg-gradient: linear-gradient(135deg, #000000 0%, #000000 100%);
+
+
+    
 }
 
 [data-theme="light"] {
-    --bg-primary: #e2e8f0;
-    --bg-secondary: #f1f5f9;
-    --bg-card: #f8fafc;
-    --bg-hover: #cbd5e1;
+    --bg-primary: #faf7f2;
+    --bg-secondary: #f3efe8;
+    --bg-card: #fffdf9;
+    --bg-hover: #f1ebe1;
 
-    --text-primary: #3d3d3d;
-    --text-secondary: #334155;
-    --text-muted: #475569;
+    --accent: #ea580c;
+    --accent-hover: #f97316;
+    --accent-light: #fdba74;
 
-    --border: #94a3b8;
-    --border-light: #cbd5e1;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #ca8a04;
 
-    --shadow: rgba(15, 23, 42, 0.12);
+    --text-primary: #1f1a17;
+    --text-secondary: #57504a;
+    --text-muted: #7a716a;
 
-    --bg-gradient: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
+    --border: #e6ddd1;
+    --border-light: #efe8dc;
+
+    --shadow: rgba(77, 52, 25, 0.08);
+
+    --bg-gradient: linear-gradient(135deg, #faf7f2 0%, #f3efe8 100%);
+
+
+
+    
 }
 
 body {
@@ -139,4 +154,22 @@ body::-webkit-scrollbar-thumb {
 /* ---- Header / URL bar area ---- */
 body {
     padding-top: 0;
+}
+
+/* تنسيق الملء التلقائي للوضع المظلم */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+input:autofill,
+input:autofill:hover,
+input:autofill:focus {
+    /* 1. تغيير لون الخلفية للون داكن باستخدام الظل الداخلي */
+    -webkit-box-shadow: 0 0 0px 1000px #4c4c4c inset !important;
+    
+    /* 2. تغيير لون النص إلى الأبيض أو لون فاتح */
+    -webkit-text-fill-color: #ffffff !important;
+    
+    /* 3. للمتصفحات الحديثة التي تدعم الخاصية مباشرة */
+    color: #ffffff !important;
+    caret-color: #ffffff !important; /* لون مؤشر الكتابة */
 }
