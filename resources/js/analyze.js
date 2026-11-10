@@ -1,65 +1,90 @@
 // URL analysis pipeline (smartAnalyze, analyzeUrl, analyzePlaylist, quickM4a).
 // (extracted from resources/js/main.js — keep in sync with load order in app.html)
 
+// Helper to escape shell arguments safely for Neutralino os.spawnProcess
+function escapeCmdArg(arg) {
+    if (!arg) return '""';
+    // Escape backslashes and double quotes
+    return `"${String(arg).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+// Internal helper to kill any running analysis process safely before starting a new one
+async function cancelPreviousAnalysisProcess() {
+    if (currentAnalyzeProcessPid) {
+        try {
+            let killCmd = window.NL_OS === 'Windows'
+                ? `taskkill /F /T /PID ${currentAnalyzeProcessPid}`
+                : `kill -9 ${currentAnalyzeProcessPid}`;
+            await Neutralino.os.execCommand(killCmd);
+            console.log("Previous analysis process killed.");
+        } catch (err) {
+            console.warn("Failed to kill previous analysis process (may have already exited):", err);
+        } finally {
+            currentAnalyzeProcess = null;
+            currentAnalyzeProcessPid = null;
+        }
+    }
+}
+
 if (el.cancelAnalyzeBtn) {
     el.cancelAnalyzeBtn.addEventListener('click', async () => {
         isAnalysisCancelled = true;
-        if (currentAnalyzeProcessPid) {
-            try {
-                // Kill yt-dlp analysis process tree
-                let killCmd = window.NL_OS === 'Windows'
-                    ? `taskkill /F /T /PID ${currentAnalyzeProcessPid}`
-                    : `kill -9 ${currentAnalyzeProcessPid}`;
-                await Neutralino.os.execCommand(killCmd);
-                console.log("Analysis cancelled by user.");
-            } catch (err) {
-                console.error("Failed to kill analysis process:", err);
-            }
-        }
+        await cancelPreviousAnalysisProcess();
         setLoading(false);
     });
 }
 
-
-// Reusable process runner for analysis with support for cancellation
+// Reusable process runner for analysis with robust listener cleanup & cancellation support
 function runSpawnalyze(cmd) {
     return new Promise(async (resolve, reject) => {
+        let proc = null;
+        let stdOutData = '';
+        let stdErrData = '';
+
+        const onSpawned = (evt) => {
+            if (proc && evt.detail.id === proc.id) {
+                if (evt.detail.action === 'stdOut') {
+                    stdOutData += evt.detail.data;
+                }
+                if (evt.detail.action === 'stdErr') {
+                    stdErrData += evt.detail.data;
+                }
+                if (evt.detail.action === 'exit') {
+                    const code = evt.detail.data;
+                    cleanup();
+                    resolve({ exitCode: code, stdOut: stdOutData, stdErr: stdErrData });
+                }
+            }
+        };
+
+        const cleanup = () => {
+            try {
+                Neutralino.events.off('spawnedProcess', onSpawned);
+            } catch (e) {
+                // Ignore if listener wasn't registered
+            }
+            if (proc && currentAnalyzeProcess === proc.id) {
+                currentAnalyzeProcess = null;
+                currentAnalyzeProcessPid = null;
+            }
+        };
+
         try {
-            let proc = await Neutralino.os.spawnProcess(cmd);
+            // Kill previous process if it's still running
+            await cancelPreviousAnalysisProcess();
+
+            proc = await Neutralino.os.spawnProcess(cmd);
             currentAnalyzeProcess = proc.id;
             currentAnalyzeProcessPid = proc.pid;
-
-            let stdOutData = '';
-            let stdErrData = '';
-
-            const onSpawned = (evt) => {
-                if (evt.detail.id == proc.id) {
-                    if (evt.detail.action == 'stdOut') {
-                        stdOutData += evt.detail.data;
-                    }
-                    if (evt.detail.action == 'stdErr') {
-                        stdErrData += evt.detail.data;
-                    }
-                    if (evt.detail.action == 'exit') {
-                        const code = evt.detail.data;
-                        Neutralino.events.off('spawnedProcess', onSpawned);
-                        currentAnalyzeProcess = null;
-                        currentAnalyzeProcessPid = null;
-                        resolve({ exitCode: code, stdOut: stdOutData, stdErr: stdErrData });
-                    }
-                }
-            };
 
             Neutralino.events.on('spawnedProcess', onSpawned);
 
         } catch (err) {
-            currentAnalyzeProcess = null;
-            currentAnalyzeProcessPid = null;
+            cleanup();
             reject(err);
         }
     });
 }
-
 
 // Logic
 async function smartAnalyze(forcePlaylist = false) {
@@ -74,7 +99,7 @@ async function smartAnalyze(forcePlaylist = false) {
 }
 
 async function analyzePlaylist() {
-    const url = el.urlInput.value.trim();
+    const url = el.urlInput ? el.urlInput.value.trim() : '';
     if (!url) return;
 
     isAnalysisCancelled = false;
@@ -84,9 +109,9 @@ async function analyzePlaylist() {
     playlistItemsToDownload = [];
 
     try {
-        let cookiesArg = settings.cookiesPath ? `--cookies "${settings.cookiesPath}"` : '';
-        let jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${settings.jsRuntime}` : '';
-        let command = `yt-dlp -J --flat-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} "${url}"`;
+        let cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies ${escapeCmdArg(settings.cookiesPath)}` : '';
+        let jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${escapeCmdArg(settings.jsRuntime)}` : '';
+        let command = `yt-dlp -J --flat-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} ${escapeCmdArg(url)}`;
         console.log("Playlist Analysis:", command);
 
         let output = await runSpawnalyze(command);
@@ -101,8 +126,16 @@ async function analyzePlaylist() {
             return;
         }
 
-        const data = JSON.parse(output.stdOut);
-        if (data.entries && data.entries.length > 0) {
+        let data;
+        try {
+            data = JSON.parse(output.stdOut);
+        } catch (parseErr) {
+            console.error("Failed to parse playlist JSON:", parseErr);
+            await analyzeUrl();
+            return;
+        }
+
+        if (data && data.entries && data.entries.length > 0) {
             currentPlaylistData = data;
             populatePlaylistModal(data);
             setLoading(false);
@@ -114,7 +147,7 @@ async function analyzePlaylist() {
             setLoading(false);
             return;
         }
-        showAlert(e.message, 'Analysis Exception');
+        showAlert(e.message || 'An error occurred during playlist analysis', 'Analysis Exception');
         setLoading(false);
     }
 }
@@ -135,7 +168,7 @@ function updateDynamicBackground(url) {
 }
 
 async function analyzeUrl(isPlaylistFormatMode = false) {
-    const url = el.urlInput.value.trim();
+    const url = el.urlInput ? el.urlInput.value.trim() : '';
     if (!url) return;
 
     // If the URL contains 'playlist', automatically redirect to playlist analysis
@@ -148,10 +181,10 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
     resetSelection();
 
     try {
-        // Speed Boost: --no-check-certificates, --no-warnings, --no-call-home
-        let cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies "${settings.cookiesPath}"` : '';
-        let jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${settings.jsRuntime}` : '';
-        let command = `yt-dlp -J --no-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} "${url}"`;
+        // Speed Boost: --no-check-certificates, --no-warnings
+        let cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies ${escapeCmdArg(settings.cookiesPath)}` : '';
+        let jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${escapeCmdArg(settings.jsRuntime)}` : '';
+        let command = `yt-dlp -J --no-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} ${escapeCmdArg(url)}`;
         console.log("Analyzing:", command);
 
         let output = await runSpawnalyze(command);
@@ -162,12 +195,21 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
                 setLoading(false);
                 return;
             }
-            showAlert(output.stdErr, 'Analysis Error');
+            showAlert(output.stdErr || 'Failed to analyze URL', 'Analysis Error');
             setLoading(false);
             return;
         }
 
-        const data = JSON.parse(output.stdOut);
+        let data;
+        try {
+            data = JSON.parse(output.stdOut);
+        } catch (parseErr) {
+            console.error("Failed to parse JSON output:", parseErr);
+            showAlert("Failed to parse video metadata from yt-dlp.", "Parse Error");
+            setLoading(false);
+            return;
+        }
+
         currentData = data;
         formats = data.formats || [];
 
@@ -272,14 +314,15 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
             setLoading(false);
             return;
         }
-        showAlert(e.message, 'Fetch Exception');
+        showAlert(e.message || 'Error fetching video data', 'Fetch Exception');
     } finally {
         setLoading(false);
     }
 }
 
+// ... existing code ...
 async function quickM4a() {
-    const url = el.urlInput.value.trim();
+    const url = el.urlInput ? el.urlInput.value.trim() : '';
     if (!url) {
         showAlert('Please enter a URL first.', 'Input Required');
         return;
@@ -288,21 +331,19 @@ async function quickM4a() {
     resetSelection();
 
     let path = settings.downloadPath;
-    let pathArg = path ? `-P "${path}"` : '';
-    let cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies "${settings.cookiesPath}"` : '';
+    let pathArg = path ? `-P ${escapeCmdArg(path)}` : '';
+    let cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies ${escapeCmdArg(settings.cookiesPath)}` : '';
 
-    let jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${settings.jsRuntime}` : '';
+    let jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${escapeCmdArg(settings.jsRuntime)}` : '';
     let cmd = '';
     if (settings.quickAudioFormat === 'opus') {
-        // Opus: Try 251, fallback to bestaudio as-is without conversion
-        cmd = `yt-dlp -f "251/bestaudio" --embed-metadata --embed-thumbnail -o "%(title)s.%(ext)s" -x --audio-format opus --no-playlist ${jsRuntimeArg} ${cookiesArg} ${pathArg} "${url}"`;
+        cmd = `yt-dlp -f "251/bestaudio" --no-overwrites --embed-metadata --embed-thumbnail -o "%(title)s.%(ext)s" -x --audio-format opus --no-playlist ${jsRuntimeArg} ${cookiesArg} ${pathArg} ${escapeCmdArg(url)}`;
     } else {
-        // M4A: Try 140, fallback to bestaudio as-is without conversion
-        cmd = `yt-dlp -f "140/bestaudio" --embed-metadata --embed-thumbnail -o "%(title)s.%(ext)s" --no-playlist ${jsRuntimeArg} ${cookiesArg} ${pathArg} "${url}"`;
+        cmd = `yt-dlp -f "140/bestaudio" --no-overwrites --embed-metadata --embed-thumbnail -o "%(title)s.%(ext)s" --no-playlist ${jsRuntimeArg} ${cookiesArg} ${pathArg} ${escapeCmdArg(url)}`;
     }
 
-    el.cmdPreview.value = cmd;
+    if (el.cmdPreview) {
+        el.cmdPreview.value = cmd;
+    }
     startDownload();
 }
-
-

@@ -2,65 +2,62 @@
 // (extracted from resources/js/main.js — keep in sync with load order in app.html)
 
 function renderGrid() {
+    if (!el || !el.gridBody || !el.videoGridBody || !el.audioGridBody) return;
+
     // Clear all
     el.gridBody.innerHTML = '';
     el.videoGridBody.innerHTML = '';
     el.audioGridBody.innerHTML = '';
 
-    const duration = getDurationSeconds(currentData) || 1;
-
-    // Tab Visibility Logic (Auto-switch if needed)
-    const counts = {
-        combined: formats.filter(f => (f.acodec === 'video only' || f.acodec === 'none' || f.vcodec === 'audio only' || f.vcodec === 'none')).length,
-        mixed: formats.filter(f => {
-            const isStandaloneVideo = (f.acodec === 'video only' || f.acodec === 'none');
-            const isStandaloneAudio = (f.vcodec === 'audio only' || f.vcodec === 'none');
-            return !isStandaloneVideo && !isStandaloneAudio && f.vcodec !== 'none' && f.acodec !== 'none';
-        }).length
-    };
-
-    // Ensure we are in a valid tab
-    if (counts[activeTab] === 0) {
-        if (counts.combined > 0) activeTab = 'combined';
-        else if (counts.mixed > 0) activeTab = 'mixed';
+    const safeFormats = Array.isArray(formats) ? formats : [];
+    
+    // Ensure activeTab is globally accessible
+    if (typeof activeTab === 'undefined') {
+        window.activeTab = 'combined';
     }
 
-    // Update active class on buttons
-    el.tabs.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.tab === activeTab);
-        btn.classList.toggle('hidden', counts[btn.dataset.tab] === 0);
-    });
+    // Update active class on tab buttons (Always show all tabs, don't hide Mixed)
+    if (Array.isArray(el.tabs)) {
+        el.tabs.forEach(btn => {
+            if (!btn) return;
+            btn.classList.toggle('active', btn.dataset.tab === activeTab);
+            btn.classList.remove('hidden'); // Ensure no tab is forcefully hidden
+        });
+    }
 
     if (activeTab === 'combined') {
-        el.dualView.classList.remove('hidden');
-        el.standardView.classList.add('hidden');
+        if (el.dualView) el.dualView.classList.remove('hidden');
+        if (el.standardView) el.standardView.classList.add('hidden');
 
         // Filter Video Only
-        const videoOnly = formats.filter(f => (f.acodec === 'video only' || f.acodec === 'none') && (f.vcodec !== 'none' && f.vcodec !== 'audio only'));
-        // Group and render Video
+        const videoOnly = safeFormats.filter(f => f && (f.acodec === 'video only' || f.acodec === 'none') && (f.vcodec !== 'none' && f.vcodec !== 'audio only'));
         const videoFrag = document.createDocumentFragment();
         renderDualColumn('video', videoOnly, videoFrag);
         el.videoGridBody.appendChild(videoFrag);
 
         // Filter Audio Only
-        const audioOnly = formats.filter(f => (f.vcodec === 'audio only' || f.vcodec === 'none') && (f.acodec !== 'none' && f.acodec !== 'video only'));
+        const audioOnly = safeFormats.filter(f => f && (f.vcodec === 'audio only' || f.vcodec === 'none') && (f.acodec !== 'none' && f.acodec !== 'video only'));
         const audioFrag = document.createDocumentFragment();
         renderAudioColumn(audioOnly, audioFrag);
         el.audioGridBody.appendChild(audioFrag);
 
     } else if (activeTab === 'mixed') {
-        el.dualView.classList.add('hidden');
-        el.standardView.classList.remove('hidden');
+        if (el.dualView) el.dualView.classList.add('hidden');
+        if (el.standardView) el.standardView.classList.remove('hidden');
 
-        const mixedFormats = formats.filter(f => {
-            const isStandaloneVideo = (f.acodec === 'video only' || f.acodec === 'none');
-            const isStandaloneAudio = (f.vcodec === 'audio only' || f.vcodec === 'none');
-            return !isStandaloneVideo && !isStandaloneAudio && f.vcodec !== 'none' && f.acodec !== 'none';
+        // Mixed Formats: Show formats containing both audio & video or all video formats as fallback
+        const mixedFormats = safeFormats.filter(f => {
+            if (!f) return false;
+            const hasVideo = f.vcodec && f.vcodec !== 'none' && f.vcodec !== 'audio only';
+            const hasAudio = f.acodec && f.acodec !== 'none' && f.acodec !== 'video only';
+            return hasVideo && hasAudio;
         });
 
-        // Use resolution grouping for Mixed
+        // Fallback: If YouTube provided separated video/audio streams, render video streams in Mixed tab
+        const formatsToRender = mixedFormats.length > 0 ? mixedFormats : safeFormats.filter(f => f && f.vcodec && f.vcodec !== 'none' && f.vcodec !== 'audio only');
+
         const mixedFrag = document.createDocumentFragment();
-        renderDualColumn('mixed', mixedFormats, mixedFrag);
+        renderDualColumn('mixed', formatsToRender, mixedFrag);
         el.gridBody.appendChild(mixedFrag);
     }
 }
@@ -68,8 +65,9 @@ function renderGrid() {
 // Normalize all resolution naming styles into one quality group.
 // Examples: 480, 480p, 854x480 -> 480p
 function getNormalizedResolution(fmt) {
-    const width = Number(fmt?.width) || 0;
-    const height = Number(fmt?.height) || 0;
+    if (!fmt) return 'Unknown';
+    const width = Number(fmt.width) || 0;
+    const height = Number(fmt.height) || 0;
 
     // If yt-dlp gives us the real height, use it as the quality.
     if (height > 0) {
@@ -77,10 +75,10 @@ function getNormalizedResolution(fmt) {
     }
 
     const candidates = [
-        fmt?.format_note,
-        fmt?.resolution,
-        fmt?.format,
-        fmt?.format_id
+        fmt.format_note,
+        fmt.resolution,
+        fmt.format,
+        fmt.format_id
     ].filter(Boolean).join(' ');
 
     // Handle text such as 854x480 or 1920x1080
@@ -124,7 +122,12 @@ function renderDualColumn(type, filtered, container = null) {
         'other': 0
     };
 
-    filtered.forEach(f => {
+    if (typeof resolutionSelections === 'undefined') {
+        window.resolutionSelections = {};
+    }
+
+    (filtered || []).forEach(f => {
+        if (!f) return;
         const resKey = getNormalizedResolution(f);
         if (!groups[resKey]) {
             groups[resKey] = {};
@@ -185,9 +188,6 @@ function renderDualColumn(type, filtered, container = null) {
 
     // Sort resolutions from highest to lowest
     const sortedResKeys = Object.keys(groups).sort((a, b) => {
-        const [w1, h1] = a.split('x').map(Number);
-        const [w2, h2] = b.split('x').map(Number);
-
         return getResolutionSortValue(b) - getResolutionSortValue(a);
     });
 
@@ -196,7 +196,7 @@ function renderDualColumn(type, filtered, container = null) {
 
         // Sort codecs according to priority
         const availableCTypes = Object.keys(resGroup).sort(
-            (a, b) => codecPriority[b] - codecPriority[a]
+            (a, b) => (codecPriority[b] || 0) - (codecPriority[a] || 0)
         );
 
         // Restore previous codec selection if available
@@ -283,7 +283,12 @@ function renderAudioColumn(filtered, container = el.audioGridBody) {
     const groups = {}; // codecKey -> [formats]
     const codecPriority = { 'opus': 10, 'mp4a': 5 };
 
-    filtered.forEach(f => {
+    if (typeof resolutionSelections === 'undefined') {
+        window.resolutionSelections = {};
+    }
+
+    (filtered || []).forEach(f => {
+        if (!f) return;
         const ac = (f.acodec || '').toLowerCase();
         const note = (f.format_note || '').toLowerCase();
         const fid = (f.format_id || '').toLowerCase();
@@ -308,7 +313,6 @@ function renderAudioColumn(filtered, container = el.audioGridBody) {
 
     // Sort groups by priority
     const sortedGroupKeys = Object.keys(groups).sort((a, b) => {
-        // DRC always last? Or just by codec priority
         const pA = codecPriority[a] || 0;
         const pB = codecPriority[b] || 0;
         return pB - pA;
@@ -335,8 +339,9 @@ function renderAudioColumn(filtered, container = el.audioGridBody) {
     });
 }
 
-
 function renderCompactRow(fmt, container, smartData = null) {
+    if (!fmt || !container) return;
+
     const isAudioOnly = (fmt.vcodec === 'audio only' || fmt.vcodec === 'none');
     const isMixed = smartData?.isMixed;
 
@@ -345,11 +350,14 @@ function renderCompactRow(fmt, container, smartData = null) {
     if (isAudioOnly) row.classList.add('audio-row');
     if (isMixed) row.classList.add('mixed-row');
 
-    if (fmt.format_id === selectedVideoId || fmt.format_id === selectedAudioId) {
+    const selVideo = (typeof selectedVideoId !== 'undefined') ? selectedVideoId : null;
+    const selAudio = (typeof selectedAudioId !== 'undefined') ? selectedAudioId : null;
+
+    if (fmt.format_id === selVideo || fmt.format_id === selAudio) {
         row.classList.add('selected');
     }
 
-    const size = getFormatDisplaySize(fmt);
+    const size = (typeof getFormatDisplaySize === 'function') ? getFormatDisplaySize(fmt) : '--';
     let tbr = Math.round(fmt.tbr || fmt.vbr || 0);
     const fallbackText = fmt.format_note || fmt.format || 'Unknown';
     const bitrateDisplay = tbr > 0 ? tbr + 'k' : fallbackText;
@@ -383,16 +391,17 @@ function renderCompactRow(fmt, container, smartData = null) {
     }
 
     // Detail Tooltip (Native Title)
-    const details = `ID: ${fmt.format_id}\nCodec: ${isAudioOnly ? fmt.acodec : fmt.vcodec}\nProtocol: ${fmt.protocol}\nFPS: ${fmt.fps || 'N/A'}`;
+    const details = `ID: ${fmt.format_id}\nCodec: ${isAudioOnly ? fmt.acodec : fmt.vcodec}\nProtocol: ${fmt.protocol || 'N/A'}\nFPS: ${fmt.fps || 'N/A'}`;
     row.title = details;
 
     const getLangInfo = (f) => {
+        if (!f) return { code: 'und', name: '' };
         const match = (f.format_note || '').match(/\[(.*?)\]\s*(.*?),/);
         return { code: f.language || match?.[1] || 'und', name: match?.[2] || '' };
     };
 
     let langSelectContainer = null;
-    if ((isAudioOnly || isMixed) && smartData?.isMultiLang) {
+    if ((isAudioOnly || isMixed) && smartData?.isMultiLang && Array.isArray(smartData.variants)) {
         const langMap = new Map();
         smartData.variants.forEach(v => {
             const info = getLangInfo(v);
@@ -401,31 +410,35 @@ function renderCompactRow(fmt, container, smartData = null) {
 
         const langOptions = Array.from(langMap).map(([code, name]) => ({
             value: code,
-            label: `[${code.toUpperCase()}]`,          // compact trigger label
-            full: `[${code.toUpperCase()}]${name ? ' ' + name : ''}` // long label for the dropdown list
+            label: `[${code.toUpperCase()}]`,
+            full: `[${code.toUpperCase()}]${name ? ' ' + name : ''}`
         }));
 
         const currentLang = getLangInfo(fmt).code;
 
-        if (langOptions.length > 1) {
+        if (langOptions.length > 1 && typeof createCustomSelect === 'function') {
             langSelectContainer = createCustomSelect(langOptions, currentLang, (newCode) => {
                 const variantsForLang = smartData.variants.filter(v => getLangInfo(v).code === newCode).sort((a, b) => (b.tbr || 0) - (a.tbr || 0));
                 const firstVariant = variantsForLang[0];
 
-                if (fmt.format_id === selectedVideoId || fmt.format_id === selectedAudioId) {
-                    if (isMixed) {
-                        selectedVideoId = firstVariant.format_id;
-                        selectedAudioId = null;
-                    } else {
-                        selectedAudioId = firstVariant.format_id;
+                if (firstVariant) {
+                    if (fmt.format_id === selectedVideoId || fmt.format_id === selectedAudioId) {
+                        if (isMixed) {
+                            selectedVideoId = firstVariant.format_id;
+                            selectedAudioId = null;
+                        } else {
+                            selectedAudioId = firstVariant.format_id;
+                        }
                     }
+                    resolutionSelections[smartData.resKey].formatId = firstVariant.format_id;
+                    renderGrid();
+                    if (typeof updateCommand === 'function') updateCommand();
                 }
-                resolutionSelections[smartData.resKey].formatId = firstVariant.format_id;
-                renderGrid();
-                updateCommand();
             });
-            langSelectContainer.classList.add('lang-select-container');
-            langSelectContainer.style.marginRight = '5px';
+            if (langSelectContainer) {
+                langSelectContainer.classList.add('lang-select-container');
+                langSelectContainer.style.marginRight = '5px';
+            }
         } else if (isMixed && langOptions.length === 1) {
             const info = getLangInfo(fmt);
             if (info.code !== 'und') {
@@ -439,22 +452,27 @@ function renderCompactRow(fmt, container, smartData = null) {
     }
 
     let codecSelectContainer = null;
-    if (smartData && smartData.ctypes && smartData.ctypes.length > 1) {
-        const codecOptions = smartData.ctypes.map(c => ({ value: c, label: getCodecBadgeHTML(c) }));
+    if (smartData && smartData.ctypes && smartData.ctypes.length > 1 && typeof createCustomSelect === 'function') {
+        const codecOptions = smartData.ctypes.map(c => ({
+            value: c,
+            label: (typeof getCodecBadgeHTML === 'function') ? getCodecBadgeHTML(c) : c
+        }));
         codecSelectContainer = createCustomSelect(codecOptions, smartData.activeCType, (newCType) => {
             const variants = smartData.resGroup[newCType].sort((a, b) => (b.tbr || b.vbr || 0) - (a.tbr || a.vbr || 0));
             const firstVariant = variants[0];
 
-            if (fmt.format_id === selectedVideoId) {
-                selectedVideoId = firstVariant.format_id;
-                if (isMixed) selectedAudioId = null;
-            }
+            if (firstVariant) {
+                if (fmt.format_id === selectedVideoId) {
+                    selectedVideoId = firstVariant.format_id;
+                    if (isMixed) selectedAudioId = null;
+                }
 
-            resolutionSelections[smartData.resKey] = { cType: newCType, formatId: firstVariant.format_id };
-            renderGrid();
-            updateCommand();
+                resolutionSelections[smartData.resKey] = { cType: newCType, formatId: firstVariant.format_id };
+                renderGrid();
+                if (typeof updateCommand === 'function') updateCommand();
+            }
         });
-        codecSelectContainer.classList.add('codec-select-container');
+        if (codecSelectContainer) codecSelectContainer.classList.add('codec-select-container');
     } else {
         if (!isAudioOnly) {
             const container = document.createElement('div');
@@ -466,7 +484,7 @@ function renderCompactRow(fmt, container, smartData = null) {
             const badgeWrapper = document.createElement('div');
             badgeWrapper.style.display = 'inline-flex';
             badgeWrapper.style.alignItems = 'center';
-            badgeWrapper.innerHTML = getCodecBadgeHTML(subTitle);
+            badgeWrapper.innerHTML = (typeof getCodecBadgeHTML === 'function') ? getCodecBadgeHTML(subTitle) : subTitle;
             container.appendChild(badgeWrapper);
 
             codecSelectContainer = container;
@@ -476,17 +494,17 @@ function renderCompactRow(fmt, container, smartData = null) {
     }
 
     let bitrateSelectContainer = null;
-    const filteredVars = smartData ? ((isAudioOnly || isMixed) ? smartData.variants.filter(v => getLangInfo(v).code === getLangInfo(fmt).code) : smartData.variants) : [];
+    const filteredVars = smartData ? ((isAudioOnly || isMixed) ? (smartData.variants || []).filter(v => getLangInfo(v).code === getLangInfo(fmt).code) : (smartData.variants || [])) : [];
 
-    if (smartData && filteredVars.length > 1) {
+    if (smartData && filteredVars.length > 1 && typeof createCustomSelect === 'function') {
         const bitOptions = filteredVars.map(v => {
             const vTbr = Math.round(v.tbr || v.vbr || 0);
             const shortLabel = vTbr > 0 ? vTbr + 'k'
                 : (typeof v.abr === 'number' ? Math.round(v.abr) + 'k' : 'AUTO');
             return {
                 value: v.format_id,
-                label: shortLabel, // compact trigger label
-                full: vTbr > 0 ? shortLabel : (v.format_note || v.format || 'Unknown') // long label in dropdown
+                label: shortLabel,
+                full: vTbr > 0 ? shortLabel : (v.format_note || v.format || 'Unknown')
             };
         });
 
@@ -496,9 +514,11 @@ function renderCompactRow(fmt, container, smartData = null) {
                 else selectedVideoId = newId;
             }
 
-            resolutionSelections[smartData.resKey].formatId = newId;
+            if (resolutionSelections[smartData.resKey]) {
+                resolutionSelections[smartData.resKey].formatId = newId;
+            }
             renderGrid();
-            updateCommand();
+            if (typeof updateCommand === 'function') updateCommand();
         });
     } else {
         const span = document.createElement('span');
@@ -529,8 +549,8 @@ function renderCompactRow(fmt, container, smartData = null) {
     // Inject custom selects
     const codecSlot = row.querySelector('.codec-slot');
     const bitrateSlot = row.querySelector('.bitrate-slot');
-    if (codecSelectContainer) codecSlot.appendChild(codecSelectContainer);
-    if (bitrateSelectContainer) bitrateSlot.appendChild(bitrateSelectContainer);
+    if (codecSelectContainer && codecSlot) codecSlot.appendChild(codecSelectContainer);
+    if (bitrateSelectContainer && bitrateSlot) bitrateSlot.appendChild(bitrateSelectContainer);
 
     // Row Click
     row.addEventListener('click', (e) => {
@@ -539,28 +559,36 @@ function renderCompactRow(fmt, container, smartData = null) {
     });
 
     const copyBtn = row.querySelector('.copy-link-btn');
-    copyBtn.onclick = (e) => {
-        e.stopPropagation();
-        copyDirectLink(fmt.format_id, copyBtn);
-    };
+    if (copyBtn) {
+        copyBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (typeof copyDirectLink === 'function') {
+                copyDirectLink(fmt.format_id, copyBtn);
+            }
+        };
+    }
 
     container.appendChild(row);
 }
 
 function handleRowClick(fmt, rowElement) {
+    if (!fmt) return;
+
     const isVideo = fmt.vcodec !== 'none';
     const isAudio = fmt.acodec !== 'none';
     const isMixed = isVideo && isAudio;
 
+    const safeFormats = Array.isArray(formats) ? formats : [];
+
     // Helper to check if currently selected video is mixed
     const currentVideoIsMixed = () => {
-        if (!selectedVideoId) return false;
-        const f = formats.find(x => x.format_id === selectedVideoId);
+        if (typeof selectedVideoId === 'undefined' || !selectedVideoId) return false;
+        const f = safeFormats.find(x => x && x.format_id === selectedVideoId);
         return f && f.vcodec !== 'none' && f.acodec !== 'none';
     };
 
     if (isMixed) {
-        if (selectedVideoId === fmt.format_id) {
+        if (typeof selectedVideoId !== 'undefined' && selectedVideoId === fmt.format_id) {
             selectedVideoId = null;
             selectedAudioId = null;
         } else {
@@ -568,7 +596,7 @@ function handleRowClick(fmt, rowElement) {
             selectedAudioId = null; // Mixed already has audio
         }
     } else if (isVideo) {
-        if (selectedVideoId === fmt.format_id) {
+        if (typeof selectedVideoId !== 'undefined' && selectedVideoId === fmt.format_id) {
             selectedVideoId = null;
         } else {
             // If current selection is Mixed, clear everything first
@@ -578,18 +606,16 @@ function handleRowClick(fmt, rowElement) {
             selectedVideoId = fmt.format_id;
 
             // AUTO-SELECT AUDIO: Pick the best one according to our UI priority (Opus > MP4A > others, excluding DRC)
-            if (!selectedAudioId) {
-                const audioOnly = formats.filter(f => (f.vcodec === 'audio only' || f.vcodec === 'none') && f.acodec !== 'none');
+            if (typeof selectedAudioId === 'undefined' || !selectedAudioId) {
+                const audioOnly = safeFormats.filter(f => f && (f.vcodec === 'audio only' || f.vcodec === 'none') && f.acodec !== 'none');
 
-                // Sort by: 1. Not DRC, 2. Codec Priority, 3. Bitrate
-                const codecPriority = { 'opus': 10, 'mp4a': 5 };
                 const getScore = (f) => {
                     const ac = (f.acodec || '').toLowerCase();
                     const note = (f.format_note || '').toLowerCase();
                     const fid = (f.format_id || '').toLowerCase();
                     const isDRC = note.includes('drc') || fid.includes('drc');
 
-                    let score = isDRC ? -100 : 0; // Penalize DRC
+                    let score = isDRC ? -100 : 0;
                     if (ac.includes('opus')) score += 10;
                     else if (ac.includes('mp4a')) score += 5;
 
@@ -599,7 +625,7 @@ function handleRowClick(fmt, rowElement) {
                 const bestAudio = audioOnly.sort((a, b) => {
                     const scoreDiff = getScore(b) - getScore(a);
                     if (scoreDiff !== 0) return scoreDiff;
-                    return (b.tbr || 0) - (a.tbr || 0); // Then by bitrate
+                    return (b.tbr || 0) - (a.tbr || 0);
                 })[0];
 
                 if (bestAudio) {
@@ -608,7 +634,7 @@ function handleRowClick(fmt, rowElement) {
             }
         }
     } else if (isAudio) {
-        if (selectedAudioId === fmt.format_id) {
+        if (typeof selectedAudioId !== 'undefined' && selectedAudioId === fmt.format_id) {
             selectedAudioId = null;
         } else {
             // If current selection is Mixed, clear it because we want standalone audio
@@ -620,7 +646,5 @@ function handleRowClick(fmt, rowElement) {
     }
 
     renderGrid(); // Re-render to show selection visuals
-    updateCommand();
+    if (typeof updateCommand === 'function') updateCommand();
 }
-
-

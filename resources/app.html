@@ -6,9 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>YT-DLP GUI</title>
   <script>
-  /* Anti-flash (FOUC) bootstrap: apply the last used theme before first paint.
-     applyTheme() in js/state.js is untouched — this only mirrors its output:
-     caches every data-theme change it makes and restores it on next launch. */
+  /* Anti-flash (FOUC) bootstrap: apply the last used theme before first paint. */
   (function () {
     try {
       var cached = localStorage.getItem('theme-cache');
@@ -39,10 +37,10 @@
         <img src="icon.png" alt="Logo" class="app-logo">
       </div>
       <div class="input-group">
-        <input type="text" id="urlInput" placeholder="Paste Video URL here..." spellcheck="false">
-        <button id="analyzeBtn" class="primary-btn">Analyze</button>
-        <button id="analyzePlaylistBtn" class="primary-btn analyze-playlist-btn" title="Analyze as Playlist">Playlist</button>
-        <button id="quickM4aBtn" class="secondary-btn quick-audio-btn" title="Quick Download Audio">
+        <input type="text" id="urlInput" placeholder="Paste Video URL here..." spellcheck="false" autocomplete="off">
+        <button id="analyzeBtn" type="button" class="primary-btn">Analyze</button>
+        <button id="analyzePlaylistBtn" type="button" class="primary-btn analyze-playlist-btn" title="Analyze as Playlist">Playlist</button>
+        <button id="quickM4aBtn" type="button" class="secondary-btn quick-audio-btn" title="Quick Download Audio">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
             stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 18V5l12-2v13"></path>
@@ -53,7 +51,7 @@
         </button>
       </div>
       <div class="notif-wrap">
-        <button id="notifBtn" class="icon-btn notif-btn" title="Download history" aria-label="Download history">
+        <button id="notifBtn" type="button" class="icon-btn notif-btn" title="Download history" aria-label="Download history">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -63,12 +61,13 @@
         <div id="notifPanel" class="notif-panel hidden">
           <div class="notif-header">
             <span>Download history</span>
-            <button id="notifClearBtn" class="notif-clear">Clear</button>
+            <button id="notifClearBtn" type="button" class="notif-clear">Clear</button>
           </div>
           <div id="notifList" class="notif-list"></div>
         </div>
       </div>
     </header>
+
     <div class="video-info-container">
       <div id="infoBg" class="info-bg"></div>
       <div id="thumbnailWrapper" class="thumbnail-wrapper hidden">
@@ -77,24 +76,21 @@
       </div>
       <div id="videoInfo"></div>
     </div>
+
     <!-- Main Content -->
     <main class="main-content">
       <!-- Loading Overlay -->
       <div id="loadingOverlay" class="loading-overlay hidden loading-column">
         <div class="spinner"></div>
-        <button id="cancelAnalyzeBtn" class="cancel-analyze-btn">Cancel Analysis</button>
+        <button id="cancelAnalyzeBtn" type="button" class="cancel-analyze-btn">Cancel Analysis</button>
       </div>
-
 
       <!-- Content Area -->
       <div id="contentArea" class="hidden">
-        <!-- Video Info with Thumbnail -->
-
-
         <!-- Tabs -->
         <div class="tabs">
-          <button class="tab-btn active" data-tab="combined">Video + Audio</button>
-          <button class="tab-btn" data-tab="mixed">Mixed</button>
+          <button type="button" class="tab-btn active" data-tab="combined">Video + Audio</button>
+          <button type="button" class="tab-btn" data-tab="mixed">Mixed</button>
         </div>
 
         <!-- Note for Video Only -->
@@ -104,8 +100,7 @@
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
-          <span>These formats contain <strong>Video Only</strong>. Please select an <strong>Audio</strong> format from
-            the "Audio Only" tab to include sound.</span>
+          <span>These formats contain <strong>Video Only</strong>. Please select an <strong>Audio</strong> format from the "Audio Only" tab to include sound.</span>
         </div>
 
         <!-- Dual View (Video + Audio) -->
@@ -168,8 +163,6 @@
                   <span>Thumb</span>
                 </label>
               </div>
-
-
             </div>
             <div id="audioGridBody" class="split-body custom-scrollbar"></div>
           </div>
@@ -192,7 +185,6 @@
         </div>
       </div>
 
-      <!-- Empty State -->
       <!-- Empty State -->
       <div id="emptyState" class="empty-state">
         <div class="empty-state-content">
@@ -241,7 +233,7 @@
     <!-- Bottom Panel -->
     <section class="bottom-panel">
       <div class="bottom-left">
-        <button id="toggleSettings" class="icon-btn" title="Settings">
+        <button id="toggleSettings" type="button" class="icon-btn" title="Settings">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-linecap="round" stroke-width="1.5" class="svg-accent">
             <title>settings-linear</title>
@@ -252,13 +244,13 @@
             </g>
           </svg>
         </button>
-        <button id="toggleCommand" class="icon-btn" title="View Command">
+        <button id="toggleCommand" type="button" class="icon-btn" title="View Command">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="4 17 10 11 4 5"></polyline>
             <line x1="12" y1="19" x2="20" y2="19"></line>
           </svg>
         </button>
-        <button id="openGithubBtn" class="icon-btn" title="GitHub Repository">
+        <button id="openGithubBtn" type="button" class="icon-btn" title="GitHub Repository">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path
               d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
@@ -268,21 +260,19 @@
       </div>
       <div class="bottom-right">
         <div class="badge-anchor">
-          <button id="clearSectionBadge" class="hidden section-clear-badge" title="Clear Section">✖</button>
-          <button id="downloadSectionBtn" class="secondary-btn" disabled>Sections</button>
+          <button id="clearSectionBadge" type="button" class="hidden section-clear-badge" title="Clear Section">✖</button>
+          <button id="downloadSectionBtn" type="button" class="secondary-btn" disabled>Sections</button>
         </div>
         <div class="badge-anchor-flex">
           <!-- Floating Format Tooltip -->
           <div id="formatTooltip" class="hidden format-tooltip">
             <span id="selectedFormatInfoText" class="format-tooltip-text"></span>
-            <button id="clearFormatBadge" class="format-tooltip-close" title="Clear Selection"
-              onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">✖</button>
-            <!-- Down arrow tail -->
+            <button id="clearFormatBadge" type="button" class="format-tooltip-close" title="Clear Selection">✖</button>
             <div class="tooltip-tail inner"></div>
             <div class="tooltip-tail"></div>
           </div>
 
-          <button id="downloadBtn" class="primary-btn" disabled>
+          <button id="downloadBtn" type="button" class="primary-btn" disabled>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
@@ -299,30 +289,27 @@
       <div class="modal-content settings-modal-content">
         <div class="modal-header">
           <h3>
-            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"
-              class="modal-title-icon">
-              <title>settings-linear</title>
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" class="modal-title-icon">
               <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5">
                 <circle cx="12" cy="12" r="3" />
-                <path
-                  d="M13.7654 2.15224C13.3978 2 12.9319 2 12 2C11.0681 2 10.6022 2 10.2346 2.15224C9.74457 2.35523 9.35522 2.74458 9.15223 3.23463C9.05957 3.45834 9.0233 3.7185 9.00911 4.09799C8.98826 4.65568 8.70226 5.17189 8.21894 5.45093C7.73564 5.72996 7.14559 5.71954 6.65219 5.45876C6.31645 5.2813 6.07301 5.18262 5.83294 5.15102C5.30704 5.08178 4.77518 5.22429 4.35436 5.5472C4.03874 5.78938 3.80577 6.1929 3.33983 6.99993C2.87389 7.80697 2.64092 8.21048 2.58899 8.60491C2.51976 9.1308 2.66227 9.66266 2.98518 10.0835C3.13256 10.2756 3.3397 10.437 3.66119 10.639C4.1338 10.936 4.43789 11.4419 4.43786 12C4.43783 12.5581 4.13375 13.0639 3.66118 13.3608C3.33965 13.5629 3.13248 13.7244 2.98508 13.9165C2.66217 14.3373 2.51966 14.8691 2.5889 15.395C2.64082 15.7894 2.87379 16.193 3.33973 17C3.80568 17.807 4.03865 18.2106 4.35426 18.4527C4.77508 18.7756 5.30694 18.9181 5.83284 18.8489C6.07289 18.8173 6.31632 18.7186 6.65204 18.5412C7.14547 18.2804 7.73556 18.27 8.2189 18.549C8.70224 18.8281 8.98826 19.3443 9.00911 19.9021C9.02331 20.2815 9.05957 20.5417 9.15223 20.7654C9.35522 21.2554 9.74457 21.6448 10.2346 21.8478C10.6022 22 11.0681 22 12 22C12.9319 22 13.3978 22 13.7654 21.8478C14.2554 21.6448 14.6448 21.2554 14.8477 20.7654C14.9404 20.5417 14.9767 20.2815 14.9909 19.902C15.0117 19.3443 15.2977 18.8281 15.781 18.549C16.2643 18.2699 16.8544 18.2804 17.3479 18.5412C17.6836 18.7186 17.927 18.8172 18.167 18.8488C18.6929 18.9181 19.2248 18.7756 19.6456 18.4527C19.9612 18.2105 20.1942 17.807 20.6601 16.9999C21.1261 16.1929 21.3591 15.7894 21.411 15.395C21.4802 14.8691 21.3377 14.3372 21.0148 13.9164C20.8674 13.7243 20.6602 13.5628 20.3387 13.3608C19.8662 13.0639 19.5621 12.558 19.5621 11.9999C19.5621 11.4418 19.8662 10.9361 20.3387 10.6392C20.6603 10.4371 20.8675 10.2757 21.0149 10.0835C21.3378 9.66273 21.4803 9.13087 21.4111 8.60497C21.3592 8.21055 21.1262 7.80703 20.6602 7C20.1943 6.19297 19.9613 5.78945 19.6457 5.54727C19.2249 5.22436 18.693 5.08185 18.1671 5.15109C17.9271 5.18269 17.6837 5.28136 17.3479 5.4588C16.8545 5.71959 16.2644 5.73002 15.7811 5.45096C15.2977 5.17191 15.0117 4.65566 14.9909 4.09794C14.9767 3.71848 14.9404 3.45833 14.8477 3.23463C14.6448 2.74458 14.2554 2.35523 13.7654 2.15224Z" />
+                <path d="M13.7654 2.15224C13.3978 2 12.9319 2 12 2C11.0681 2 10.6022 2 10.2346 2.15224C9.74457 2.35523 9.35522 2.74458 9.15223 3.23463C9.05957 3.45834 9.0233 3.7185 9.00911 4.09799C8.98826 4.65568 8.70226 5.17189 8.21894 5.45093C7.73564 5.72996 7.14559 5.71954 6.65219 5.45876C6.31645 5.2813 6.07301 5.18262 5.83294 5.15102C5.30704 5.08178 4.77518 5.22429 4.35436 5.5472C4.03874 5.78938 3.80577 6.1929 3.33983 6.99993C2.87389 7.80697 2.64092 8.21048 2.58899 8.60491C2.51976 9.1308 2.66227 9.66266 2.98518 10.0835C3.13256 10.2756 3.3397 10.437 3.66119 10.639C4.1338 10.936 4.43789 11.4419 4.43786 12C4.43783 12.5581 4.13375 13.0639 3.66118 13.3608C3.33965 13.5629 3.13248 13.7244 2.98508 13.9165C2.66217 14.3373 2.51966 14.8691 2.5889 15.395C2.64082 15.7894 2.87379 16.193 3.33973 17C3.80568 17.807 4.03865 18.2106 4.35426 18.4527C4.77508 18.7756 5.30694 18.9181 5.83284 18.8489C6.07289 18.8173 6.31632 18.7186 6.65204 18.5412C7.14547 18.2804 7.73556 18.27 8.2189 18.549C8.70224 18.8281 8.98826 19.3443 9.00911 19.9021C9.02331 20.2815 9.05957 20.5417 9.15223 20.7654C9.35522 21.2554 9.74457 21.6448 10.2346 21.8478C10.6022 22 11.0681 22 12 22C12.9319 22 13.3978 22 13.7654 21.8478C14.2554 21.6448 14.6448 21.2554 14.8477 20.7654C14.9404 20.5417 14.9767 20.2815 14.9909 19.902C15.0117 19.3443 15.2977 18.8281 15.781 18.549C16.2643 18.2699 16.8544 18.2804 17.3479 18.5412C17.6836 18.7186 17.927 18.8172 18.167 18.8488C18.6929 18.9181 19.2248 18.7756 19.6456 18.4527C19.9612 18.2105 20.1942 17.807 20.6601 16.9999C21.1261 16.1929 21.3591 15.7894 21.411 15.395C21.4802 14.8691 21.3377 14.3372 21.0148 13.9164C20.8674 13.7243 20.6602 13.5628 20.3387 13.3608C19.8662 13.0639 19.5621 12.558 19.5621 11.9999C19.5621 11.4418 19.8662 10.9361 20.3387 10.6392C20.6603 10.4371 20.8675 10.2757 21.0149 10.0835C21.3378 9.66273 21.4803 9.13087 21.4111 8.60497C21.3592 8.21055 21.1262 7.80703 20.6602 7C20.1943 6.19297 19.9613 5.78945 19.6457 5.54727C19.2249 5.22436 18.693 5.08185 18.1671 5.15109C17.9271 5.18269 17.6837 5.28136 17.3479 5.4588C16.8545 5.71959 16.2644 5.73002 15.7811 5.45096C15.2977 5.17191 15.0117 4.65566 14.9909 4.09794C14.9767 3.71848 14.9404 3.45833 14.8477 3.23463C14.6448 2.74458 14.2554 2.35523 13.7654 2.15224Z" />
               </g>
             </svg>
             Settings
           </h3>
-          <button id="closeSettingsBtn" class="close-btn">×</button>
+          <button id="closeSettingsBtn" type="button" class="close-btn">×</button>
         </div>
         <div class="settings-wrapper">
           <!-- Left Sidebar Navigation -->
           <div class="settings-sidebar">
-            <button class="settings-tab-btn active" data-settings-tab="general">
+            <button type="button" class="settings-tab-btn active" data-settings-tab="general">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                 <line x1="9" y1="3" x2="9" y2="21"></line>
               </svg>
               General
             </button>
-            <button class="settings-tab-btn" data-settings-tab="downloader">
+            <button type="button" class="settings-tab-btn" data-settings-tab="downloader">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>
@@ -330,13 +317,13 @@
               </svg>
               Downloader
             </button>
-            <button class="settings-tab-btn" data-settings-tab="runtimes">
+            <button type="button" class="settings-tab-btn" data-settings-tab="runtimes">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
               </svg>
               JS Runtimes
             </button>
-            <button class="settings-tab-btn" data-settings-tab="shortcuts">
+            <button type="button" class="settings-tab-btn" data-settings-tab="shortcuts">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
                 <line x1="6" y1="8" x2="6" y2="8"></line>
@@ -349,7 +336,7 @@
               </svg>
               Shortcuts
             </button>
-            <button class="settings-tab-btn" data-settings-tab="about">
+            <button type="button" class="settings-tab-btn" data-settings-tab="about">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -369,7 +356,7 @@
                 <!-- Theme selection card -->
                 <div class="settings-card row-card">
                   <div class="card-heading">
-                    <label>Theme</label>
+                    <label for="themeSelect">Theme</label>
                     <small>Choose your preferred app appearance</small>
                   </div>
                   <select id="themeSelect" class="res-select settings-select">
@@ -382,12 +369,12 @@
                 <!-- Download location card -->
                 <div class="settings-card">
                   <div class="card-heading mb8">
-                    <label>Download Location</label>
+                    <label for="downloadPath">Download Location</label>
                     <small>Where downloaded video and audio files will be saved.</small>
                   </div>
                   <div class="input-row">
                     <input type="text" id="downloadPath" value="Downloads" readonly class="settings-text-input">
-                    <button id="browseBtn" class="secondary-btn btn-md">Browse</button>
+                    <button id="browseBtn" type="button" class="secondary-btn btn-md">Browse</button>
                   </div>
                 </div>
               </div>
@@ -401,7 +388,7 @@
                 <!-- Thread options -->
                 <div class="settings-card row-card">
                   <div class="card-heading">
-                    <label>Download Threads</label>
+                    <label for="concurrentFragments">Download Threads</label>
                     <small>Multi-threading speeds up DASH/HLS streams (Default: 1)</small>
                   </div>
                   <input type="number" id="concurrentFragments" min="1" max="32" value="1" class="settings-number-input">
@@ -411,7 +398,7 @@
                 <div class="settings-card">
                   <div class="setting-row mb8">
                     <div class="card-heading">
-                      <label>Quick Audio Format</label>
+                      <label for="quickAudioFormat">Quick Audio Format</label>
                       <small>Default format for the quick download audio button</small>
                     </div>
                     <select id="quickAudioFormat" class="res-select settings-select sm">
@@ -419,8 +406,7 @@
                       <option value="opus">Opus (High Quality)</option>
                     </select>
                   </div>
-                  <small class="shortcut-hint">💡 Shortcut: Press [ALT + 1]
-                    anywhere to quick download URL from clipboard!</small>
+                  <small class="shortcut-hint">💡 Shortcut: Press [ALT + 1] anywhere to quick download URL from clipboard!</small>
                 </div>
 
                 <!-- Toggle options grid -->
@@ -441,8 +427,7 @@
 
                     <div class="setting-row">
                       <div class="setting-row-label">
-                        <span class="setting-row-title">Embed
-                          Metadata</span>
+                        <span class="setting-row-title">Embed Metadata</span>
                         <small>Add video details & metadata to output file</small>
                       </div>
                       <label class="toggle-switch">
@@ -453,8 +438,7 @@
 
                     <div class="setting-row">
                       <div class="setting-row-label">
-                        <span class="setting-row-title">Embed
-                          Thumbnail</span>
+                        <span class="setting-row-title">Embed Thumbnail</span>
                         <small>Set the thumbnail art on the audio/video file</small>
                       </div>
                       <label class="toggle-switch">
@@ -465,8 +449,7 @@
 
                     <div class="setting-row">
                       <div class="setting-row-label">
-                        <span class="setting-row-title">Restrict
-                          Filenames</span>
+                        <span class="setting-row-title">Restrict Filenames</span>
                         <small>Force ASCII filenames (replaces special characters)</small>
                       </div>
                       <label class="toggle-switch">
@@ -477,8 +460,7 @@
 
                     <div class="setting-row">
                       <div class="setting-row-label">
-                        <span class="setting-row-title">Write
-                          Subtitles</span>
+                        <span class="setting-row-title">Write Subtitles</span>
                         <small>Export subtitle file along with video</small>
                       </div>
                       <label class="toggle-switch">
@@ -489,8 +471,7 @@
 
                     <div class="setting-row">
                       <div class="setting-row-label">
-                        <span class="setting-row-title">Ignore
-                          Errors</span>
+                        <span class="setting-row-title">Ignore Errors</span>
                         <small>Force downloading rest of files on warning/failure</small>
                       </div>
                       <label class="toggle-switch">
@@ -512,13 +493,11 @@
                 <div class="settings-card">
                   <div class="setting-row mb8">
                     <div class="card-heading">
-                      <label>Cookies Authentication</label>
+                      <label for="useCookies">Cookies Authentication</label>
                       <small>Use browser session cookies for private/member-only videos.</small>
-                      <a href="#" id="cookiesTutorialLink" class="settings-inline-link"
-                        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">
+                      <a href="#" id="cookiesTutorialLink" class="settings-inline-link">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                          <path
-                            d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.549-4.385-8.816zM9 16V8l8 4-8 4z" />
+                          <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.549-4.385-8.816zM9 16V8l8 4-8 4z" />
                         </svg>
                         How to setup cookies (Tutorial)
                       </a>
@@ -529,14 +508,13 @@
                     </label>
                   </div>
                   <div class="input-row mt4">
-                    <input type="text" id="cookiesPath" value="" placeholder="No cookies file" class="settings-text-input">
-                    <button id="browseCookiesBtn" class="secondary-btn btn-pad12">Browse</button>
-                    <button id="clearCookiesBtn" class="secondary-btn btn-pad12">Clear</button>
+                    <input type="text" id="cookiesPath" value="" placeholder="No cookies file" readonly class="settings-text-input">
+                    <button id="browseCookiesBtn" type="button" class="secondary-btn btn-pad12">Browse</button>
+                    <button id="clearCookiesBtn" type="button" class="secondary-btn btn-pad12">Clear</button>
                   </div>
                   <!-- Warning for Cookies & JS Runtime -->
                   <div id="cookiesRuntimeWarning" class="hidden runtime-warning">
-                    ⚠️ Notice: Using cookies requires an active External JS Runtime (like Node.js) for signature
-                    extraction on many platforms.
+                    ⚠️ Notice: Using cookies requires an active External JS Runtime (like Node.js) for signature extraction on many platforms.
                   </div>
                 </div>
 
@@ -544,12 +522,11 @@
                 <div class="settings-card">
                   <div class="runtime-header">
                     <div class="card-heading">
-                      <label>Active JS Runtime</label>
+                      <label for="jsRuntimeSelect">Active JS Runtime</label>
                       <small>Bypasses signature extraction / player challenges</small>
                       <a href="#" id="jsRuntimeWikiLink" class="settings-inline-link">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                          <path
-                            d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
                         </svg>
                         Learn about JS Runtimes (Wiki)
                       </a>
@@ -575,8 +552,8 @@
                       <span class="runtime-name">Node.js</span>
                       <div class="runtime-actions">
                         <span id="status-node" class="runtime-status">Not Checked</span>
-                        <button class="secondary-btn check-rt-btn" data-runtime="node">Check</button>
-                        <button class="secondary-btn dl-rt-btn" data-runtime="node"
+                        <button type="button" class="secondary-btn check-rt-btn" data-runtime="node">Check</button>
+                        <button type="button" class="secondary-btn dl-rt-btn" data-runtime="node"
                           data-url="https://nodejs.org/en/download/" title="https://nodejs.org/en/download/">Download</button>
                       </div>
                     </div>
@@ -585,8 +562,8 @@
                       <span class="runtime-name">Deno</span>
                       <div class="runtime-actions">
                         <span id="status-deno" class="runtime-status">Not Checked</span>
-                        <button class="secondary-btn check-rt-btn" data-runtime="deno">Check</button>
-                        <button class="secondary-btn dl-rt-btn" data-runtime="deno"
+                        <button type="button" class="secondary-btn check-rt-btn" data-runtime="deno">Check</button>
+                        <button type="button" class="secondary-btn dl-rt-btn" data-runtime="deno"
                           data-url="https://docs.deno.com/runtime/getting_started/installation/" title="https://docs.deno.com/runtime/getting_started/installation/">Download</button>
                       </div>
                     </div>
@@ -595,8 +572,8 @@
                       <span class="runtime-name">Bun</span>
                       <div class="runtime-actions">
                         <span id="status-bun" class="runtime-status">Not Checked</span>
-                        <button class="secondary-btn check-rt-btn" data-runtime="bun">Check</button>
-                        <button class="secondary-btn dl-rt-btn" data-runtime="bun"
+                        <button type="button" class="secondary-btn check-rt-btn" data-runtime="bun">Check</button>
+                        <button type="button" class="secondary-btn dl-rt-btn" data-runtime="bun"
                           data-url="https://bun.com/docs/installation" title="https://bun.com/docs/installation">Download</button>
                       </div>
                     </div>
@@ -608,41 +585,34 @@
             <!-- 4. Shortcuts Pane -->
             <div id="settings-pane-shortcuts" class="settings-pane">
               <div class="settings-pane-title">Keyboard Shortcuts</div>
-              <p class="settings-pane-note">Click on any shortcut input box
-                and press keys to record a custom hotkey.</p>
+              <p class="settings-pane-note">Click on any shortcut input box and press keys to record a custom hotkey.</p>
 
               <div class="settings-grid">
                 <!-- Analyze Shortcut -->
                 <div class="settings-card row-card">
                   <div class="card-heading">
-                    <span class="setting-row-title">Analyze
-                      URL</span>
+                    <span class="setting-row-title">Analyze URL</span>
                     <small>Triggers smart video analysis</small>
                   </div>
-                  <input type="text" id="shortcutAnalyze" value="Ctrl + V" readonly
-                    class="shortcut-input">
+                  <input type="text" id="shortcutAnalyze" value="Ctrl + V" readonly class="shortcut-input">
                 </div>
 
                 <!-- Quick Audio Shortcut -->
                 <div class="settings-card row-card">
                   <div class="card-heading">
-                    <span class="setting-row-title">Quick
-                      Audio Download</span>
+                    <span class="setting-row-title">Quick Audio Download</span>
                     <small>Downloads audio directly from clipboard</small>
                   </div>
-                  <input type="text" id="shortcutQuickAudio" value="Alt + 1" readonly
-                    class="shortcut-input">
+                  <input type="text" id="shortcutQuickAudio" value="Alt + 1" readonly class="shortcut-input">
                 </div>
 
                 <!-- Analyze Playlist Shortcut -->
                 <div class="settings-card row-card">
                   <div class="card-heading">
-                    <span class="setting-row-title">Analyze
-                      Playlist URL</span>
+                    <span class="setting-row-title">Analyze Playlist URL</span>
                     <small>Forces URL to be analyzed as playlist</small>
                   </div>
-                  <input type="text" id="shortcutPlaylist" value="Alt + 2" readonly
-                    class="shortcut-input">
+                  <input type="text" id="shortcutPlaylist" value="Alt + 2" readonly class="shortcut-input">
                 </div>
               </div>
             </div>
@@ -656,9 +626,8 @@
                 <div class="settings-card about-card">
                   <img src="icon.png" alt="App Logo" class="about-logo">
                   <span class="about-title">YT-MANGO</span>
-                  <span class="about-desc">A professional graphical interface for
-                    yt-dlp.</span>
-                  <button id="openGithubBtn" class="secondary-btn about-github-btn">GitHub Repository</button>
+                  <span class="about-desc">A professional graphical interface for yt-dlp.</span>
+                  <button id="openGithubBtn" type="button" class="secondary-btn about-github-btn">GitHub Repository</button>
                 </div>
 
                 <!-- Dependencies -->
@@ -670,9 +639,8 @@
                     <span class="dep-name">yt-dlp version</span>
                     <div class="dep-actions">
                       <span id="ytdlpVersionText" class="version-text">Checking...</span>
-                      <button id="updateYtdlpBtn" class="secondary-btn btn-xs btn-with-icon">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                          stroke-width="2.5">
+                      <button id="updateYtdlpBtn" type="button" class="secondary-btn btn-xs btn-with-icon">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                           <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.25 5.25" />
                         </svg>
                         Update
@@ -698,20 +666,14 @@
       <div class="modal-content command-modal-content">
         <div class="modal-header">
           <h3>
-            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 36 36"
-              class="modal-title-icon">
-              <title>command-line</title>
-              <path fill="currentColor"
-                d="M32 5H4a2 2 0 0 0-2 2v22a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2M4 7h28v2.2H4Zm0 22V10.8h28V29Z"
-                class="clr-i-outline clr-i-outline-path-1" />
-              <path fill="currentColor" d="M17 23h6v2h-6z" class="clr-i-outline clr-i-outline-path-2" />
-              <path fill="currentColor" d="m7 15.68l6.79 3.12L7 21.91v2.2l9.6-4.41v-1.81L7 13.48z"
-                class="clr-i-outline clr-i-outline-path-3" />
-              <path fill="none" d="M0 0h36v36H0z" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 36 36" class="modal-title-icon">
+              <path fill="currentColor" d="M32 5H4a2 2 0 0 0-2 2v22a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2M4 7h28v2.2H4Zm0 22V10.8h28V29Z" />
+              <path fill="currentColor" d="M17 23h6v2h-6z" />
+              <path fill="currentColor" d="m7 15.68l6.79 3.12L7 21.91v2.2l9.6-4.41v-1.81L7 13.48z" />
             </svg>
             Command Preview
           </h3>
-          <button id="closeCommandBtn" class="close-btn">×</button>
+          <button id="closeCommandBtn" type="button" class="close-btn">×</button>
         </div>
         <div class="modal-body">
           <textarea id="cmdPreview" spellcheck="false" readonly></textarea>
@@ -737,10 +699,10 @@
         </div>
 
         <div class="modal-actions">
-          <button id="toggleLogBtn" class="secondary-btn">Details</button>
-          <button id="cancelDownloadBtn" class="secondary-btn">Cancel</button>
-          <button id="openFolderBtn" class="primary-btn hidden">Open Folder</button>
-          <button id="closeModalBtn" class="secondary-btn hidden">Close</button>
+          <button id="toggleLogBtn" type="button" class="secondary-btn">Details</button>
+          <button id="cancelDownloadBtn" type="button" class="secondary-btn">Cancel</button>
+          <button id="openFolderBtn" type="button" class="primary-btn hidden">Open Folder</button>
+          <button id="closeModalBtn" type="button" class="secondary-btn hidden">Close</button>
         </div>
       </div>
     </div>
@@ -750,24 +712,19 @@
       <div class="modal-content command-modal-content">
         <div class="modal-header">
           <h3>
-            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 48 48"
-              class="modal-title-icon">
-              <title>cut-solid</title>
-              <path fill-rule="evenodd"
-                d="M12 3.5a9.5 9.5 0 0 0-5.56 17.204c1.094.891 2.8 2.036 4.85 3.296c-2.05 1.26-3.756 2.405-4.85 3.296A9.5 9.5 0 0 0 12 44.5a9.5 9.5 0 0 0 8.922-6.229A9.5 9.5 0 0 0 21.5 35a9.48 9.48 0 0 0-3.222-7.13c1.066-.086 5.294-.37 14.222-.37q.82 0 1.589.003A222 222 0 0 1 25.27 24c8.32-3.53 16.875-6.4 19.741-7.336c.804-.263 1.284-1.194.78-2.002c-.935-1.5-3.245-4.162-7.791-4.162c-1.56 0-3.634.592-5.82 1.436c-2.202.85-4.576 1.981-6.757 3.107a130 130 0 0 0-5.317 2.914A9.5 9.5 0 0 0 12 3.5M9.5 13a2.5 2.5 0 1 1 5 0a2.5 2.5 0 0 1-5 0m0 22a2.5 2.5 0 1 1 5 0a2.5 2.5 0 0 1-5 0M31 33a2 2 0 0 1-2 2h-2a2 2 0 1 1 0-4h2a2 2 0 0 1 2 2m8 0a2 2 0 0 1-2 2h-2a2 2 0 1 1 0-4h2a2 2 0 0 1 2 2m6 2a2 2 0 1 0 0-4h-2a2 2 0 1 0 0 4z"
-                clip-rule="evenodd" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 48 48" class="modal-title-icon">
+              <path fill-rule="evenodd" d="M12 3.5a9.5 9.5 0 0 0-5.56 17.204c1.094.891 2.8 2.036 4.85 3.296c-2.05 1.26-3.756 2.405-4.85 3.296A9.5 9.5 0 0 0 12 44.5a9.5 9.5 0 0 0 8.922-6.229A9.5 9.5 0 0 0 21.5 35a9.48 9.48 0 0 0-3.222-7.13c1.066-.086 5.294-.37 14.222-.37q.82 0 1.589.003A222 222 0 0 1 25.27 24c8.32-3.53 16.875-6.4 19.741-7.336c.804-.263 1.284-1.194.78-2.002c-.935-1.5-3.245-4.162-7.791-4.162c-1.56 0-3.634.592-5.82 1.436c-2.202.85-4.576 1.981-6.757 3.107a130 130 0 0 0-5.317 2.914A9.5 9.5 0 0 0 12 3.5M9.5 13a2.5 2.5 0 1 1 5 0a2.5 2.5 0 0 1-5 0m0 22a2.5 2.5 0 1 1 5 0a2.5 2.5 0 0 1-5 0M31 33a2 2 0 0 1-2 2h-2a2 2 0 1 1 0-4h2a2 2 0 0 1 2 2m8 0a2 2 0 0 1-2 2h-2a2 2 0 1 1 0-4h2a2 2 0 0 1 2 2m6 2a2 2 0 1 0 0-4h-2a2 2 0 1 0 0 4z" clip-rule="evenodd" />
             </svg>
             Download Sections
           </h3>
-          <button id="closeSectionsBtn" class="close-btn">×</button>
+          <button id="closeSectionsBtn" type="button" class="close-btn">×</button>
         </div>
         <div class="modal-body">
           <p class="modal-note">Download a specific part of the video.</p>
 
           <div id="chapterContainer" class="setting-item hidden">
             <div class="setting-row">
-                <label>Select Chapter(s) <span class="chapter-hint">(Hold Ctrl for
-                    multiple)</span>:</label>
+                <label for="chapterSelect">Select Chapter(s) <span class="chapter-hint">(Hold Ctrl for multiple)</span>:</label>
                 <span id="chapterTotalDuration" class="chapter-total"></span>
             </div>
             <select id="chapterSelect" class="chapter-select custom-scrollbar" multiple size="5"></select>
@@ -792,41 +749,23 @@
               <div class="time-picker-box">
                 <!-- H -->
                 <div class="time-segment">
-                  <button class="t-btn t-up" data-target="startH" data-max="99"><svg viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <polyline points="18 15 12 9 6 15"></polyline>
-                    </svg></button>
+                  <button type="button" class="t-btn t-up" data-target="startH" data-max="99"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg></button>
                   <input type="text" id="startH" value="00" maxlength="2" class="t-val">
-                  <button class="t-btn t-down" data-target="startH" data-max="99"><svg viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg></button>
+                  <button type="button" class="t-btn t-down" data-target="startH" data-max="99"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
                 </div>
                 <div class="t-sep">:</div>
                 <!-- M -->
                 <div class="time-segment">
-                  <button class="t-btn t-up" data-target="startM" data-max="59"><svg viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <polyline points="18 15 12 9 6 15"></polyline>
-                    </svg></button>
+                  <button type="button" class="t-btn t-up" data-target="startM" data-max="59"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg></button>
                   <input type="text" id="startM" value="00" maxlength="2" class="t-val">
-                  <button class="t-btn t-down" data-target="startM" data-max="59"><svg viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg></button>
+                  <button type="button" class="t-btn t-down" data-target="startM" data-max="59"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
                 </div>
                 <div class="t-sep">:</div>
                 <!-- S -->
                 <div class="time-segment">
-                  <button class="t-btn t-up" data-target="startS" data-max="59"><svg viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <polyline points="18 15 12 9 6 15"></polyline>
-                    </svg></button>
+                  <button type="button" class="t-btn t-up" data-target="startS" data-max="59"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg></button>
                   <input type="text" id="startS" value="00" maxlength="2" class="t-val">
-                  <button class="t-btn t-down" data-target="startS" data-max="59"><svg viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg></button>
+                  <button type="button" class="t-btn t-down" data-target="startS" data-max="59"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
                 </div>
               </div>
             </div>
@@ -837,55 +776,37 @@
               <div class="time-picker-box">
                 <!-- H -->
                 <div class="time-segment">
-                  <button class="t-btn t-up" data-target="endH" data-max="99"><svg viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <polyline points="18 15 12 9 6 15"></polyline>
-                    </svg></button>
+                  <button type="button" class="t-btn t-up" data-target="endH" data-max="99"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg></button>
                   <input type="text" id="endH" value="00" maxlength="2" class="t-val">
-                  <button class="t-btn t-down" data-target="endH" data-max="99"><svg viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg></button>
+                  <button type="button" class="t-btn t-down" data-target="endH" data-max="99"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
                 </div>
                 <div class="t-sep">:</div>
                 <!-- M -->
                 <div class="time-segment">
-                  <button class="t-btn t-up" data-target="endM" data-max="59"><svg viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <polyline points="18 15 12 9 6 15"></polyline>
-                    </svg></button>
+                  <button type="button" class="t-btn t-up" data-target="endM" data-max="59"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg></button>
                   <input type="text" id="endM" value="00" maxlength="2" class="t-val">
-                  <button class="t-btn t-down" data-target="endM" data-max="59"><svg viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg></button>
+                  <button type="button" class="t-btn t-down" data-target="endM" data-max="59"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
                 </div>
                 <div class="t-sep">:</div>
                 <!-- S -->
                 <div class="time-segment">
-                  <button class="t-btn t-up" data-target="endS" data-max="59"><svg viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <polyline points="18 15 12 9 6 15"></polyline>
-                    </svg></button>
+                  <button type="button" class="t-btn t-up" data-target="endS" data-max="59"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg></button>
                   <input type="text" id="endS" value="00" maxlength="2" class="t-val">
-                  <button class="t-btn t-down" data-target="endS" data-max="59"><svg viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" stroke-width="2">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg></button>
+                  <button type="button" class="t-btn t-down" data-target="endS" data-max="59"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
                 </div>
               </div>
             </div>
           </div>
 
           <div class="modal-footer">
-            <button id="clearSectionBtn" class="secondary-btn">Clear</button>
-            <button id="applySectionBtn" class="primary-btn">Apply</button>
+            <button id="clearSectionBtn" type="button" class="secondary-btn">Clear</button>
+            <button id="applySectionBtn" type="button" class="primary-btn">Apply</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Playlist Selection Modal (Professional Playlist Manager) -->
+    <!-- Playlist Selection Modal -->
     <div id="playlistModal" class="modal hidden playlist-modal-lg">
       <div class="modal-content playlist-modal-content">
         <div class="modal-header playlist-modal-header">
@@ -893,14 +814,14 @@
             <h3 id="playlistTitle">Playlist</h3>
             <span id="playlistCountLabel" class="playlist-count">0 videos</span>
           </div>
-          <button id="closePlaylistBtn" class="close-btn">×</button>
+          <button id="closePlaylistBtn" type="button" class="close-btn">×</button>
         </div>
         <div class="playlist-toolbar">
-          <input type="text" id="playlistSearchInput" class="playlist-search" placeholder="Search videos...">
+          <input type="text" id="playlistSearchInput" class="playlist-search" placeholder="Search videos..." spellcheck="false" autocomplete="off">
           <div class="playlist-toolbar-actions">
-            <button id="selectAllPlaylistBtn" class="secondary-btn btn-sm">Select All</button>
-            <button id="deselectAllPlaylistBtn" class="secondary-btn btn-sm">Deselect All</button>
-            <button id="invertPlaylistBtn" class="secondary-btn btn-sm">Invert</button>
+            <button id="selectAllPlaylistBtn" type="button" class="secondary-btn btn-sm">Select All</button>
+            <button id="deselectAllPlaylistBtn" type="button" class="secondary-btn btn-sm">Deselect All</button>
+            <button id="invertPlaylistBtn" type="button" class="secondary-btn btn-sm">Invert</button>
             <select id="playlistVideoQuality" class="playlist-quality-select" title="Video quality">
               <option value="best">Video: Best</option>
               <option value="1080">Video: 1080p</option>
@@ -925,11 +846,11 @@
               <span>Audio only</span>
             </label>
             <label class="quick-toggle">
-              <input type="checkbox" id="playlistEmbedMeta" checked>
+              <input type="checkbox" id="playlistEmbedMeta">
               <span>Meta</span>
             </label>
             <label class="quick-toggle">
-              <input type="checkbox" id="playlistEmbedThumb" checked>
+              <input type="checkbox" id="playlistEmbedThumb">
               <span>Thumb</span>
             </label>
           </div>
@@ -942,16 +863,13 @@
         <div class="modal-footer playlist-footer">
           <div class="playlist-footer-info" id="playlistSelectionInfo">0 selected</div>
           <div class="playlist-footer-actions">
-            <button id="pauseAllPlaylistBtn" class="secondary-btn">Pause All</button>
-            <button id="downloadSelectedPlaylistBtn" class="primary-btn">Download Selected</button>
-            <button id="downloadAllPlaylistBtn" class="primary-btn">Download All</button>
+            <button id="pauseAllPlaylistBtn" type="button" class="secondary-btn">Pause All</button>
+            <button id="downloadSelectedPlaylistBtn" type="button" class="primary-btn">Download Selected</button>
+            <button id="downloadAllPlaylistBtn" type="button" class="primary-btn">Download All</button>
           </div>
         </div>
       </div>
     </div>
-  </div>
-
-  </div>
   </div>
 
   <!-- yt-dlp Installation Modal -->
@@ -968,25 +886,22 @@
         </div>
         <h3 id="installTitle">yt-dlp Required</h3>
         <p id="installDesc" class="install-desc">
-          The core engine (yt-dlp) is missing. It's required to analyze and download videos. Download it now to
-          continue?
+          The core engine (yt-dlp) is missing. It's required to analyze and download videos. Download it now to continue?
         </p>
         <div class="install-actions">
-          <button id="exitAppBtn" class="secondary-btn btn-hero">Exit</button>
-          <button id="skipInstallBtn" class="secondary-btn btn-hero hidden">Skip</button>
-          <button id="startInstallBtn" class="primary-btn btn-hero">Download Now</button>
+          <button id="exitAppBtn" type="button" class="secondary-btn btn-hero">Exit</button>
+          <button id="skipInstallBtn" type="button" class="secondary-btn btn-hero hidden">Skip</button>
+          <button id="startInstallBtn" type="button" class="primary-btn btn-hero">Download Now</button>
         </div>
       </div>
 
       <div id="installProgressView" class="hidden">
         <h3 id="progressTitle">Downloading...</h3>
-        <p id="progressDesc" class="progress-desc">Fetching the
-          latest version from GitHub</p>
+        <p id="progressDesc" class="progress-desc">Fetching the latest version from GitHub</p>
         <div class="progress-track thin">
           <div id="installProgressBar" class="progress-fill indeterminate-bar"></div>
         </div>
-        <div id="installStatusText" class="install-status">Connecting...
-        </div>
+        <div id="installStatusText" class="install-status">Connecting...</div>
       </div>
     </div>
   </div>
@@ -1004,15 +919,14 @@
       </div>
       <h3 id="alertTitle" class="alert-title">Notice</h3>
       <div class="custom-scrollbar alert-body">
-        <p id="alertMsg" class="alert-msg">
-        </p>
+        <p id="alertMsg" class="alert-msg"></p>
       </div>
       <div id="alertFixWrapper" class="hidden alert-fix-wrapper">
-        <button id="alertFixBtn" class="primary-btn alert-fix-btn">
+        <button id="alertFixBtn" type="button" class="primary-btn alert-fix-btn">
           🔧 Fix Issue
         </button>
       </div>
-      <button id="closeAlertBtn" class="primary-btn btn-block">OK</button>
+      <button id="closeAlertBtn" type="button" class="primary-btn btn-block">OK</button>
     </div>
   </div>
 

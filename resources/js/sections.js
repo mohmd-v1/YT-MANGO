@@ -1,10 +1,29 @@
 // Sections (trim) feature and subtitles UI/download.
 // (extracted from resources/js/main.js — keep in sync with load order in app.html)
 
+// Internal helper to escape shell arguments safely
+function escapeCmdArg(arg) {
+    if (!arg) return '""';
+    return `"${String(arg).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+// Helper to safely format time
+function safeFormatDuration(sec) {
+    if (typeof formatDuration === 'function') {
+        return formatDuration(sec);
+    }
+    const s = Math.floor(sec % 60);
+    const m = Math.floor((sec / 60) % 60);
+    const h = Math.floor(sec / 3600);
+    const pad = (n) => String(n).padStart(2, '0');
+    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+
 // Sections Listeners
-if (el.downloadSectionBtn) {
+if (el && el.downloadSectionBtn) {
     // Helper to get time in seconds from inputs
     function getTimeFromInputs(prefix) {
+        if (!el.sections || !el.sections[prefix + 'H']) return 0;
         const h = parseInt(el.sections[prefix + 'H'].value) || 0;
         const m = parseInt(el.sections[prefix + 'M'].value) || 0;
         const s = parseInt(el.sections[prefix + 'S'].value) || 0;
@@ -12,21 +31,25 @@ if (el.downloadSectionBtn) {
     }
 
     function updateSliderVisualsOnly() {
+        if (!el.sections || !el.sections.startSlider || !el.sections.endSlider) return;
         const currentStart = parseInt(el.sections.startSlider.value) || 0;
         const currentEnd = parseInt(el.sections.endSlider.value) || 0;
         const max = parseInt(el.sections.startSlider.max) || 100;
 
-        el.sections.startTimeDisp.textContent = formatDuration(currentStart);
-        el.sections.endTimeDisp.textContent = formatDuration(currentEnd);
+        if (el.sections.startTimeDisp) el.sections.startTimeDisp.textContent = safeFormatDuration(currentStart);
+        if (el.sections.endTimeDisp) el.sections.endTimeDisp.textContent = safeFormatDuration(currentEnd);
 
         const startPercent = (currentStart / max) * 100;
         const endPercent = (currentEnd / max) * 100;
 
-        el.sections.sliderTrackFill.style.left = `${Math.max(0, Math.min(100, startPercent))}%`;
-        el.sections.sliderTrackFill.style.width = `${Math.max(0, endPercent - startPercent)}%`;
+        if (el.sections.sliderTrackFill) {
+            el.sections.sliderTrackFill.style.left = `${Math.max(0, Math.min(100, startPercent))}%`;
+            el.sections.sliderTrackFill.style.width = `${Math.max(0, endPercent - startPercent)}%`;
+        }
     }
 
     function onSliderInput(e) {
+        if (!el.sections || !el.sections.startSlider || !el.sections.endSlider) return;
         let startVal = parseInt(el.sections.startSlider.value) || 0;
         let endVal = parseInt(el.sections.endSlider.value) || 0;
 
@@ -41,26 +64,21 @@ if (el.downloadSectionBtn) {
         }
 
         updateSliderVisualsOnly();
-        setTimePicker('start', formatDuration(startVal));
-        setTimePicker('end', formatDuration(endVal));
+        setTimePicker('start', safeFormatDuration(startVal));
+        setTimePicker('end', safeFormatDuration(endVal));
     }
 
-    // Enforce START ≤ END at all times. The sides "push" each other:
-    // - Moving START past END drags END with it.
-    // - Moving END below START drags START with it.
     function reconcileRange(movedSide = null) {
         let startSec = getTimeFromInputs('start');
         let endSec = getTimeFromInputs('end');
 
         if (startSec > endSec) {
             if (movedSide === 'end') {
-                // END crossed below START → pull START down with it
                 startSec = endSec;
-                setTimePicker('start', formatDuration(startSec));
+                setTimePicker('start', safeFormatDuration(startSec));
             } else {
-                // START crossed above END → push END up with it
                 endSec = startSec;
-                setTimePicker('end', formatDuration(endSec));
+                setTimePicker('end', safeFormatDuration(endSec));
             }
         }
         return { startSec, endSec };
@@ -68,21 +86,23 @@ if (el.downloadSectionBtn) {
 
     function syncSlidersFromInputs(movedSide = null) {
         const { startSec, endSec } = reconcileRange(movedSide);
-        el.sections.startSlider.value = startSec;
-        el.sections.endSlider.value = endSec;
+        if (el.sections && el.sections.startSlider && el.sections.endSlider) {
+            el.sections.startSlider.value = startSec;
+            el.sections.endSlider.value = endSec;
+        }
         updateSliderVisualsOnly();
         return { startSec, endSec };
     }
 
-    el.sections.startSlider.addEventListener('input', onSliderInput);
-    el.sections.endSlider.addEventListener('input', onSliderInput);
+    if (el.sections.startSlider) el.sections.startSlider.addEventListener('input', onSliderInput);
+    if (el.sections.endSlider) el.sections.endSlider.addEventListener('input', onSliderInput);
 
     el.downloadSectionBtn.addEventListener('click', () => {
-        let videoDuration = getDurationSeconds(currentData) || 0;
+        let videoDuration = (typeof getDurationSeconds === 'function') ? getDurationSeconds(currentData) : 0;
         if (videoDuration === 0) videoDuration = 3600; // Fallback to 1 hour if unknown
 
-        el.sections.startSlider.max = videoDuration;
-        el.sections.endSlider.max = videoDuration;
+        if (el.sections.startSlider) el.sections.startSlider.max = videoDuration;
+        if (el.sections.endSlider) el.sections.endSlider.max = videoDuration;
 
         let startSec = getTimeFromInputs('start');
         let endSec = getTimeFromInputs('end');
@@ -90,29 +110,30 @@ if (el.downloadSectionBtn) {
         // Treat 00:00:00 end as "unset" → full video length
         if (endSec === 0) {
             endSec = videoDuration;
-            if (startSec > endSec) startSec = endSec; // video shorter than a stored start time
-            setTimePicker('end', formatDuration(endSec));
+            if (startSec > endSec) startSec = endSec;
+            setTimePicker('end', safeFormatDuration(endSec));
         }
 
-        // Clamp to video length, then enforce START ≤ END
         startSec = Math.min(startSec, videoDuration);
         endSec = Math.min(endSec, videoDuration);
         if (startSec > endSec) {
-            ({ startSec, endSec } = reconcileRange('end')); // END is newer/sure → START follows it
+            ({ startSec, endSec } = reconcileRange('end'));
         }
 
-        el.sections.startSlider.value = startSec;
-        el.sections.endSlider.value = endSec;
+        if (el.sections.startSlider) el.sections.startSlider.value = startSec;
+        if (el.sections.endSlider) el.sections.endSlider.value = endSec;
         updateSliderVisualsOnly();
 
-        el.sections.modal.classList.remove('hidden');
+        if (el.sections.modal) el.sections.modal.classList.remove('hidden');
     });
 }
-if (el.sections.closeBtn) {
+
+if (el && el.sections && el.sections.closeBtn) {
     el.sections.closeBtn.addEventListener('click', () => {
-        el.sections.modal.classList.add('hidden');
+        if (el.sections.modal) el.sections.modal.classList.add('hidden');
     });
 }
+
 // Section Spinners Logic
 document.querySelectorAll('.t-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -137,7 +158,8 @@ document.querySelectorAll('.t-btn').forEach(btn => {
 document.querySelectorAll('.t-val').forEach(input => {
     input.addEventListener('blur', (e) => {
         let val = parseInt(e.target.value) || 0;
-        const max = parseInt(e.target.previousElementSibling.getAttribute('data-max')) || 59;
+        const prevElem = e.target.previousElementSibling;
+        const max = prevElem ? (parseInt(prevElem.getAttribute('data-max')) || 59) : 59;
         if (val < 0) val = 0;
         if (val > max) val = max;
         e.target.value = val.toString().padStart(2, '0');
@@ -154,6 +176,7 @@ document.querySelectorAll('.time-segment').forEach(seg => {
 });
 
 const setTimePicker = (prefix, timeStr) => {
+    if (!el || !el.sections || !el.sections[prefix + 'H']) return;
     if (!timeStr) {
         el.sections[prefix + 'H'].value = '00';
         el.sections[prefix + 'M'].value = '00';
@@ -161,15 +184,15 @@ const setTimePicker = (prefix, timeStr) => {
         return;
     }
     let parts = timeStr.split(':');
-    if (parts.length === 2) parts = ['00', ...parts]; // MM:SS format
-    if (parts.length === 1) parts = ['00', '00', ...parts]; // SS format
+    if (parts.length === 2) parts = ['00', ...parts];
+    if (parts.length === 1) parts = ['00', '00', ...parts];
 
     el.sections[prefix + 'H'].value = (parts[0] || '0').toString().padStart(2, '0');
     el.sections[prefix + 'M'].value = (parts[1] || '0').toString().padStart(2, '0');
     el.sections[prefix + 'S'].value = (parts[2] || '0').toString().padStart(2, '0');
 };
 
-if (el.sections.applyBtn) {
+if (el && el.sections && el.sections.applyBtn) {
     el.sections.applyBtn.addEventListener('click', () => {
         const startH = el.sections.startH.value;
         const startM = el.sections.startM.value;
@@ -182,56 +205,62 @@ if (el.sections.applyBtn) {
         const end = `${endH}:${endM}:${endS}`;
 
         if (end !== "00:00:00") {
-            // Defensive: apply can never produce an empty or reversed section
             if (getTimeFromInputs('end') <= getTimeFromInputs('start')) {
-                alert('End time must be greater than start time.');
+                if (typeof showAlert === 'function') {
+                    showAlert('End time must be greater than start time.', 'Invalid Range');
+                } else {
+                    console.warn('End time must be greater than start time.');
+                }
                 return;
             }
             sectionTime = `*${start}-${end}`;
-            updateCommand();
-            el.sections.modal.classList.add('hidden');
-            el.statusMsg.textContent = 'Section Applied ✔️';
-            el.downloadSectionBtn.style.color = '#4caf50'; // Make button green to indicate active
+            if (typeof updateCommand === 'function') updateCommand();
+            if (el.sections.modal) el.sections.modal.classList.add('hidden');
+            if (el.statusMsg) el.statusMsg.textContent = 'Section Applied ✔️';
+            if (el.downloadSectionBtn) el.downloadSectionBtn.style.color = '#4caf50';
 
-            // Show clear badge and make it flex
             if (el.clearSectionBadge) {
                 el.clearSectionBadge.classList.remove('hidden');
                 el.clearSectionBadge.style.display = 'flex';
             }
 
-            setTimeout(() => el.statusMsg.textContent = 'Ready', 2000);
+            setTimeout(() => { if (el.statusMsg) el.statusMsg.textContent = 'Ready'; }, 2000);
         } else {
-            alert('Please specify an end time greater than 00:00:00.');
+            if (typeof showAlert === 'function') {
+                showAlert('Please specify an end time greater than 00:00:00.', 'Invalid End Time');
+            }
         }
     });
 }
-if (el.sections.clearBtn) {
+
+if (el && el.sections && el.sections.clearBtn) {
     el.sections.clearBtn.addEventListener('click', () => {
         sectionTime = '';
         setTimePicker('start', '');
         setTimePicker('end', '');
-        el.sections.chapterSelect.value = '';
+        if (el.sections.chapterSelect) el.sections.chapterSelect.value = '';
         const durSpan = document.getElementById('chapterTotalDuration');
         if (durSpan) durSpan.textContent = '';
         syncSlidersFromInputs();
-        updateCommand();
-        el.sections.modal.classList.add('hidden');
-        el.statusMsg.textContent = 'Section Cleared';
-        el.downloadSectionBtn.style.color = ''; // Reset button color
+        if (typeof updateCommand === 'function') updateCommand();
+        if (el.sections.modal) el.sections.modal.classList.add('hidden');
+        if (el.statusMsg) el.statusMsg.textContent = 'Section Cleared';
+        if (el.downloadSectionBtn) el.downloadSectionBtn.style.color = '';
 
-        // Hide clear badge
         if (el.clearSectionBadge) el.clearSectionBadge.classList.add('hidden');
 
-        setTimeout(() => el.statusMsg.textContent = 'Ready', 2000);
+        setTimeout(() => { if (el.statusMsg) el.statusMsg.textContent = 'Ready'; }, 2000);
     });
 }
-if (el.clearSectionBadge) {
+
+if (el && el.clearSectionBadge) {
     el.clearSectionBadge.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (el.sections.clearBtn) el.sections.clearBtn.click();
+        if (el.sections && el.sections.clearBtn) el.sections.clearBtn.click();
     });
 }
-if (el.sections.chapterSelect) {
+
+if (el && el.sections && el.sections.chapterSelect) {
     el.sections.chapterSelect.addEventListener('change', () => {
         const selectedOptions = Array.from(el.sections.chapterSelect.selectedOptions);
         const durationSpan = document.getElementById('chapterTotalDuration');
@@ -250,11 +279,11 @@ if (el.sections.chapterSelect) {
                 if (e > maxEnd) maxEnd = e;
             });
 
-            setTimePicker('start', formatDuration(minStart));
-            setTimePicker('end', formatDuration(maxEnd));
+            setTimePicker('start', safeFormatDuration(minStart));
+            setTimePicker('end', safeFormatDuration(maxEnd));
 
             const totalSec = maxEnd - minStart;
-            if (durationSpan) durationSpan.textContent = `Total: ${formatDuration(totalSec)}`;
+            if (durationSpan) durationSpan.textContent = `Total: ${safeFormatDuration(totalSec)}`;
         } else {
             setTimePicker('start', '');
             setTimePicker('end', '');
@@ -264,22 +293,22 @@ if (el.sections.chapterSelect) {
     });
 }
 
-
 function renderSubtitles() {
-    if (!currentData) return;
+    if (!currentData || !el || !el.subOptionsList) return;
 
     el.subOptionsList.innerHTML = '';
     const subs = currentData.subtitles || {};
     const autoSubs = currentData.automatic_captions || {};
 
-    // Add Auto Captions Toggle inside dropdown
     const autoToggleRow = document.createElement('div');
     autoToggleRow.className = 'custom-option';
     autoToggleRow.style.padding = '8px 12px';
     autoToggleRow.style.borderBottom = '1px solid var(--border-light)';
+    
+    const isAutoChecked = (typeof autoSubsEnabled !== 'undefined') ? autoSubsEnabled : false;
     autoToggleRow.innerHTML = `
         <label class="toggle-switch" style="gap: 8px; width: 100%; cursor: pointer;">
-            <input type="checkbox" id="includeAutoSubsInner" ${autoSubsEnabled ? 'checked' : ''}>
+            <input type="checkbox" id="includeAutoSubsInner" ${isAutoChecked ? 'checked' : ''}>
             <span class="slider" style="width: 30px; height: 16px; --slider-size: 11px;"></span>
             <span style="font-size: 10px; font-weight: 800; color: var(--text-muted);">INCLUDE AUTO</span>
         </label>
@@ -287,33 +316,33 @@ function renderSubtitles() {
     autoToggleRow.onclick = (e) => e.stopPropagation();
     el.subOptionsList.appendChild(autoToggleRow);
 
-    // Listener for the inner toggle
     setTimeout(() => {
         const toggle = document.getElementById('includeAutoSubsInner');
         if (toggle) {
             toggle.onchange = (e) => {
                 autoSubsEnabled = e.target.checked;
                 renderSubtitles();
-                updateCommand();
+                if (typeof updateCommand === 'function') updateCommand();
             };
         }
     }, 0);
 
     const allSubs = { ...subs };
-    if (autoSubsEnabled) {
+    if (typeof autoSubsEnabled !== 'undefined' && autoSubsEnabled) {
         Object.keys(autoSubs).forEach(lang => {
             if (!allSubs[lang]) allSubs[lang] = autoSubs[lang];
         });
     }
 
     const langCodes = Object.keys(allSubs).sort();
+    const selSubs = (typeof selectedSubtitles !== 'undefined') ? selectedSubtitles : [];
 
     if (langCodes.length > 0) {
-        el.subSelectorWrapper.classList.remove('hidden');
+        if (el.subSelectorWrapper) el.subSelectorWrapper.classList.remove('hidden');
         langCodes.forEach(code => {
             const subInfo = allSubs[code];
             const name = subInfo[0]?.name || code;
-            const isSelected = selectedSubtitles.includes(code);
+            const isSelected = selSubs.includes(code);
 
             const option = document.createElement('div');
             option.className = `custom-option ${isSelected ? 'selected' : ''}`;
@@ -337,81 +366,96 @@ function renderSubtitles() {
             const isAuto = autoSubs[code] && !subs[code];
 
             const subDlBtn = option.querySelector('.sub-download-btn');
-            subDlBtn.onclick = (e) => {
-                e.stopPropagation();
-                downloadSubtitle(code, name, subDlBtn, isAuto);
-            };
+            if (subDlBtn) {
+                subDlBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    downloadSubtitle(code, name, subDlBtn, isAuto);
+                };
+            }
 
             option.onclick = (e) => {
                 e.stopPropagation();
-                if (selectedSubtitles.includes(code)) {
-                    selectedSubtitles = selectedSubtitles.filter(c => c !== code);
-                } else {
-                    selectedSubtitles.push(code);
+                if (typeof selectedSubtitles !== 'undefined') {
+                    if (selectedSubtitles.includes(code)) {
+                        selectedSubtitles = selectedSubtitles.filter(c => c !== code);
+                    } else {
+                        selectedSubtitles.push(code);
+                    }
                 }
                 renderSubtitles();
-                updateCommand();
+                if (typeof updateCommand === 'function') updateCommand();
             };
 
             el.subOptionsList.appendChild(option);
         });
     } else {
-        el.subSelectorWrapper.classList.add('hidden');
+        if (el.subSelectorWrapper) el.subSelectorWrapper.classList.add('hidden');
     }
 
-    el.subCountText.textContent = `Subs (${selectedSubtitles.length})`;
-    if (selectedSubtitles.length > 0) {
-        el.subMultiSelect.querySelector('.custom-select-trigger').style.borderColor = '#a855f7';
-        el.subCountText.style.color = '#a855f7';
-        el.subCountText.style.fontWeight = '700';
-    } else {
-        el.subMultiSelect.querySelector('.custom-select-trigger').style.borderColor = 'rgba(168, 85, 247, 0.4)';
-        el.subCountText.style.color = 'var(--text-secondary)';
-        el.subCountText.style.fontWeight = '500';
+    if (el.subCountText) el.subCountText.textContent = `Subs (${selSubs.length})`;
+    if (el.subMultiSelect) {
+        const trigger = el.subMultiSelect.querySelector('.custom-select-trigger');
+        if (trigger) {
+            if (selSubs.length > 0) {
+                trigger.style.borderColor = '#a855f7';
+                if (el.subCountText) {
+                    el.subCountText.style.color = '#a855f7';
+                    el.subCountText.style.fontWeight = '700';
+                }
+            } else {
+                trigger.style.borderColor = 'rgba(168, 85, 247, 0.4)';
+                if (el.subCountText) {
+                    el.subCountText.style.color = 'var(--text-secondary)';
+                    el.subCountText.style.fontWeight = '500';
+                }
+            }
+        }
     }
 }
 
 // Toggle logic for subtitle multi-select
-el.subMultiSelect.querySelector('.custom-select-trigger').onclick = (e) => {
-    e.stopPropagation();
-    const isActive = el.subMultiSelect.classList.contains('active');
+if (el && el.subMultiSelect) {
+    const trigger = el.subMultiSelect.querySelector('.custom-select-trigger');
+    if (trigger) {
+        trigger.onclick = (e) => {
+            e.stopPropagation();
+            const isActive = el.subMultiSelect.classList.contains('active');
 
-    // Close all other selects first
-    document.querySelectorAll('.custom-select-container').forEach(c => c.classList.remove('active'));
+            // Close all other selects first
+            document.querySelectorAll('.custom-select-container').forEach(c => c.classList.remove('active'));
 
-    if (!isActive) {
-        el.subMultiSelect.classList.add('active');
+            if (!isActive) {
+                el.subMultiSelect.classList.add('active');
+            }
+        };
     }
-};
+}
 
 // Global click to close
 document.addEventListener('click', () => {
-    el.subMultiSelect.classList.remove('active');
+    if (el && el.subMultiSelect) el.subMultiSelect.classList.remove('active');
 });
 
-// Load settings and check tools on startup
+// Download Subtitle
 async function downloadSubtitle(langCode, langName, btnElement, isAuto = false) {
     if (!currentData) return;
 
     const subs = isAuto ? currentData.automatic_captions : currentData.subtitles;
-    const subInfo = subs[langCode];
+    const subInfo = subs ? subs[langCode] : null;
 
     if (!subInfo || subInfo.length === 0) {
-        showStatus("Subtitle URL not found", "error");
+        if (typeof showStatus === 'function') showStatus("Subtitle URL not found", "error");
         return;
     }
 
-    // Pick the best format (prefer srt or vtt)
     const bestFormat = subInfo.find(s => s.ext === 'srt') || subInfo.find(s => s.ext === 'vtt') || subInfo[0];
     const subUrl = bestFormat.url;
     const ext = bestFormat.ext || 'vtt';
 
-    // Sanitize title for default filename
     const safeTitle = (currentData.title || 'subtitle').replace(/[\\/:*?"<>|]/g, '_').substring(0, 80);
     const defaultName = `${safeTitle}_${langCode}.${ext}`;
 
     try {
-        // Ask user where to save
         const fullPath = await Neutralino.os.showSaveDialog('Save Subtitle', {
             defaultPath: defaultName,
             filters: [
@@ -426,17 +470,15 @@ async function downloadSubtitle(langCode, langName, btnElement, isAuto = false) 
         btnElement.innerHTML = `<svg class="anim-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
         btnElement.disabled = true;
 
-        // Direct download (cross platform)
         let cmd = window.NL_OS === 'Windows'
-            ? `powershell -Command "Invoke-WebRequest -Uri '${subUrl}' -OutFile '${fullPath}'"`
-            : `curl -L -o "${fullPath}" "${subUrl}"`;
+            ? `powershell -Command "Invoke-WebRequest -Uri '${subUrl}' -OutFile ${escapeCmdArg(fullPath)}"`
+            : `curl -L -o ${escapeCmdArg(fullPath)} "${subUrl}"`;
 
         const output = await Neutralino.os.execCommand(cmd);
 
-        // Success is exitCode 0
         if (output.exitCode === 0) {
             btnElement.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="4"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-            showStatus(`Saved: ${langName} subtitle`, 'success');
+            if (typeof showStatus === 'function') showStatus(`Saved: ${langName} subtitle`, 'success');
         } else {
             console.error("Download Error:", output.stdErr);
             btnElement.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
@@ -449,8 +491,6 @@ async function downloadSubtitle(langCode, langName, btnElement, isAuto = false) 
 
     } catch (e) {
         console.error("Subtitle save error:", e);
-        showStatus("Error saving subtitle", "error");
+        if (typeof showStatus === 'function') showStatus("Error saving subtitle", "error");
     }
 }
-
-

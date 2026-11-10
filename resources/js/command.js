@@ -1,6 +1,12 @@
 // Command preview building (updateCommand) and related listeners.
 // (extracted from resources/js/main.js — keep in sync with load order in app.html)
 
+// Internal escape helper to protect paths and URLs in generated command string
+function escapeCmdArg(arg) {
+    if (!arg) return '""';
+    return `"${String(arg).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
 function updateCommand() {
     if (!currentData) return;
 
@@ -17,30 +23,28 @@ function updateCommand() {
         formatPart = ''; // checks default behavior, usually bestvideo+bestaudio
     }
 
-    // If user explicitly unselected everything, maybe empty logic?
-    // Let's assume if nothing selected, we don't put -f, or we put best.
-    // But for the GUI, explicit selection is key. If nothing selected, maybe disable download?
-
-    el.downloadBtn.disabled = (!selectedVideoId && !selectedAudioId);
-    if (el.downloadSectionBtn) el.downloadSectionBtn.disabled = el.downloadBtn.disabled;
+    if (el.downloadBtn) {
+        el.downloadBtn.disabled = (!selectedVideoId && !selectedAudioId);
+    }
+    if (el.downloadSectionBtn && el.downloadBtn) {
+        el.downloadSectionBtn.disabled = el.downloadBtn.disabled;
+    }
 
     // Update Download Button Badge Info
     let formatInfoText = '';
     const bottomPanel = document.querySelector('.bottom-panel');
     if (selectedVideoId || selectedAudioId) {
-        let vFmt = formats.find(f => f.format_id === selectedVideoId);
-        let aFmt = formats.find(f => f.format_id === selectedAudioId);
+        let vFmt = formats ? formats.find(f => f.format_id === selectedVideoId) : null;
+        let aFmt = formats ? formats.find(f => f.format_id === selectedAudioId) : null;
 
         const getFormatSizeVal = (fmt) => {
             if (!fmt) return 0;
-            // 1. Try any potential size fields from yt-dlp
             const possibleSize = fmt.filesize || fmt.filesize_approx || fmt.filesize_approximate || fmt.size || fmt.file_size;
             if (possibleSize !== undefined && possibleSize !== null && possibleSize !== '') {
-                return parseSizeToBytes(possibleSize);
+                return parseSizeToBytes ? parseSizeToBytes(possibleSize) : Number(possibleSize) || 0;
             }
-            // 2. Fallback to estimation based on bitrate and duration
             const bitrate = fmt.tbr || fmt.vbr || fmt.abr || 0;
-            const duration = getDurationSeconds(currentData) || 0;
+            const duration = (typeof getDurationSeconds === 'function') ? getDurationSeconds(currentData) : (currentData.duration || 0);
             if (bitrate > 0 && duration > 0) {
                 return ((bitrate * 1024) / 8) * duration;
             }
@@ -57,15 +61,15 @@ function updateCommand() {
         if (vFmt && aFmt) {
             let totalBytes = getFormatSizeVal(vFmt) + getFormatSizeVal(aFmt);
             let approx = isFormatSizeApprox(vFmt) || isFormatSizeApprox(aFmt) ||
-                String(vFmt.filesize).includes('~') || String(aFmt.filesize).includes('~') ||
-                String(vFmt.filesize_approx).includes('~') || String(aFmt.filesize_approx).includes('~') ||
-                String(vFmt.filesize).includes('≈') || String(aFmt.filesize).includes('≈') ||
-                String(vFmt.filesize_approx).includes('≈') || String(aFmt.filesize_approx).includes('≈');
-            sizeStr = totalBytes ? (approx ? '~' : '') + formatBytes(totalBytes) : '--';
+                String(vFmt.filesize || '').includes('~') || String(aFmt.filesize || '').includes('~') ||
+                String(vFmt.filesize_approx || '').includes('~') || String(aFmt.filesize_approx || '').includes('~') ||
+                String(vFmt.filesize || '').includes('≈') || String(aFmt.filesize || '').includes('≈') ||
+                String(vFmt.filesize_approx || '').includes('≈') || String(aFmt.filesize_approx || '').includes('≈');
+            sizeStr = totalBytes ? (approx ? '~' : '') + (typeof formatBytes === 'function' ? formatBytes(totalBytes) : `${Math.round(totalBytes / 1024 / 1024)}MB`) : '--';
         } else if (vFmt) {
-            sizeStr = getFormatDisplaySize(vFmt);
+            sizeStr = typeof getFormatDisplaySize === 'function' ? getFormatDisplaySize(vFmt) : '--';
         } else if (aFmt) {
-            sizeStr = getFormatDisplaySize(aFmt);
+            sizeStr = typeof getFormatDisplaySize === 'function' ? getFormatDisplaySize(aFmt) : '--';
         }
 
         if (vFmt && aFmt) {
@@ -97,8 +101,8 @@ function updateCommand() {
         }
     }
 
-    if (!selectedVideoId && !selectedAudioId && el.downloadBtn.disabled) {
-        el.cmdPreview.value = "Select a stream to generate command...";
+    if (!selectedVideoId && !selectedAudioId && el.downloadBtn && el.downloadBtn.disabled) {
+        if (el.cmdPreview) el.cmdPreview.value = "Select a stream to generate command...";
         return;
     }
 
@@ -110,18 +114,20 @@ function updateCommand() {
     if (settings.writeSubs) flags.push('--write-subs');
     if (settings.ignoreErrors) flags.push('--ignore-errors');
 
-    // Global Stability Flags
+    // Global Stability & Anti-Overwrite Flags
+    flags.push('--no-overwrites');
+    flags.push('--no-post-overwrites');
     flags.push('--no-check-certificates');
     flags.push('--no-warnings');
 
     if (settings.jsRuntime && settings.jsRuntime !== 'none') {
-        flags.push(`--js-runtimes ${settings.jsRuntime}`);
+        flags.push(`--js-runtimes ${escapeCmdArg(settings.jsRuntime)}`);
     }
 
-    if (selectedSubtitles.length > 0) {
+    if (typeof selectedSubtitles !== 'undefined' && selectedSubtitles.length > 0) {
         flags.push('--embed-subs');
-        flags.push(`--sub-langs "${selectedSubtitles.join(',')}"`);
-        if (autoSubsEnabled) flags.push('--write-auto-subs');
+        flags.push(`--sub-langs ${escapeCmdArg(selectedSubtitles.join(','))}`);
+        if (typeof autoSubsEnabled !== 'undefined' && autoSubsEnabled) flags.push('--write-auto-subs');
     }
 
     if (settings.concurrentFragments > 1) {
@@ -129,8 +135,7 @@ function updateCommand() {
     }
 
     // Audio Extraction Optimization
-    // If only audio is selected and it's Opus, add -x --audio-format opus
-    if (!selectedVideoId && selectedAudioId && currentData) {
+    if (!selectedVideoId && selectedAudioId && currentData && currentData.formats) {
         const aFmt = currentData.formats.find(f => f.format_id === selectedAudioId);
         if (aFmt) {
             const ac = (aFmt.acodec || '').toLowerCase();
@@ -142,42 +147,54 @@ function updateCommand() {
     }
 
     let path = settings.downloadPath;
-    // Strict: Always use -P with quotes
-    let pathArg = path ? `-P "${path}"` : '';
-
-    // Add cookies if specified
-    let cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies "${settings.cookiesPath}"` : '';
-
-    let sectionArg = sectionTime ? `--download-sections "${sectionTime}"` : '';
+    let pathArg = path ? `-P ${escapeCmdArg(path)}` : '';
+    let cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies ${escapeCmdArg(settings.cookiesPath)}` : '';
+    let sectionArg = (typeof sectionTime !== 'undefined' && sectionTime) ? `--download-sections ${escapeCmdArg(sectionTime)}` : '';
 
     let playlistArg = "";
-    if (isPlaylistMode && playlistItemsToDownload.length > 0) {
+    if (typeof isPlaylistMode !== 'undefined' && isPlaylistMode && typeof playlistItemsToDownload !== 'undefined' && playlistItemsToDownload.length > 0) {
         playlistArg = `--playlist-items ${playlistItemsToDownload.join(',')}`;
     }
 
-    // Output Template Optimization: Use original title without additions
-    flags.push('-o "%(title)s.%(ext)s"');
+    // Output Template Optimization: Include quality tag [1080p] if video format selected + section timestamp if trimmed
+    let resTag = '';
+    if (selectedVideoId) {
+        let vFmt = formats ? formats.find(f => f.format_id === selectedVideoId) : null;
+        if (vFmt) {
+            let res = (typeof getNormalizedResolution === 'function') ? getNormalizedResolution(vFmt) : (vFmt.height ? `${vFmt.height}p` : '');
+            if (res && res !== 'Unknown') {
+                resTag = ` [${res}]`;
+            }
+        }
+    }
 
-    // Container Optimization: Force MP4 when merging video + audio
+    if (typeof sectionTime !== 'undefined' && sectionTime) {
+        let cleanRange = sectionTime.replace('*', '').replace(/:/g, '.');
+        flags.push(`-o "%(title)s${resTag} (${cleanRange}).%(ext)s"`);
+    } else {
+        flags.push(`-o "%(title)s${resTag}.%(ext)s"`);
+    }
+
     if (selectedVideoId && selectedAudioId) {
         flags.push('--merge-output-format mp4');
     }
 
-    let cmd = `yt-dlp ${sectionArg} ${playlistArg} ${formatPart} ${flags.join(' ')} ${cookiesArg} ${pathArg} "${el.urlInput.value.trim()}"`;
-    // Clean up extra spaces
+    const rawUrl = el.urlInput ? el.urlInput.value.trim() : '';
+    let cmd = `yt-dlp ${sectionArg} ${playlistArg} ${formatPart} ${flags.join(' ')} ${cookiesArg} ${pathArg} ${escapeCmdArg(rawUrl)}`;
+    
     cmd = cmd.replace(/\s+/g, ' ').trim();
-    el.cmdPreview.value = cmd;
+
+    if (el.cmdPreview) {
+        el.cmdPreview.value = cmd;
+    }
 }
 
-// Clear format badge listener
 if (el.clearFormatBadge) {
     el.clearFormatBadge.addEventListener('click', (e) => {
         e.stopPropagation();
         selectedVideoId = null;
         selectedAudioId = null;
-        renderGrid();
+        if (typeof renderGrid === 'function') renderGrid();
         updateCommand();
     });
 }
-
-

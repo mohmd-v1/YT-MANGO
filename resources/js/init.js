@@ -124,7 +124,6 @@ window.addEventListener('drop', (e) => {
 });
 
 
-
 // Call init at the end or here
 Neutralino.init();
 
@@ -194,14 +193,6 @@ window.addEventListener('scroll', () => {
 });
 
 
-// Initialize app
-Neutralino.init();
-
-Neutralino.events.on("windowClose", () => {
-    Neutralino.app.exit();
-});
-
-
 /* =========================================================
    CUSTOM WINDOW CONTROLS (Handled by tabs shell now)
 ========================================================= */
@@ -227,11 +218,6 @@ document.addEventListener("dragleave", (e) => {
     if (el.emptyState) el.emptyState.style.opacity = "1";
 });
 
-// Note: drop is handled by window.addEventListener('drop') above (lines ~509)
-// to avoid double-triggering smartAnalyze.
-
 // Load settings and check tools on startup (runs after all feature modules)
 loadSettings();
 ensureToolsInstalled();
-
-

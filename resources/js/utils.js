@@ -6,10 +6,10 @@ function getCodecBadgeHTML(codec) {
         return '<span class="badge codec-pro badge-codec-default">NONE</span>';
     }
 
-    const vc = codec.toLowerCase();
+    const vc = String(codec).toLowerCase();
 
     // Normalize codec name
-    let normalizedCodec = codec.toUpperCase();
+    let normalizedCodec = String(codec).toUpperCase();
     if (normalizedCodec.length > 20) {
         normalizedCodec = normalizedCodec.substring(0, 17) + '...';
     }
@@ -70,7 +70,7 @@ function getCodecBadgeHTML(codec) {
 
 
 function showStatus(text, type = 'info') {
-    if (!el.statusMsg) return;
+    if (!el || !el.statusMsg) return;
     el.statusMsg.textContent = text;
     el.statusMsg.style.color = 'var(--text-secondary)'; // Default
 
@@ -82,7 +82,7 @@ function showStatus(text, type = 'info') {
 
 function detectErrorFix(message) {
     if (!message) return null;
-    const msg = message.toLowerCase();
+    const msg = String(message).toLowerCase();
 
     // ── 1. Cookies errors (HIGHEST PRIORITY – check first) ──
     if (msg.includes('cookies') || msg.includes('sign in') || msg.includes('login') || msg.includes('confirm your age') || msg.includes('age-restricted') || msg.includes('members only')) {
@@ -90,7 +90,7 @@ function detectErrorFix(message) {
             type: 'cookies',
             btnText: '🔑 Fix: Configure Cookies',
             action: () => {
-                el.settingsModal.classList.remove('hidden');
+                if (el && el.settingsModal) el.settingsModal.classList.remove('hidden');
                 const runtimeTabBtn = document.querySelector('[data-settings-tab="runtimes"]');
                 if (runtimeTabBtn) runtimeTabBtn.click();
 
@@ -121,20 +121,16 @@ function detectErrorFix(message) {
             type: 'runtime',
             btnText: '🔧 Fix: Setup JS Runtime',
             action: () => {
-                // Open Settings
-                el.settingsModal.classList.remove('hidden');
-                // Switch to runtimes tab
+                if (el && el.settingsModal) el.settingsModal.classList.remove('hidden');
                 const runtimeTabBtn = document.querySelector('[data-settings-tab="runtimes"]');
                 if (runtimeTabBtn) runtimeTabBtn.click();
 
-                // Highlight target card
                 const selectEl = document.getElementById('jsRuntimeSelect');
                 const checkCard = selectEl ? selectEl.closest('.settings-card') : null;
                 if (checkCard) {
                     checkCard.classList.add('glowing-fix-highlight');
                 }
 
-                // Clear highlight when JS Runtime changes
                 if (selectEl) {
                     const removeHighlight = () => {
                         if (selectEl.value !== 'none') {
@@ -148,31 +144,26 @@ function detectErrorFix(message) {
         };
     }
 
-    // ── 3. Format/quality errors → usually caused by missing JS Runtime ──
+    // ── 3. Format/quality errors ──
     if (msg.includes('requested format') || msg.includes('not available') || msg.includes('format is not available')) {
         return {
             type: 'format',
             btnText: '🔧 Fix: Setup JS Runtime',
             action: () => {
-                // Open Settings → JS Runtimes tab
-                el.settingsModal.classList.remove('hidden');
+                if (el && el.settingsModal) el.settingsModal.classList.remove('hidden');
                 const runtimeTabBtn = document.querySelector('[data-settings-tab="runtimes"]');
                 if (runtimeTabBtn) runtimeTabBtn.click();
 
-                // Highlight the JS Runtime selector card
                 const selectEl = document.getElementById('jsRuntimeSelect');
                 const runtimeCard = selectEl ? selectEl.closest('.settings-card') : null;
                 if (runtimeCard) {
                     runtimeCard.classList.add('glowing-fix-highlight');
                 }
 
-                // Reset stream selection to avoid stale format IDs
-                selectedVideoId = null;
-                selectedAudioId = null;
-                renderGrid();
-                updateCommand();
+                if (typeof resetSelection === 'function') resetSelection();
+                if (typeof renderGrid === 'function') renderGrid();
+                if (typeof updateCommand === 'function') updateCommand();
 
-                // Clear highlight when JS Runtime changes
                 if (selectEl) {
                     const removeHighlight = () => {
                         if (selectEl.value !== 'none') {
@@ -191,8 +182,9 @@ function detectErrorFix(message) {
 
 
 function showAlert(message, title = 'Notice') {
-    el.alert.title.textContent = title;
-    el.alert.msg.textContent = message;
+    if (!el || !el.alert || !el.alert.modal) return;
+    if (el.alert.title) el.alert.title.textContent = title;
+    if (el.alert.msg) el.alert.msg.textContent = message;
 
     const fixWrapper = document.getElementById('alertFixWrapper');
     const fixBtn = document.getElementById('alertFixBtn');
@@ -202,7 +194,7 @@ function showAlert(message, title = 'Notice') {
         fixBtn.textContent = fix.btnText;
         fixBtn.onclick = () => {
             fix.action();
-            el.alert.modal.classList.add('hidden'); // Close alert modal after click
+            el.alert.modal.classList.add('hidden');
         };
         fixWrapper.classList.remove('hidden');
     } else {
@@ -212,14 +204,16 @@ function showAlert(message, title = 'Notice') {
     el.alert.modal.classList.remove('hidden');
 }
 
-el.alert.closeBtn.addEventListener('click', () => {
-    el.alert.modal.classList.add('hidden');
-});
+if (el && el.alert && el.alert.closeBtn) {
+    el.alert.closeBtn.addEventListener('click', () => {
+        if (el.alert.modal) el.alert.modal.classList.add('hidden');
+    });
+}
 
 
 // Helper to parse shortcut
 function matchShortcut(e, shortcutStr) {
-    if (!shortcutStr) return false;
+    if (!e || !shortcutStr) return false;
     let parts = shortcutStr.toLowerCase().split('+').map(p => p.trim());
     let reqCtrl = parts.includes('ctrl');
     let reqAlt = parts.includes('alt');
@@ -241,9 +235,9 @@ function matchShortcut(e, shortcutStr) {
 // Migrate older settings shortcuts (e.g. 'Ctrl+V' -> 'Ctrl+KeyV')
 function migrateShortcut(s) {
     if (!s) return s;
-    let parts = s.split('+').map(p => p.trim());
+    let parts = String(s).split('+').map(p => p.trim());
     let last = parts[parts.length - 1];
-    if (last.length === 1) {
+    if (last && last.length === 1) {
         if (/[a-zA-Z]/.test(last)) {
             parts[parts.length - 1] = 'Key' + last.toUpperCase();
         } else if (/[0-9]/.test(last)) {
@@ -256,19 +250,19 @@ function migrateShortcut(s) {
 // Format shortcut string for display in UI (e.g. 'Ctrl+KeyV' -> 'Ctrl + V')
 function formatShortcutForDisplay(shortcutStr) {
     if (!shortcutStr) return '';
-    return shortcutStr
+    return String(shortcutStr)
         .replace(/Key([A-Z])/g, '$1')
         .replace(/Digit([0-9])/g, '$1')
         .replace(/\+/g, ' + ');
 }
 
-// Interactive shortcut recorder for settings inputs
 
 function createCustomSelect(options, selectedValue, onChange, placeholder = 'Select...') {
     const container = document.createElement('div');
     container.className = 'custom-select-container';
 
-    const selectedOption = options.find(o => o.value === selectedValue) || options[0];
+    const safeOptions = Array.isArray(options) ? options : [];
+    const selectedOption = safeOptions.find(o => o.value === selectedValue) || safeOptions[0];
 
     container.innerHTML = `
         <div class="custom-select-trigger">
@@ -276,7 +270,7 @@ function createCustomSelect(options, selectedValue, onChange, placeholder = 'Sel
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px; opacity: 0.6; flex-shrink: 0;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
         <div class="custom-options custom-scrollbar">
-            ${options.map(o => `
+            ${safeOptions.map(o => `
                 <div class="custom-option ${o.value === selectedValue ? 'selected' : ''}" data-value="${o.value}">
                     ${o.full !== undefined ? o.full : o.label}
                 </div>
@@ -285,23 +279,23 @@ function createCustomSelect(options, selectedValue, onChange, placeholder = 'Sel
     `;
 
     const trigger = container.querySelector('.custom-select-trigger');
-    const optionsList = container.querySelector('.custom-options');
 
-    trigger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        // Close other open selects
-        document.querySelectorAll('.custom-select-container.active').forEach(s => {
-            if (s !== container) s.classList.remove('active');
+    if (trigger) {
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.custom-select-container.active').forEach(s => {
+                if (s !== container) s.classList.remove('active');
+            });
+            container.classList.toggle('active');
         });
-        container.classList.toggle('active');
-    });
+    }
 
     container.querySelectorAll('.custom-option').forEach(opt => {
         opt.addEventListener('click', (e) => {
             e.stopPropagation();
             const value = opt.dataset.value;
             container.classList.remove('active');
-            if (value !== selectedValue) {
+            if (value !== selectedValue && typeof onChange === 'function') {
                 onChange(value);
             }
         });
@@ -318,6 +312,7 @@ document.addEventListener('click', () => {
 
 // Helpers
 function setLoading(isLoading) {
+    if (!el || !el.loadingOverlay) return;
     if (isLoading) el.loadingOverlay.classList.remove('hidden');
     else el.loadingOverlay.classList.add('hidden');
 }
@@ -338,13 +333,13 @@ function resetSelection() {
     selectedAudioId = null;
     selectedSubtitles = [];
     currentData = null;
-    currentFormats = [];
-    el.contentArea.classList.add('hidden');
-    el.gridBody.innerHTML = '';
+    formats = [];
+    if (el && el.contentArea) el.contentArea.classList.add('hidden');
+    if (el && el.gridBody) el.gridBody.innerHTML = '';
 }
 
 function formatDuration(seconds) {
-    if (!seconds) return '0:00';
+    if (!seconds || isNaN(seconds)) return '0:00';
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = Math.floor(seconds % 60);
@@ -398,17 +393,23 @@ function showToast(title, message, opts) {
     if (message) toast.querySelector('.toast-msg').textContent = message;
     if (opts.actionLabel) {
         const ab = toast.querySelector('.toast-action');
-        ab.textContent = opts.actionLabel;
-        if (typeof opts.onAction === 'function') {
-            ab.addEventListener('click', (e) => { e.stopPropagation(); try { opts.onAction(); } catch (err) { console.error(err); } });
+        if (ab) {
+            ab.textContent = opts.actionLabel;
+            if (typeof opts.onAction === 'function') {
+                ab.addEventListener('click', (e) => { e.stopPropagation(); try { opts.onAction(); } catch (err) { console.error(err); } });
+            }
         }
     }
-    toast.querySelector('.toast-close').addEventListener('click', () => removeToast(toast));
+    const closeBtn = toast.querySelector('.toast-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => removeToast(toast));
+    }
     container.appendChild(toast);
     requestAnimationFrame(() => { requestAnimationFrame(() => toast.classList.add('show')); });
     toast._timer = setTimeout(() => removeToast(toast), opts.duration || 5000);
     return toast;
 }
+
 function getDurationSeconds(obj) {
     if (!obj) return 0;
     let d = obj.duration;
@@ -452,7 +453,6 @@ function formatSizeValue(val) {
 function getFormatDisplaySize(fmt) {
     if (!fmt) return '--';
 
-    // 1. Try to read any potential size fields from yt-dlp
     const possibleSize = fmt.filesize || fmt.filesize_approx || fmt.filesize_approximate || fmt.size || fmt.file_size;
     if (possibleSize !== undefined && possibleSize !== null && possibleSize !== '') {
         const sizeStr = formatSizeValue(possibleSize);
@@ -463,9 +463,8 @@ function getFormatDisplaySize(fmt) {
         return sizeStr;
     }
 
-    // 2. Fallback to estimation based on bitrate and duration
     const bitrate = fmt.tbr || fmt.vbr || fmt.abr || 0;
-    const duration = getDurationSeconds(currentData) || 0;
+    const duration = (typeof currentData !== 'undefined' && currentData) ? getDurationSeconds(currentData) : 0;
     if (bitrate > 0 && duration > 0) {
         const estimatedBytes = ((bitrate * 1024) / 8) * duration;
         return '≈' + formatBytes(estimatedBytes);
@@ -477,7 +476,7 @@ function getFormatDisplaySize(fmt) {
 function parseSizeToBytes(val) {
     if (val === undefined || val === null || val === '') return 0;
     if (typeof val === 'number') return val;
-    let str = val.replace(/[~≈\s]/g, '').trim().toLowerCase();
+    let str = String(val).replace(/[~≈\s]/g, '').trim().toLowerCase();
     const num = parseFloat(str);
     if (isNaN(num)) return 0;
     let multiplier = 1;
@@ -497,5 +496,3 @@ function formatBytes(bytes, decimals = 1) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
-
-

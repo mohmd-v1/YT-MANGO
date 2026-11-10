@@ -1,8 +1,7 @@
 // Global state, settings object and element registry.
 // (extracted from resources/js/main.js — keep in sync with load order in app.html)
 
-
-// State
+// State Variables
 let currentData = null;
 let formats = [];
 let selectedVideoId = null;
@@ -17,7 +16,8 @@ let sectionTime = ''; // Track applied sections time range
 let currentPlaylistData = null;
 let playlistItemsToDownload = []; // Array of indices (1-indexed)
 let isPlaylistMode = false;
-// New playlist manager state
+
+// Playlist manager state
 let playlistData = null;
 let playlistSelection = new Set();
 let playlistDownloads = new Map();
@@ -25,6 +25,8 @@ let playlistMaxConcurrent = 3;
 let resolutionSelections = {}; // Track user selections per resolution: { '1920x1080': { cType: 'av01', formatId: '...' } }
 let selectedSubtitles = []; // Array of language codes
 let autoSubsEnabled = false;
+
+// Global Application Settings Default Object
 let settings = {
     downloadPath: 'Downloads',
     cookiesPath: '',
@@ -32,7 +34,7 @@ let settings = {
     embedMetadata: false,
     embedThumbnail: false,
     restrictFilenames: false,
-    noPlaylist: false,
+    noPlaylist: true,
     writeSubs: false,
     ignoreErrors: false,
     concurrentFragments: 8,
@@ -46,8 +48,7 @@ let settings = {
     }
 };
 
-// Elements
-
+// DOM Element Registry
 const el = {
     urlInput: document.getElementById('urlInput'),
     analyzeBtn: document.getElementById('analyzeBtn'),
@@ -185,33 +186,33 @@ const el = {
     }
 };
 
-
+// Theme Helper Function
 function applyTheme(theme) {
     const root = document.documentElement;
     if (theme === 'system') {
-        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         root.setAttribute('data-theme', isDark ? 'dark' : 'light');
     } else {
         root.setAttribute('data-theme', theme);
     }
 }
 
-// Watch for system theme changes
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if (settings.theme === 'system') {
-        applyTheme('system');
-    }
-});
+// Watch for system theme changes safely
+if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if (settings && settings.theme === 'system') {
+            applyTheme('system');
+        }
+    });
+}
 
-// Receive theme changes broadcast by the browser shell (when theme is changed in another tab)
+// Receive theme changes broadcast by shell window
 window.addEventListener('message', (e) => {
     const theme = e.data && e.data.theme;
     if (e.data && e.data.type === 'theme-change' &&
         (theme === 'light' || theme === 'dark' || theme === 'system')) {
-        settings.theme = theme;
+        if (settings) settings.theme = theme;
         applyTheme(theme);
-        if (el.inputs.themeSelect) el.inputs.themeSelect.value = theme;
+        if (el.inputs && el.inputs.themeSelect) el.inputs.themeSelect.value = theme;
     }
 });
-
-
