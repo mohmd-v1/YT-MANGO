@@ -23,7 +23,7 @@
   ],
   "modes": {
     "window": {
-      "title": "YT MANGO",
+      "title": "YT-MANGO",
       "width": 934,
       "height": 600,
       "minWidth": 934,
@@ -32,7 +32,7 @@
       "fullScreen": false,
       "alwaysOnTop": false,
       "icon": "/resources/icon.png",
-      "enableInspector": true,
+      "enableInspector": false,
       "borderless": true,
       "maximize": false,
       "hidden": false,
@@ -41,7 +41,7 @@
     }
   },
   "cli": {
-    "binaryName": "YT MANGO",
+    "binaryName": "YT-MANGO",
     "resourcesPath": "/resources/",
     "extensionsPath": "/extensions/",
     "clientLibrary": "/resources/js/neutralino.js",
