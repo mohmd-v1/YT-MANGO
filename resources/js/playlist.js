@@ -124,7 +124,7 @@ async function fetchPlaylistLanguages(data) {
     const url = entry.url || entry.webpage_url || entry.id;
     const jsRuntimeArg = settings && settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${escapeCmdArg(settings.jsRuntime)}` : '';
     const cookiesArg = (settings && settings.useCookies && settings.cookiesPath) ? `--cookies ${escapeCmdArg(settings.cookiesPath)}` : '';
-    const cmd = `yt-dlp -J --no-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} ${escapeCmdArg(url)}`;
+    const cmd = `yt-dlp -J --encoding utf-8 --no-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} ${escapeCmdArg(url)}`;
     
     try {
         if (typeof runSpawnalyze !== 'function') return;
@@ -220,33 +220,42 @@ function buildPlaylistItemCmd(entry, index) {
 
     const lang = (el && el.playlist && el.playlist.audioLangSelect) ? el.playlist.audioLangSelect.value : 'auto';
 
-    let core;
+    // Ordered selector chain per audio choice. Later entries are fallbacks only
+    // and must never offer a *higher* bitrate than the chosen one, otherwise an
+    // explicit "Low" silently turns into the best quality.
+    let chain;
     let convertTo = null;
     switch (aq) {
-        case 'opus-best': core = 'bestaudio[acodec^=opus]'; convertTo = 'opus'; break;
-        case 'opus-med': core = 'bestaudio[acodec^=opus][abr<=80]'; convertTo = 'opus'; break;
-        case 'opus-low': core = 'bestaudio[acodec^=opus][abr<=55]'; convertTo = 'opus'; break;
-        case 'm4a-best': core = 'bestaudio[acodec^=mp4a]'; convertTo = 'm4a'; break;
-        case 'm4a-low': core = 'bestaudio[acodec^=mp4a][abr<=80]'; convertTo = 'm4a'; break;
-        default: core = 'bestaudio'; break;
+        case 'opus-best':
+            chain = ['bestaudio[acodec^=opus]', 'bestaudio'];
+            convertTo = 'opus'; break;
+        case 'opus-med':
+            // Best opus under 80k, otherwise the smallest opus available.
+            chain = ['bestaudio[acodec^=opus][abr<=80]', 'worstaudio[acodec^=opus]', 'worstaudio'];
+            convertTo = 'opus'; break;
+        case 'opus-low':
+            // Smallest opus offered, whatever abr the site reports. YouTube
+            // Music ships 249 at ~57k, so a fixed `abr<=55` filter matched
+            // nothing and yt-dlp fell back to 251 at ~145k.
+            chain = ['worstaudio[acodec^=opus]', 'worstaudio'];
+            convertTo = 'opus'; break;
+        case 'm4a-best':
+            chain = ['bestaudio[acodec^=mp4a]', 'bestaudio'];
+            convertTo = 'm4a'; break;
+        case 'm4a-low':
+            chain = ['bestaudio[acodec^=mp4a][abr<=80]', 'worstaudio[acodec^=mp4a]', 'worstaudio'];
+            convertTo = 'm4a'; break;
+        default: // auto / original
+            chain = ['bestaudio']; break;
     }
 
     const cands = [];
     const addLang = (expr) => (lang !== 'auto') ? `${expr}[language=${lang}]` : null;
-    if (core !== 'bestaudio') {
-        const l = addLang(core); if (l) cands.push(l);
-        cands.push(core);
-        const codecPrefix = core.startsWith('bestaudio[acodec^=opus]') ? 'bestaudio[acodec^=opus]' :
-            (core.startsWith('bestaudio[acodec^=mp4a]') ? 'bestaudio[acodec^=mp4a]' : null);
-        if (codecPrefix) {
-            const l2 = addLang(codecPrefix); if (l2) cands.push(l2);
-            cands.push(codecPrefix);
-        }
+    for (const expr of chain) {
+        const l = addLang(expr);
+        if (l) cands.push(l);
+        cands.push(expr);
     }
-    if (lang !== 'auto') {
-        const l3 = addLang('bestaudio'); if (l3) cands.push(l3);
-    }
-    cands.push('bestaudio');
     const uniq = [...new Set(cands)];
     const audioSelector = uniq.join('/');
 
@@ -254,8 +263,13 @@ function buildPlaylistItemCmd(entry, index) {
     let audioFlags = [];
     if (audioOnly) {
         formatStr = audioSelector;
-        if (convertTo) {
-            audioFlags.push('-x', '--audio-format', convertTo);
+        // "Auto" already sorts the audio towards opus (`-S acodec:opus`), so
+        // extract it to a real .opus file exactly like the single-video quick
+        // audio path does — otherwise the item stays in its .webm container.
+        // "Audio: Original" is the opt-out that keeps the source container.
+        const targetFormat = convertTo || (aq === 'auto' ? 'opus' : null);
+        if (targetFormat) {
+            audioFlags.push('-x', '--audio-format', targetFormat);
         }
     } else {
         formatStr = `${vPart}+(${audioSelector})/${vPart}+bestaudio/best`;
@@ -265,10 +279,20 @@ function buildPlaylistItemCmd(entry, index) {
     if (embedMeta) flags.push('--embed-metadata');
     if (embedThumb) flags.push('--embed-thumbnail');
     if (settings && settings.restrictFilenames) flags.push('--restrict-filenames');
-    flags.push('--no-overwrites');
-    flags.push('--no-post-overwrites');
+    // An explicit audio quality is a deliberate choice, so it must win over an
+    // existing file: the output name is derived from the title only, so a file
+    // fetched earlier at another bitrate would otherwise be skipped as "has
+    // already been downloaded" and the new quality would never take effect.
+    const explicitQuality = ['opus-best', 'opus-med', 'opus-low', 'm4a-best', 'm4a-low'].includes(aq);
+    if (explicitQuality) {
+        flags.push('--force-overwrites');
+    } else {
+        flags.push('--no-overwrites');
+        flags.push('--no-post-overwrites');
+        flags.push('--continue');
+    }
     flags.push('--no-playlist');
-    flags.push('--continue');
+    flags.push('--encoding utf-8');
     flags.push(`-S "lang,acodec:opus"`);
     flags.push(`-f "${formatStr}"`);
     flags = flags.concat(audioFlags);
@@ -371,15 +395,6 @@ async function downloadPlaylistItems(indices) {
                     }
                     const match = text.match(/(\d+(\.\d+)?)%/);
                     if (match && barFill) barFill.style.width = match[1] + '%';
-
-                    const destMatch = text.match(/\[download\]\s+Destination:\s+(.+)/) ||
-                                      text.match(/\[Merger\]\s+Merging formats into "(.+)"/) ||
-                                      text.match(/\[ExtractAudio\]\s+Destination:\s+(.+)/) ||
-                                      text.match(/\[download\]\s+(.+?)\s+has already been downloaded/);
-                    if (destMatch) {
-                        let rawDest = destMatch[1].trim().replace(/^"/, '').replace(/"$/, '');
-                        if (rawDest) itemDestination = rawDest;
-                    }
                 }
 
                 if (evt.detail.action === 'exit') {
@@ -392,6 +407,12 @@ async function downloadPlaylistItems(indices) {
 
                     const logContent = logEl ? (logEl.textContent || '') : '';
                     const isAlreadyDownloaded = /has already been downloaded|already in target format/i.test(logContent);
+
+                    // Parse the final file path from the complete log
+                    // (chunk-safe, and prefers the post-merge path).
+                    if (typeof extractDestinationPath === 'function') {
+                        itemDestination = extractDestinationPath(logContent) || itemDestination;
+                    }
 
                     let playlistFolder = (playlistData && playlistData.title)
                         ? `${(settings ? settings.downloadPath : '')}/${playlistData.title.replace(/[\\/:*?"<>|]/g, '_').trim()}`
@@ -499,7 +520,7 @@ async function downloadPlaylistItems(indices) {
                                     if (barFill) barFill.style.width = '100%';
                                     dl.status = 'done';
                                     if (pauseBtn) pauseBtn.classList.add('hidden');
-                                    if (resumeBtn) resumeBtn.classList.remove('hidden');
+                                    if (resumeBtn) resumeBtn.classList.add('hidden');
                                     if (closeBtn) closeBtn.classList.remove('hidden');
                                     setTimeout(() => {
                                         removePanel(panel);

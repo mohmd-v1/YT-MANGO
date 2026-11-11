@@ -67,7 +67,11 @@ Neutralino.events.on("ready", async () => {
         }
     }
 
-    loadSettings();
+    await loadSettings();
+
+    // Tools must be checked after the (single) settings load so the install
+    // modal and version labels use the persisted configuration.
+    await ensureToolsInstalled();
 });
 
 window.addEventListener('dragover', (e) => {
@@ -178,6 +182,12 @@ if (openGithubBtn) {
     });
 }
 
+if (el && el.openGithubAboutBtn) {
+    el.openGithubAboutBtn.addEventListener('click', () => {
+        Neutralino.os.open('https://github.com/mohmd-v1/yt-dlp-gui');
+    });
+}
+
 
 // Float tabs on scroll
 window.addEventListener('scroll', () => {
@@ -218,6 +228,5 @@ document.addEventListener("dragleave", (e) => {
     if (el.emptyState) el.emptyState.style.opacity = "1";
 });
 
-// Load settings and check tools on startup (runs after all feature modules)
-loadSettings();
-ensureToolsInstalled();
+// Settings are loaded exactly once, from the Neutralino "ready" handler above,
+// right before ensureToolsInstalled() runs.

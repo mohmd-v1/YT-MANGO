@@ -1,4 +1,4 @@
-// URL analysis pipeline (smartAnalyze, analyzeUrl, analyzePlaylist, quickM4a).
+// URL analysis pipeline (analyzeUrl, analyzePlaylist, quickM4a).
 // (extracted from resources/js/main.js — keep in sync with load order in app.html)
 
 // Helper to escape shell arguments safely for Neutralino os.spawnProcess
@@ -86,18 +86,6 @@ function runSpawnalyze(cmd) {
     });
 }
 
-// Logic
-async function smartAnalyze(forcePlaylist = false) {
-    if (forcePlaylist instanceof Event) {
-        forcePlaylist = false;
-    }
-    if (forcePlaylist) {
-        await analyzePlaylist();
-    } else {
-        await analyzeUrl();
-    }
-}
-
 async function analyzePlaylist() {
     const url = el.urlInput ? el.urlInput.value.trim() : '';
     if (!url) return;
@@ -111,7 +99,7 @@ async function analyzePlaylist() {
     try {
         let cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies ${escapeCmdArg(settings.cookiesPath)}` : '';
         let jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${escapeCmdArg(settings.jsRuntime)}` : '';
-        let command = `yt-dlp -J --flat-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} ${escapeCmdArg(url)}`;
+        let command = `yt-dlp -J --flat-playlist --encoding utf-8 --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} ${escapeCmdArg(url)}`;
         console.log("Playlist Analysis:", command);
 
         let output = await runSpawnalyze(command);
@@ -184,7 +172,7 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
         // Speed Boost: --no-check-certificates, --no-warnings
         let cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies ${escapeCmdArg(settings.cookiesPath)}` : '';
         let jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${escapeCmdArg(settings.jsRuntime)}` : '';
-        let command = `yt-dlp -J --no-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} ${escapeCmdArg(url)}`;
+        let command = `yt-dlp -J --encoding utf-8 --no-playlist --no-check-certificates --no-warnings ${jsRuntimeArg} ${cookiesArg} ${escapeCmdArg(url)}`;
         console.log("Analyzing:", command);
 
         let output = await runSpawnalyze(command);
@@ -337,9 +325,9 @@ async function quickM4a() {
     let jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${escapeCmdArg(settings.jsRuntime)}` : '';
     let cmd = '';
     if (settings.quickAudioFormat === 'opus') {
-        cmd = `yt-dlp -f "251/bestaudio" --no-overwrites --embed-metadata --embed-thumbnail -o "%(title)s.%(ext)s" -x --audio-format opus --no-playlist ${jsRuntimeArg} ${cookiesArg} ${pathArg} ${escapeCmdArg(url)}`;
+        cmd = `yt-dlp -f "251/bestaudio" --encoding utf-8 --no-overwrites --embed-metadata --embed-thumbnail -o "%(title)s.%(ext)s" -x --audio-format opus --no-playlist ${jsRuntimeArg} ${cookiesArg} ${pathArg} ${escapeCmdArg(url)}`;
     } else {
-        cmd = `yt-dlp -f "140/bestaudio" --no-overwrites --embed-metadata --embed-thumbnail -o "%(title)s.%(ext)s" --no-playlist ${jsRuntimeArg} ${cookiesArg} ${pathArg} ${escapeCmdArg(url)}`;
+        cmd = `yt-dlp -f "140/bestaudio" --encoding utf-8 --no-overwrites --embed-metadata --embed-thumbnail -o "%(title)s.%(ext)s" --no-playlist ${jsRuntimeArg} ${cookiesArg} ${pathArg} ${escapeCmdArg(url)}`;
     }
 
     if (el.cmdPreview) {

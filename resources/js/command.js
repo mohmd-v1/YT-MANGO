@@ -119,6 +119,10 @@ function updateCommand() {
     flags.push('--no-post-overwrites');
     flags.push('--no-check-certificates');
     flags.push('--no-warnings');
+    // yt-dlp writes human-readable log lines with the console encoding when
+    // stdout is piped; force UTF-8 so non-ASCII file paths survive for the
+    // "open file location" feature.
+    flags.push('--encoding utf-8');
 
     if (settings.jsRuntime && settings.jsRuntime !== 'none') {
         flags.push(`--js-runtimes ${escapeCmdArg(settings.jsRuntime)}`);

@@ -60,6 +60,17 @@ function renderGrid() {
         renderDualColumn('mixed', formatsToRender, mixedFrag);
         el.gridBody.appendChild(mixedFrag);
     }
+
+    // "Video only" note: relevant only in the Mixed tab when the source did not
+    // provide any muxed stream, so the fallback list is video-only.
+    if (el.videoOnlyNote) {
+        const hasMuxed = safeFormats.some(f =>
+            f && f.vcodec && f.vcodec !== 'none' && f.vcodec !== 'audio only' &&
+            f.acodec && f.acodec !== 'none' && f.acodec !== 'video only'
+        );
+        const showNote = activeTab === 'mixed' && safeFormats.length > 0 && !hasMuxed;
+        el.videoOnlyNote.classList.toggle('hidden', !showNote);
+    }
 }
 
 // Normalize all resolution naming styles into one quality group.
@@ -237,7 +248,7 @@ function renderDualColumn(type, filtered, container = null) {
         if (type === 'video') {
             renderCompactRow(
                 activeFmt,
-                el.videoGridBody,
+                container || el.videoGridBody,
                 {
                     resKey,
                     ctypes: availableCTypes,

@@ -295,6 +295,9 @@ async function loadSettings() {
         applyTheme(settings.theme || 'system');
     }
 
+    // Keep the shell's theme record aligned with the persisted settings.
+    await syncShellSettings();
+
     if (el && el.quickAudioLabel) {
         el.quickAudioLabel.textContent = (settings.quickAudioFormat || 'm4a').toUpperCase();
     }
@@ -333,6 +336,7 @@ function syncSettingsUI() {
 async function saveSettings() {
     try {
         await Neutralino.storage.setData('settings', JSON.stringify(settings));
+        await syncShellSettings();
         if (typeof showStatus === 'function') {
             showStatus('Settings Saved', 'success');
             setTimeout(() => showStatus('Ready'), 2000);
@@ -340,6 +344,19 @@ async function saveSettings() {
         try { if (window.__bc) window.__bc.postMessage({ type: 'settings', sender: window.__tabId, payload: settings }); } catch (e) { }
     } catch (err) {
         console.error("Failed to save settings:", err);
+    }
+}
+
+// The tab shell (index.html) restores the window theme before the app iframe
+// is ready, so it needs a tiny dedicated record. Keep this mirror in sync so
+// explicit Light/Dark choices are not overridden by the OS theme watcher.
+async function syncShellSettings() {
+    try {
+        await Neutralino.storage.setData('yt_dlp_settings', JSON.stringify({
+            theme: (settings && settings.theme) || 'system'
+        }));
+    } catch (err) {
+        // Non-fatal: the shell falls back to the cached/system theme.
     }
 }
 

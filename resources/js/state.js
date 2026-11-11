@@ -84,6 +84,7 @@ const el = {
     selectedFormatInfoText: document.getElementById('selectedFormatInfoText'),
     toggleSettings: document.getElementById('toggleSettings'),
     toggleCommand: document.getElementById('toggleCommand'),
+    openGithubAboutBtn: document.getElementById('openGithubAboutBtn'),
     videoOnlyNote: document.getElementById('videoOnlyNote'),
     settingsModal: document.getElementById('settingsModal'),
     commandModal: document.getElementById('commandModal'),
@@ -114,16 +115,6 @@ const el = {
     ytdlpVersionText: document.getElementById('ytdlpVersionText'),
     ffmpegVersionText: document.getElementById('ffmpegVersionText'),
     updateYtdlpBtn: document.getElementById('updateYtdlpBtn'),
-    modal: {
-        self: document.getElementById('progressModal'),
-        bar: document.getElementById('progressBar'),
-        log: document.getElementById('progressLog'),
-        close: document.getElementById('closeModalBtn'),
-        open: document.getElementById('openFolderBtn'),
-        cancel: document.getElementById('cancelDownloadBtn'),
-        processing: document.getElementById('processingView'),
-        success: document.getElementById('successView')
-    },
     sections: {
         modal: document.getElementById('sectionsModal'),
         closeBtn: document.getElementById('closeSectionsBtn'),

@@ -16,6 +16,7 @@
   "nativeAllowList": [
     "app.*",
     "os.*",
+    "filesystem.*",
     "storage.*",
     "window.*",
     "events.*",
@@ -32,7 +33,7 @@
       "fullScreen": false,
       "alwaysOnTop": false,
       "icon": "/resources/icon.png",
-      "enableInspector": false,
+      "enableInspector": true,
       "borderless": true,
       "maximize": false,
       "hidden": false,

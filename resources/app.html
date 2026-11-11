@@ -21,12 +21,12 @@
     } catch (e) { }
   })();
   </script>
-  <link rel="stylesheet" href="css/theme.css?v=20261101a">
-  <link rel="stylesheet" href="css/components.css?v=20261101a">
-  <link rel="stylesheet" href="css/layout.css?v=20261101a">
-  <link rel="stylesheet" href="css/formats.css?v=20261101a">
-  <link rel="stylesheet" href="css/settings.css?v=20261101a">
-  <link rel="stylesheet" href="css/modals.css?v=20261101a">
+  <link rel="stylesheet" href="css/theme.css?v=20261111a">
+  <link rel="stylesheet" href="css/components.css?v=20261111a">
+  <link rel="stylesheet" href="css/layout.css?v=20261111a">
+  <link rel="stylesheet" href="css/formats.css?v=20261111a">
+  <link rel="stylesheet" href="css/settings.css?v=20261111a">
+  <link rel="stylesheet" href="css/modals.css?v=20261111a">
 </head>
 
 <body>
@@ -100,7 +100,7 @@
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
-          <span>These formats contain <strong>Video Only</strong>. Please select an <strong>Audio</strong> format from the "Audio Only" tab to include sound.</span>
+          <span>These formats are <strong>Video Only</strong>. Switch to the <strong>Video + Audio</strong> tab to pick a video stream and an audio stream together.</span>
         </div>
 
         <!-- Dual View (Video + Audio) -->
@@ -627,7 +627,7 @@
                   <img src="icon.png" alt="App Logo" class="about-logo">
                   <span class="about-title">YT-MANGO</span>
                   <span class="about-desc">A professional graphical interface for yt-dlp.</span>
-                  <button id="openGithubBtn" type="button" class="secondary-btn about-github-btn">GitHub Repository</button>
+                  <button id="openGithubAboutBtn" type="button" class="secondary-btn about-github-btn">GitHub Repository</button>
                 </div>
 
                 <!-- Dependencies -->
@@ -677,32 +677,6 @@
         </div>
         <div class="modal-body">
           <textarea id="cmdPreview" spellcheck="false" readonly></textarea>
-        </div>
-      </div>
-    </div>
-
-    <!-- Download Progress Modal -->
-    <div id="progressModal" class="modal modal-compact hidden">
-      <div class="modal-content">
-        <div id="processingView">
-          <h3>Downloading...</h3>
-          <div class="progress-track">
-            <div id="progressBar" class="progress-fill" style="width: 0%"></div>
-          </div>
-          <pre id="progressLog" class="terminal-log"></pre>
-        </div>
-
-        <div id="successView" class="success-view hidden">
-          <div class="success-icon">✓</div>
-          <h3>Download Complete!</h3>
-          <p>Your files are ready.</p>
-        </div>
-
-        <div class="modal-actions">
-          <button id="toggleLogBtn" type="button" class="secondary-btn">Details</button>
-          <button id="cancelDownloadBtn" type="button" class="secondary-btn">Cancel</button>
-          <button id="openFolderBtn" type="button" class="primary-btn hidden">Open Folder</button>
-          <button id="closeModalBtn" type="button" class="secondary-btn hidden">Close</button>
         </div>
       </div>
     </div>
@@ -837,6 +811,7 @@
               <option value="opus-low">Audio: Opus - Low</option>
               <option value="m4a-best">Audio: M4A - Best</option>
               <option value="m4a-low">Audio: M4A - Low</option>
+              <option value="original">Audio: Original (no convert)</option>
             </select>
             <select id="playlistAudioLang" class="playlist-quality-select" title="Audio language">
               <option value="auto">Lang: Original (auto)</option>
@@ -938,18 +913,18 @@
 
   <script src="js/neutralino.js"></script>
   <!-- Feature modules — load order matters (shared global scope) -->
-  <script src="js/state.js?v=20261106"></script>
-  <script src="js/utils.js?v=20261106"></script>
-  <script src="js/tools.js?v=20261106"></script>
-  <script src="js/settings.js?v=20261106"></script>
-  <script src="js/sections.js?v=20261106"></script>
-  <script src="js/notifs.js?v=20261106"></script>
-  <script src="js/analyze.js?v=20261106"></script>
-  <script src="js/grid.js?v=20261106"></script>
-  <script src="js/command.js?v=20261106"></script>
-  <script src="js/download.js?v=20261106"></script>
-  <script src="js/playlist.js?v=20261106"></script>
-  <script src="js/init.js?v=20261106"></script>
+  <script src="js/state.js?v=20261111c"></script>
+  <script src="js/utils.js?v=20261111c"></script>
+  <script src="js/tools.js?v=20261111c"></script>
+  <script src="js/settings.js?v=20261111c"></script>
+  <script src="js/sections.js?v=20261111c"></script>
+  <script src="js/notifs.js?v=20261111c"></script>
+  <script src="js/analyze.js?v=20261111c"></script>
+  <script src="js/grid.js?v=20261111c"></script>
+  <script src="js/command.js?v=20261111c"></script>
+  <script src="js/download.js?v=20261111c"></script>
+  <script src="js/playlist.js?v=20261111f"></script>
+  <script src="js/init.js?v=20261111c"></script>
 </body>
 
 </html>

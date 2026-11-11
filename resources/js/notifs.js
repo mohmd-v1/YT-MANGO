@@ -72,9 +72,6 @@ function renderNotifPanel() {
             const target = (item && item.path) ? item.path : (typeof settings !== 'undefined' && settings ? settings.downloadPath : null);
             if (typeof openFileLocation === 'function' && target) {
                 openFileLocation(target);
-            } else {
-                const elOpen = document.getElementById('openFolderBtn');
-                if (elOpen) elOpen.click();
             }
         });
     });
@@ -135,16 +132,6 @@ document.addEventListener('click', (e) => {
 });
 
 loadNotifHistory();
-
-const toggleLogBtn = document.getElementById('toggleLogBtn');
-if (toggleLogBtn) {
-    toggleLogBtn.addEventListener('click', () => {
-        const log = document.getElementById('progressLog');
-        if (!log) return;
-        log.classList.toggle('expanded');
-        toggleLogBtn.textContent = log.classList.contains('expanded') ? 'Hide' : 'Details';
-    });
-}
 
 // Cross-tab sync (settings + download history)
 window.__tabId = 'tab_' + Math.random().toString(36).slice(2);

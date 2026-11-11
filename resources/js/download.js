@@ -1,69 +1,8 @@
 // Download execution (panel system, cancel, copy direct link).
 // (extracted from resources/js/main.js — keep in sync with load order in app.html)
 
-let lastDownloadedFilePath = null;
-
 if (el && el.downloadBtn) {
     el.downloadBtn.addEventListener('click', startDownload);
-}
-
-function closeModal() {
-    if (el && el.modal && el.modal.self) el.modal.self.classList.add('hidden');
-    if (el && el.modal && el.modal.log) el.modal.log.textContent = '';
-    if (el && el.modal && el.modal.bar) el.modal.bar.style.width = '0%';
-    if (el && el.modal && el.modal.close) el.modal.close.classList.add('hidden');
-    if (el && el.modal && el.modal.open) el.modal.open.classList.add('hidden');
-    if (el && el.modal && el.modal.cancel) el.modal.cancel.classList.add('hidden');
-
-    // Reset view to processing
-    if (el && el.modal && el.modal.processing) el.modal.processing.classList.remove('hidden');
-    if (el && el.modal && el.modal.success) el.modal.success.classList.add('hidden');
-
-    // Reset reference
-    if (typeof currentDownloadProcess !== 'undefined') {
-        currentDownloadProcess = null;
-    }
-}
-
-if (el && el.modal && el.modal.close) {
-    el.modal.close.addEventListener('click', closeModal);
-}
-
-if (el && el.modal && el.modal.cancel) {
-    el.modal.cancel.addEventListener('click', async () => {
-        if (typeof currentDownloadProcessPid !== 'undefined' && currentDownloadProcessPid) {
-            try {
-                // Kill yt-dlp and all child processes
-                let killCmd = window.NL_OS === 'Windows'
-                    ? `taskkill /F /T /PID ${currentDownloadProcessPid}`
-                    : `kill -9 ${currentDownloadProcessPid}`;
-                await Neutralino.os.execCommand(killCmd);
-
-                if (el.modal.log) el.modal.log.textContent += '\n\n[CANCELLED] Download cancelled by user.';
-                if (el.statusMsg) el.statusMsg.textContent = 'Download cancelled';
-                currentDownloadProcess = null;
-                currentDownloadProcessPid = null;
-
-                // Show close button
-                el.modal.cancel.classList.add('hidden');
-                el.modal.close.classList.remove('hidden');
-            } catch (err) {
-                console.error('Failed to cancel download:', err);
-                if (el.modal.log) el.modal.log.textContent += '\n\n[CANCELLED] Download process terminated.';
-                currentDownloadProcess = null;
-                currentDownloadProcessPid = null;
-                el.modal.cancel.classList.add('hidden');
-                el.modal.close.classList.remove('hidden');
-            }
-        }
-    });
-}
-
-if (el && el.modal && el.modal.open) {
-    el.modal.open.addEventListener('click', async () => {
-        let target = lastDownloadedFilePath || (settings ? settings.downloadPath : null) || 'Downloads';
-        openFileLocation(target);
-    });
 }
 
 async function startDownload() {
@@ -144,18 +83,6 @@ async function startDownload() {
 
                 const match = text.match(/(\d+(\.\d+)?)%/);
                 if (match && barFill) barFill.style.width = match[1] + '%';
-
-                const destMatch = text.match(/\[download\]\s+Destination:\s+(.+)/) ||
-                                  text.match(/\[Merger\]\s+Merging formats into "(.+)"/) ||
-                                  text.match(/\[ExtractAudio\]\s+Destination:\s+(.+)/) ||
-                                  text.match(/\[download\]\s+(.+?)\s+has already been downloaded/);
-                if (destMatch) {
-                    let rawDest = destMatch[1].trim().replace(/^"/, '').replace(/"$/, '');
-                    if (rawDest) {
-                        panelDestination = rawDest;
-                        lastDownloadedFilePath = rawDest;
-                    }
-                }
             }
 
             if (evt.detail.action == 'exit') {
@@ -169,6 +96,10 @@ async function startDownload() {
 
                 const logContent = logEl ? (logEl.textContent || '') : '';
                 const isAlreadyDownloaded = /has already been downloaded|already in target format/i.test(logContent);
+
+                // Parse the destination from the complete log (not per chunk):
+                // a long non-ASCII path can be split across output chunks.
+                panelDestination = extractDestinationPath(logContent) || panelDestination;
 
                 if (code === 0 || isAlreadyDownloaded) {
                     if (barFill) barFill.style.width = '100%';
@@ -258,42 +189,169 @@ async function startDownload() {
     }
 }
 
-function openFileLocation(targetPath) {
+// Extract the final output path from a complete yt-dlp log.
+// The last matching line wins (Destination → Merger/ExtractAudio/MoveFiles),
+// so merged and audio-extracted downloads resolve to the real file.
+function extractDestinationPath(logText) {
+    if (!logText) return null;
+    const patterns = [
+        /\[download\]\s+Destination:\s+([^\r\n]+)/g,
+        /\[Merger\]\s+Merging formats into "([^"]+)"/g,
+        /\[ExtractAudio\]\s+Destination:\s+([^\r\n]+)/g,
+        /\[MoveFiles\]\s+Moving file "[^"]+" to "([^"]+)"/g,
+        /\[download\]\s+([^\r\n]+?)\s+has already been downloaded/g
+    ];
+    let best = null;
+    patterns.forEach(re => {
+        let m;
+        while ((m = re.exec(logText))) {
+            const p = (m[1] || '').trim().replace(/^"|"$/g, '');
+            if (p && (!best || m.index > best.index)) best = { index: m.index, path: p };
+        }
+    });
+    return best ? best.path : null;
+}
+
+// Windows: `explorer /select` always spawns a brand-new window, even when the
+// folder is already open in Explorer. So we drive Shell.Application through
+// PowerShell to reuse an existing window on that folder (selecting the file and
+// bringing the window forward) and only fall back to a new window when there is
+// none. The script travels as Base64/UTF-16 so Arabic paths survive quoting.
+function psSingleQuote(value) {
+    return "'" + String(value == null ? '' : value).replace(/'/g, "''") + "'";
+}
+
+function encodePowershellScript(script) {
+    let binary = '';
+    for (let i = 0; i < script.length; i++) {
+        const code = script.charCodeAt(i);
+        binary += String.fromCharCode(code & 0xff, (code >> 8) & 0xff);
+    }
+    return btoa(binary);
+}
+
+function buildWindowsRevealCommand(filePath, dirPath) {
+    const lines = [
+        "$ErrorActionPreference='SilentlyContinue'",
+        '$d=' + psSingleQuote(dirPath),
+        '$t=' + psSingleQuote(filePath || ''),
+        '$ok=$false',
+        'try{',
+        '  $sh=New-Object -ComObject Shell.Application',
+        '  foreach($w in $sh.Windows()){',
+        '    try{',
+        '      $p=$w.Document.Folder.Self.Path',
+        "      if($p -and ($p.TrimEnd('\\') -ieq $d.TrimEnd('\\'))){",
+        '        $w.Visible=$true',
+        '        if($t){try{$i=$w.Document.Folder.ParseName([IO.Path]::GetFileName($t));if($i){$w.Document.SelectItem($i,29)}}catch{}}',
+        '        try{Add-Type -AssemblyName Microsoft.VisualBasic;[Microsoft.VisualBasic.Interaction]::AppActivate([int]$w.HWND)|Out-Null}catch{}',
+        '        $ok=$true',
+        '        break',
+        '      }',
+        '    }catch{}',
+        '  }',
+        '}catch{}',
+        'if(-not $ok){',
+        "  if($t){Start-Process explorer.exe -ArgumentList ('/select,\"'+$t+'\"')}",
+        "  else{Start-Process explorer.exe -ArgumentList ('\"'+$d+'\"')}",
+        '}'
+    ];
+    return 'powershell -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand '
+        + encodePowershellScript(lines.join('\n'));
+}
+
+async function openFileLocation(targetPath) {
     if (!targetPath) return;
 
-    let resolvedPath = String(targetPath).trim();
-    // Check if absolute path (Windows "C:\" or UNC "\\", or Unix "/")
-    const isAbsolute = /^(?:[a-zA-Z]:[\\/]|\\\\|[\\/])/.test(resolvedPath);
-    if (!isAbsolute && typeof settings !== 'undefined' && settings && settings.downloadPath) {
-        const base = String(settings.downloadPath).replace(/[\\/]+$/, '');
-        const rel = resolvedPath.replace(/^[\\/]+/, '');
-        resolvedPath = `${base}/${rel}`;
+    const isWindows = window.NL_OS === 'Windows';
+    const sep = isWindows ? '\\' : '/';
+    const normalize = (p) => {
+        const s = String(p || '').trim();
+        return isWindows ? s.replace(/\//g, '\\') : s.replace(/\\/g, '/');
+    };
+    const parentOf = (p) => String(p).replace(/[\\/][^\\/]+$/, '');
+    const baseName = (p) => String(p).split(/[\\/]/).pop() || '';
+
+    let resolved = normalize(targetPath);
+    const isAbsolute = isWindows
+        ? /^(?:[a-zA-Z]:[\\/]|\\\\)/.test(resolved)
+        : resolved.startsWith('/');
+
+    const configuredBase = (typeof settings !== 'undefined' && settings && settings.downloadPath)
+        ? normalize(settings.downloadPath).replace(/[\\/]+$/, '')
+        : '';
+
+    if (!isAbsolute && configuredBase) {
+        const baseLabel = baseName(configuredBase);
+        let rel = resolved.replace(/^[\\/]+/, '');
+        // Avoid "Downloads\Downloads\file" when yt-dlp already reported a path
+        // relative to its own output folder.
+        if (baseLabel && rel.toLowerCase().startsWith(baseLabel.toLowerCase() + sep)) {
+            rel = rel.slice(baseLabel.length + 1);
+        }
+        resolved = configuredBase + sep + rel;
+    }
+
+    const stat = async (p) => {
+        try {
+            const s = await Neutralino.filesystem.getStats(p);
+            return { exists: true, isDir: !!s.isDirectory, isFile: !!s.isFile };
+        } catch (e) {
+            return { exists: false, isDir: false, isFile: false };
+        }
+    };
+
+    let filePath = null;
+    let dirPath = resolved;
+    const info = await stat(resolved);
+
+    if (info.exists && info.isFile) {
+        filePath = resolved;
+        dirPath = parentOf(resolved);
+    } else if (!info.exists) {
+        // Stale history entry / renamed file: open the nearest existing folder
+        // instead of letting Explorer fall back to "This PC".
+        dirPath = parentOf(resolved);
+        let guard = 0;
+        while (dirPath && guard++ < 8) {
+            const d = await stat(dirPath);
+            if (d.exists && d.isDir) break;
+            const parent = parentOf(dirPath);
+            if (!parent || parent === dirPath) { dirPath = ''; break; }
+            dirPath = parent;
+        }
+        if (!dirPath) dirPath = configuredBase;
+    }
+
+    if (!dirPath) {
+        if (typeof showStatus === 'function') showStatus('Folder not found', 'error');
+        return;
     }
 
     let openCmd = '';
-    if (window.NL_OS === 'Windows') {
-        let winPath = resolvedPath.replace(/\//g, '\\');
-        // If path points to a file, use /select to highlight it
-        if (/\.[a-zA-Z0-9]+$/.test(winPath)) {
-            openCmd = `explorer /select,"${winPath}"`;
-        } else {
-            openCmd = `explorer "${winPath}"`;
+    if (isWindows) {
+        // Try to reveal inside an existing Explorer window first.
+        let revealed = false;
+        try {
+            const result = await Neutralino.os.execCommand(buildWindowsRevealCommand(filePath, dirPath));
+            revealed = !!(result && result.exitCode === 0);
+        } catch (e) {
+            revealed = false;
         }
+        if (revealed) return;
+        openCmd = filePath ? `explorer /select,"${filePath}"` : `explorer "${dirPath}"`;
     } else if (window.NL_OS === 'Darwin') {
-        let posixPath = resolvedPath.replace(/\\/g, '/');
-        if (/\.[a-zA-Z0-9]+$/.test(posixPath)) {
-            openCmd = `open -R "${posixPath}"`;
-        } else {
-            openCmd = `open "${posixPath}"`;
-        }
+        openCmd = filePath ? `open -R "${filePath}"` : `open "${dirPath}"`;
     } else {
-        let posixPath = resolvedPath.replace(/\\/g, '/');
-        let dir = posixPath.includes('/') && /\.[a-zA-Z0-9]+$/.test(posixPath)
-            ? posixPath.substring(0, posixPath.lastIndexOf('/'))
-            : posixPath;
-        openCmd = `xdg-open "${dir}"`;
+        openCmd = `xdg-open "${dirPath}"`;
     }
-    Neutralino.os.execCommand(openCmd).catch(() => { });
+
+    try {
+        await Neutralino.os.execCommand(openCmd);
+    } catch (e) {
+        console.warn('Failed to open file location:', e);
+        if (typeof showStatus === 'function') showStatus('Could not open folder', 'error');
+    }
 }
 
 function removePanel(panel) {
