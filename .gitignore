@@ -21,3 +21,7 @@ python_version/
 # OS files
 .DS_Store
 Thumbs.db
+.tmp/window_state.config.json
+.tmp/auth_info.json
+.tmp/window_state.config.json
+fac.json
