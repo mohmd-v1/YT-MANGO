@@ -157,7 +157,7 @@
     border-radius: 0 0 var(--radius) var(--radius);
     max-height: 580px;
     min-height: 350px;
-    overflow-y: auto;
+    overflow-y: hidden;
     overflow-x: hidden;
 }
 
@@ -167,7 +167,7 @@
     grid-template-columns: minmax(110px, 1.8fr) minmax(65px, 1.1fr) minmax(55px, 0.9fr) 30px;
     align-items: center;
     gap: 8px;
-    padding: 9px 4px;
+    padding: 13px 4px;
     border-bottom: 1px solid var(--border);
     cursor: pointer;
     transition: background-color 0.1s ease, padding-left 0.1s ease;
