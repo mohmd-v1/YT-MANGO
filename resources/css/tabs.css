@@ -160,6 +160,17 @@ body.tabs-shell {
     color: var(--text-primary, #ffffff);
 }
 
+.new-tab-btn.drag-over-target {
+    background: var(--accent, #e11d48) !important;
+    color: #ffffff !important;
+    transform: scale(1.12);
+}
+
+.browser-tab.drag-over-target {
+    border-color: var(--accent, #e11d48) !important;
+    box-shadow: 0 0 8px rgba(225, 29, 72, 0.5);
+}
+
 [data-theme="light"] .new-tab-btn:hover {
     background: rgba(0, 0, 0, 0.08);
     color: #0f172a;

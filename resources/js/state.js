@@ -44,7 +44,9 @@ let settings = {
     shortcuts: {
         analyze: 'Ctrl+KeyV',
         quickAudio: 'Alt+Digit1',
-        playlist: 'Alt+Digit2'
+        playlist: 'Alt+Digit2',
+        newTab: 'Ctrl+KeyT',
+        closeTab: 'Ctrl+KeyW'
     }
 };
 
@@ -86,6 +88,7 @@ const el = {
     toggleCommand: document.getElementById('toggleCommand'),
     openGithubAboutBtn: document.getElementById('openGithubAboutBtn'),
     videoOnlyNote: document.getElementById('videoOnlyNote'),
+    videoOnlyNoteText: document.getElementById('videoOnlyNoteText'),
     settingsModal: document.getElementById('settingsModal'),
     commandModal: document.getElementById('commandModal'),
     closeSettingsBtn: document.getElementById('closeSettingsBtn'),
@@ -110,7 +113,9 @@ const el = {
         themeSelect: document.getElementById('themeSelect'),
         shortcutAnalyze: document.getElementById('shortcutAnalyze'),
         shortcutQuickAudio: document.getElementById('shortcutQuickAudio'),
-        shortcutPlaylist: document.getElementById('shortcutPlaylist')
+        shortcutPlaylist: document.getElementById('shortcutPlaylist'),
+        shortcutNewTab: document.getElementById('shortcutNewTab'),
+        shortcutCloseTab: document.getElementById('shortcutCloseTab')
     },
     ytdlpVersionText: document.getElementById('ytdlpVersionText'),
     ffmpegVersionText: document.getElementById('ffmpegVersionText'),

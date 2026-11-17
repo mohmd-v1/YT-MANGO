@@ -8,6 +8,18 @@ if (el && el.downloadBtn) {
 async function startDownload() {
     if (!el || !el.cmdPreview || !el.cmdPreview.value) return;
 
+    // FFmpeg Safety Check: Prevent download if video + audio streams are selected without FFmpeg
+    const ffmpegOk = typeof isFfmpegAvailable === 'function' ? isFfmpegAvailable() : true;
+    if (!ffmpegOk && typeof selectedVideoId !== 'undefined' && selectedVideoId && typeof selectedAudioId !== 'undefined' && selectedAudioId) {
+        if (typeof showAlert === 'function') {
+            showAlert('FFmpeg is required to merge separate video and audio streams. Please install FFmpeg or select a mixed stream (or video/audio only).', 'FFmpeg Required');
+        }
+        if (typeof showInstallModal === 'function') {
+            showInstallModal('ffmpeg');
+        }
+        return;
+    }
+
     // Build header title for process panel with resolution tag if video
     let downloadTitle = 'Downloading...';
     if (typeof currentData !== 'undefined' && currentData && currentData.title) {

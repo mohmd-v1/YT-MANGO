@@ -323,11 +323,14 @@ async function quickM4a() {
     let cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies ${escapeCmdArg(settings.cookiesPath)}` : '';
 
     let jsRuntimeArg = settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${escapeCmdArg(settings.jsRuntime)}` : '';
+    const ffmpegOk = typeof isFfmpegAvailable === 'function' ? isFfmpegAvailable() : true;
     let cmd = '';
-    if (settings.quickAudioFormat === 'opus') {
+    if (ffmpegOk && settings.quickAudioFormat === 'opus') {
         cmd = `yt-dlp -f "251/bestaudio" --encoding utf-8 --no-overwrites --embed-metadata --embed-thumbnail -o "%(title)s.%(ext)s" -x --audio-format opus --no-playlist ${jsRuntimeArg} ${cookiesArg} ${pathArg} ${escapeCmdArg(url)}`;
     } else {
-        cmd = `yt-dlp -f "140/bestaudio" --encoding utf-8 --no-overwrites --embed-metadata --embed-thumbnail -o "%(title)s.%(ext)s" --no-playlist ${jsRuntimeArg} ${cookiesArg} ${pathArg} ${escapeCmdArg(url)}`;
+        // Without FFmpeg, do not invoke audio conversion (-x --audio-format) or post-processing embed flags that fail
+        const postFlags = ffmpegOk ? '--embed-metadata --embed-thumbnail' : '';
+        cmd = `yt-dlp -f "140/bestaudio" --encoding utf-8 --no-overwrites ${postFlags} -o "%(title)s.%(ext)s" --no-playlist ${jsRuntimeArg} ${cookiesArg} ${pathArg} ${escapeCmdArg(url)}`;
     }
 
     if (el.cmdPreview) {

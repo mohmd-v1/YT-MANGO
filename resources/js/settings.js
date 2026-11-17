@@ -5,7 +5,9 @@ function initShortcutInputs() {
     const shortcutKeys = {
         shortcutAnalyze: 'analyze',
         shortcutQuickAudio: 'quickAudio',
-        shortcutPlaylist: 'playlist'
+        shortcutPlaylist: 'playlist',
+        shortcutNewTab: 'newTab',
+        shortcutCloseTab: 'closeTab'
     };
 
     for (const [id, settingKey] of Object.entries(shortcutKeys)) {
@@ -104,6 +106,25 @@ window.addEventListener('keydown', async (e) => {
     }
 
     if (typeof matchShortcut !== 'function') return;
+
+    const newTabSc = settings?.shortcuts?.newTab || 'Ctrl+KeyT';
+    const closeTabSc = settings?.shortcuts?.closeTab || 'Ctrl+KeyW';
+
+    if (matchShortcut(e, newTabSc)) {
+        e.preventDefault();
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'NEW_TAB' }, '*');
+        }
+        return;
+    }
+
+    if (matchShortcut(e, closeTabSc)) {
+        e.preventDefault();
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'CLOSE_TAB' }, '*');
+        }
+        return;
+    }
 
     const quickAudioSc = settings?.shortcuts?.quickAudio;
     const playlistSc = settings?.shortcuts?.playlist;
@@ -286,6 +307,8 @@ async function loadSettings() {
         settings.shortcuts.analyze = migrateShortcut(settings.shortcuts.analyze || 'Ctrl+KeyV');
         settings.shortcuts.quickAudio = migrateShortcut(settings.shortcuts.quickAudio || 'Alt+Digit1');
         settings.shortcuts.playlist = migrateShortcut(settings.shortcuts.playlist || 'Alt+Digit2');
+        settings.shortcuts.newTab = migrateShortcut(settings.shortcuts.newTab || 'Ctrl+KeyT');
+        settings.shortcuts.closeTab = migrateShortcut(settings.shortcuts.closeTab || 'Ctrl+KeyW');
     }
 
     initShortcutInputs();
@@ -352,9 +375,17 @@ async function saveSettings() {
 // explicit Light/Dark choices are not overridden by the OS theme watcher.
 async function syncShellSettings() {
     try {
+        const sc = (settings && settings.shortcuts) || {
+            newTab: 'Ctrl+KeyT',
+            closeTab: 'Ctrl+KeyW'
+        };
         await Neutralino.storage.setData('yt_dlp_settings', JSON.stringify({
-            theme: (settings && settings.theme) || 'system'
+            theme: (settings && settings.theme) || 'system',
+            shortcuts: sc
         }));
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'SYNC_SHORTCUTS', shortcuts: sc }, '*');
+        }
     } catch (err) {
         // Non-fatal: the shell falls back to the cached/system theme.
     }

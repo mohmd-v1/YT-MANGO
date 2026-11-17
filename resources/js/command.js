@@ -10,6 +10,18 @@ function escapeCmdArg(arg) {
 function updateCommand() {
     if (!currentData) return;
 
+    // Safety: If selectedVideoId is a mixed stream (contains both video and audio),
+    // it must NEVER be combined with an audio stream! Clear selectedAudioId if so.
+    if (selectedVideoId && selectedAudioId && formats) {
+        const vFmt = formats.find(f => f.format_id === selectedVideoId);
+        const isMixedCheck = (typeof isFormatMixed === 'function')
+            ? isFormatMixed(vFmt)
+            : (vFmt && vFmt.vcodec !== 'none' && vFmt.acodec && vFmt.acodec !== 'none');
+        if (isMixedCheck) {
+            selectedAudioId = null;
+        }
+    }
+
     let formatPart = '';
 
     if (selectedVideoId && selectedAudioId) {
@@ -23,11 +35,25 @@ function updateCommand() {
         formatPart = ''; // checks default behavior, usually bestvideo+bestaudio
     }
 
+    const ffmpegOk = typeof isFfmpegAvailable === 'function' ? isFfmpegAvailable() : true;
+
     if (el.downloadBtn) {
-        el.downloadBtn.disabled = (!selectedVideoId && !selectedAudioId);
+        if (!ffmpegOk && selectedVideoId && selectedAudioId) {
+            el.downloadBtn.disabled = true;
+            el.downloadBtn.title = "FFmpeg is required to merge separate video and audio streams";
+        } else {
+            el.downloadBtn.disabled = (!selectedVideoId && !selectedAudioId);
+            el.downloadBtn.title = "";
+        }
     }
     if (el.downloadSectionBtn && el.downloadBtn) {
-        el.downloadSectionBtn.disabled = el.downloadBtn.disabled;
+        if (!ffmpegOk) {
+            el.downloadSectionBtn.disabled = true;
+            el.downloadSectionBtn.title = "FFmpeg is required for video section trimming";
+        } else {
+            el.downloadSectionBtn.disabled = el.downloadBtn.disabled;
+            el.downloadSectionBtn.title = "";
+        }
     }
 
     // Update Download Button Badge Info
@@ -138,8 +164,8 @@ function updateCommand() {
         flags.push(`-N ${settings.concurrentFragments}`);
     }
 
-    // Audio Extraction Optimization
-    if (!selectedVideoId && selectedAudioId && currentData && currentData.formats) {
+    // Audio Extraction Optimization (Requires FFmpeg)
+    if (ffmpegOk && !selectedVideoId && selectedAudioId && currentData && currentData.formats) {
         const aFmt = currentData.formats.find(f => f.format_id === selectedAudioId);
         if (aFmt) {
             const ac = (aFmt.acodec || '').toLowerCase();
@@ -153,7 +179,7 @@ function updateCommand() {
     let path = settings.downloadPath;
     let pathArg = path ? `-P ${escapeCmdArg(path)}` : '';
     let cookiesArg = (settings.useCookies && settings.cookiesPath) ? `--cookies ${escapeCmdArg(settings.cookiesPath)}` : '';
-    let sectionArg = (typeof sectionTime !== 'undefined' && sectionTime) ? `--download-sections ${escapeCmdArg(sectionTime)}` : '';
+    let sectionArg = (ffmpegOk && typeof sectionTime !== 'undefined' && sectionTime) ? `--download-sections ${escapeCmdArg(sectionTime)}` : '';
 
     let playlistArg = "";
     if (typeof isPlaylistMode !== 'undefined' && isPlaylistMode && typeof playlistItemsToDownload !== 'undefined' && playlistItemsToDownload.length > 0) {
@@ -179,7 +205,7 @@ function updateCommand() {
         flags.push(`-o "%(title)s${resTag}.%(ext)s"`);
     }
 
-    if (selectedVideoId && selectedAudioId) {
+    if (ffmpegOk && selectedVideoId && selectedAudioId) {
         flags.push('--merge-output-format mp4');
     }
 

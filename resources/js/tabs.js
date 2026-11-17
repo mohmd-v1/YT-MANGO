@@ -88,11 +88,71 @@ document.addEventListener("DOMContentLoaded", () => {
     // Tabs Management
     newTabBtn.addEventListener("click", () => createNewTab());
 
+    // Drag and Drop URL onto New Tab Button (+): creates new tab and loads URL
+    newTabBtn.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        newTabBtn.classList.add("drag-over-target");
+    });
+
+    newTabBtn.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        newTabBtn.classList.remove("drag-over-target");
+    });
+
+    newTabBtn.addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        newTabBtn.classList.remove("drag-over-target");
+        const data = e.dataTransfer.getData("text/plain") || e.dataTransfer.getData("text/uri-list");
+        if (data) {
+            const url = data.split("\n")[0].trim();
+            if (url) {
+                createNewTab(url);
+            }
+        }
+    });
+
+    // Browser Keyboard Shortcuts (customizable, fallback to Ctrl+T / Ctrl+W) on the main shell window
+    window.addEventListener("keydown", (e) => {
+        const newTabSc = shellSettings?.shortcuts?.newTab || 'Ctrl+KeyT';
+        const closeTabSc = shellSettings?.shortcuts?.closeTab || 'Ctrl+KeyW';
+
+        if (typeof matchShortcut === 'function') {
+            if (matchShortcut(e, newTabSc)) {
+                e.preventDefault();
+                createNewTab();
+                return;
+            }
+            if (matchShortcut(e, closeTabSc)) {
+                e.preventDefault();
+                if (activeTabId) {
+                    closeTab(activeTabId);
+                }
+                return;
+            }
+        } else {
+            // Fallback using physical code
+            if (e.ctrlKey || e.metaKey) {
+                if (e.code === 'KeyT') {
+                    e.preventDefault();
+                    createNewTab();
+                } else if (e.code === 'KeyW') {
+                    e.preventDefault();
+                    if (activeTabId) {
+                        closeTab(activeTabId);
+                    }
+                }
+            }
+        }
+    });
+
     // Create first tab
     createNewTab();
 });
 
-function createNewTab() {
+function createNewTab(initialUrl = '') {
     const tabId = `tab-${Date.now()}`;
 
     // Create Tab Button
@@ -121,10 +181,59 @@ function createNewTab() {
     iframe.className = "tab-iframe";
     iframe.id = `iframe-${tabId}`;
 
+    // If an initial URL is passed, send it to the iframe once it finishes loading
+    if (initialUrl) {
+        iframe.addEventListener("load", () => {
+            try {
+                iframe.contentWindow.postMessage({ type: 'LOAD_URL', url: initialUrl }, '*');
+            } catch (err) { }
+        }, { once: true });
+    }
+
+    // Drag-over Tab behavior: dragging a link onto a tab immediately activates it!
+    tabBtn.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        tabBtn.classList.add("drag-over-target");
+        // Automatically switch to this tab when hovering with a dragged item
+        switchToTab(tabId);
+    });
+
+    tabBtn.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        tabBtn.classList.remove("drag-over-target");
+    });
+
+    tabBtn.addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        tabBtn.classList.remove("drag-over-target");
+        const data = e.dataTransfer.getData("text/plain") || e.dataTransfer.getData("text/uri-list");
+        if (data) {
+            const url = data.split("\n")[0].trim();
+            if (url) {
+                switchToTab(tabId);
+                try {
+                    iframe.contentWindow.postMessage({ type: 'LOAD_URL', url }, '*');
+                } catch (err) { }
+            }
+        }
+    });
+
     // Event Listeners
     tabBtn.addEventListener("click", (e) => {
         if (!e.target.closest('.browser-tab-close')) {
             switchToTab(tabId);
+        }
+    });
+
+    // Middle-click (scroll-wheel click) to close tab
+    tabBtn.addEventListener("auxclick", (e) => {
+        if (e.button === 1) { // 1 = middle mouse button
+            e.preventDefault();
+            e.stopPropagation();
+            closeTab(tabId);
         }
     });
 
@@ -193,10 +302,11 @@ function closeTab(tabId) {
     }
 }
 
-// Allow the iframe to update the tab title
+// Message Handler (Title updates, Tab commands from inside iframes)
 window.addEventListener('message', (e) => {
-    if (e.data && e.data.type === 'UPDATE_TAB_TITLE') {
-        // Find which iframe sent this
+    if (!e.data) return;
+
+    if (e.data.type === 'UPDATE_TAB_TITLE') {
         const iframes = document.querySelectorAll('.tab-iframe');
         iframes.forEach(iframe => {
             if (iframe.contentWindow === e.source) {
@@ -207,5 +317,14 @@ window.addEventListener('message', (e) => {
                 }
             }
         });
+    } else if (e.data.type === 'NEW_TAB') {
+        createNewTab(e.data.url || '');
+    } else if (e.data.type === 'CLOSE_TAB') {
+        if (activeTabId) {
+            closeTab(activeTabId);
+        }
+    } else if (e.data.type === 'SYNC_SHORTCUTS' && e.data.shortcuts) {
+        if (!shellSettings) shellSettings = {};
+        shellSettings.shortcuts = e.data.shortcuts;
     }
 });

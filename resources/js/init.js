@@ -74,6 +74,18 @@ Neutralino.events.on("ready", async () => {
     await ensureToolsInstalled();
 });
 
+// Listen for external URL load requests (e.g. from tab drag & drop or new tab creations)
+window.addEventListener('message', async (e) => {
+    if (e.data && e.data.type === 'LOAD_URL' && e.data.url) {
+        if (el && el.urlInput) {
+            el.urlInput.value = e.data.url.trim();
+            if (typeof analyzeUrl === 'function') {
+                await analyzeUrl();
+            }
+        }
+    }
+});
+
 window.addEventListener('dragover', (e) => {
     e.preventDefault();
     e.stopPropagation();

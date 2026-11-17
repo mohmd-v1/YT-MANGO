@@ -152,6 +152,8 @@ try {
                     settings.shortcuts.analyze = migrateShortcut(settings.shortcuts.analyze || 'Ctrl+KeyV');
                     settings.shortcuts.quickAudio = migrateShortcut(settings.shortcuts.quickAudio || 'Alt+Digit1');
                     settings.shortcuts.playlist = migrateShortcut(settings.shortcuts.playlist || 'Alt+Digit2');
+                    settings.shortcuts.newTab = migrateShortcut(settings.shortcuts.newTab || 'Ctrl+KeyT');
+                    settings.shortcuts.closeTab = migrateShortcut(settings.shortcuts.closeTab || 'Ctrl+KeyW');
                 }
             }
             if (msg.type === 'notif' && msg.payload) {

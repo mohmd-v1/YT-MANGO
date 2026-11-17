@@ -98,6 +98,17 @@ if (el && el.downloadSectionBtn) {
     if (el.sections.endSlider) el.sections.endSlider.addEventListener('input', onSliderInput);
 
     el.downloadSectionBtn.addEventListener('click', () => {
+        const ffmpegOk = typeof isFfmpegAvailable === 'function' ? isFfmpegAvailable() : true;
+        if (!ffmpegOk) {
+            if (typeof showAlert === 'function') {
+                showAlert('FFmpeg is required for downloading specific sections/cuts. Please install FFmpeg.', 'FFmpeg Required');
+            }
+            if (typeof showInstallModal === 'function') {
+                showInstallModal('ffmpeg');
+            }
+            return;
+        }
+
         let videoDuration = (typeof getDurationSeconds === 'function') ? getDurationSeconds(currentData) : 0;
         if (videoDuration === 0) videoDuration = 3600; // Fallback to 1 hour if unknown
 

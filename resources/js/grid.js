@@ -1,6 +1,26 @@
 // Formats grid rendering (dual view, compact rows, row handling).
 // (extracted from resources/js/main.js — keep in sync with load order in app.html)
 
+// Helper to check if a format has both audio and video pre-muxed (Mixed stream)
+function isFormatMixed(f) {
+    if (!f) return false;
+    const hasExplicitVideo = f.vcodec && f.vcodec !== 'none' && f.vcodec !== 'audio only';
+    const hasExplicitAudio = f.acodec && f.acodec !== 'none' && f.acodec !== 'video only';
+    if (hasExplicitVideo && hasExplicitAudio) return true;
+
+    // Progressive direct video formats (Facebook reels, Instagram, Twitter, etc.)
+    // where yt-dlp might leave vcodec/acodec undefined, but ext/video_ext is mp4 and it's not audio-only or video-only.
+    const isExplicitAudioOnly = (f.vcodec === 'none' || f.vcodec === 'audio only') || (f.resolution === 'audio only') || (f.video_ext === 'none' && f.audio_ext && f.audio_ext !== 'none');
+    const isExplicitVideoOnly = (f.acodec === 'none' || f.acodec === 'video only');
+
+    if (!isExplicitAudioOnly && !isExplicitVideoOnly) {
+        if (f.ext === 'mp4' || f.video_ext === 'mp4' || (f.format_id && /^(hd|sd)$/i.test(f.format_id))) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function renderGrid() {
     if (!el || !el.gridBody || !el.videoGridBody || !el.audioGridBody) return;
 
@@ -10,11 +30,28 @@ function renderGrid() {
     el.audioGridBody.innerHTML = '';
 
     const safeFormats = Array.isArray(formats) ? formats : [];
-    
-    // Ensure activeTab is globally accessible
-    if (typeof activeTab === 'undefined') {
-        window.activeTab = 'combined';
+
+    // Count available formats in each view:
+    // Video + Audio (Combined) requires video streams (video-only) or audio streams (audio-only).
+    const combinedVideoOnly = safeFormats.filter(f => f && (f.acodec === 'video only' || f.acodec === 'none') && (f.vcodec !== 'none' && f.vcodec !== 'audio only'));
+    const combinedAudioOnly = safeFormats.filter(f => f && (f.vcodec === 'audio only' || f.vcodec === 'none') && (f.acodec !== 'none' && f.acodec !== 'video only'));
+    const hasCombinedStreams = (combinedVideoOnly.length > 0 || combinedAudioOnly.length > 0);
+
+    // Mixed requires pre-muxed formats (both video and audio)
+    const rawMixedFormats = safeFormats.filter(isFormatMixed);
+    const hasMixedStreams = rawMixedFormats.length > 0;
+
+    // Automatic primary tab switching:
+    // If Video + Audio has no streams, but Mixed has streams, automatically switch to Mixed!
+    if (!hasCombinedStreams && hasMixedStreams) {
+        activeTab = 'mixed';
+    } else if (hasCombinedStreams && !hasMixedStreams && activeTab === 'mixed') {
+        // If Mixed is empty but Combined has streams, keep Combined
+        activeTab = 'combined';
+    } else if (typeof activeTab === 'undefined') {
+        activeTab = hasCombinedStreams ? 'combined' : 'mixed';
     }
+    window.activeTab = activeTab;
 
     // Update active class on tab buttons (Always show all tabs, don't hide Mixed)
     if (Array.isArray(el.tabs)) {
@@ -46,14 +83,9 @@ function renderGrid() {
         if (el.standardView) el.standardView.classList.remove('hidden');
 
         // Mixed Formats: Show formats containing both audio & video or all video formats as fallback
-        const mixedFormats = safeFormats.filter(f => {
-            if (!f) return false;
-            const hasVideo = f.vcodec && f.vcodec !== 'none' && f.vcodec !== 'audio only';
-            const hasAudio = f.acodec && f.acodec !== 'none' && f.acodec !== 'video only';
-            return hasVideo && hasAudio;
-        });
+        const mixedFormats = safeFormats.filter(isFormatMixed);
 
-        // Fallback: If YouTube provided separated video/audio streams, render video streams in Mixed tab
+        // Fallback: If platform provided separated video/audio streams, render video streams in Mixed tab
         const formatsToRender = mixedFormats.length > 0 ? mixedFormats : safeFormats.filter(f => f && f.vcodec && f.vcodec !== 'none' && f.vcodec !== 'audio only');
 
         const mixedFrag = document.createDocumentFragment();
@@ -61,15 +93,40 @@ function renderGrid() {
         el.gridBody.appendChild(mixedFrag);
     }
 
-    // "Video only" note: relevant only in the Mixed tab when the source did not
-    // provide any muxed stream, so the fallback list is video-only.
+    // Note / alert rendering:
+    // 1) If both tabs have no formats available (safeFormats is empty)
+    // 2) If FFmpeg is missing: show warning that merging requires FFmpeg, and prompt installation.
+    // 3) If in Mixed tab and source has no muxed streams, show video-only note.
     if (el.videoOnlyNote) {
-        const hasMuxed = safeFormats.some(f =>
-            f && f.vcodec && f.vcodec !== 'none' && f.vcodec !== 'audio only' &&
-            f.acodec && f.acodec !== 'none' && f.acodec !== 'video only'
-        );
-        const showNote = activeTab === 'mixed' && safeFormats.length > 0 && !hasMuxed;
-        el.videoOnlyNote.classList.toggle('hidden', !showNote);
+        const ffmpegOk = typeof isFfmpegAvailable === 'function' ? isFfmpegAvailable() : true;
+        const noteTextEl = el.videoOnlyNoteText || el.videoOnlyNote.querySelector('span');
+        const hasAnyFormats = safeFormats.length > 0;
+
+        if (!hasAnyFormats) {
+            if (noteTextEl) {
+                noteTextEl.innerHTML = '<strong>No formats available:</strong> No video or audio streams were found for this URL.';
+            }
+            el.videoOnlyNote.classList.remove('hidden');
+        } else if (!ffmpegOk) {
+            if (noteTextEl) {
+                noteTextEl.innerHTML = '<strong>FFmpeg is missing:</strong> Merging separate video and audio streams, custom conversions, and section clipping are disabled. Please install FFmpeg to enable them. <a href="#" id="noteInstallFfmpegLink" style="color:var(--accent);text-decoration:underline;margin-left:6px;cursor:pointer;">Install FFmpeg</a>';
+                const link = noteTextEl.querySelector('#noteInstallFfmpegLink');
+                if (link) {
+                    link.onclick = (e) => {
+                        e.preventDefault();
+                        if (typeof showInstallModal === 'function') showInstallModal('ffmpeg');
+                    };
+                }
+            }
+            el.videoOnlyNote.classList.remove('hidden');
+        } else {
+            const hasMuxed = safeFormats.some(isFormatMixed);
+            const showNote = activeTab === 'mixed' && safeFormats.length > 0 && !hasMuxed;
+            if (showNote && noteTextEl) {
+                noteTextEl.innerHTML = 'These formats are <strong>Video Only</strong>. Switch to the <strong>Video + Audio</strong> tab to pick a video stream and an audio stream together.';
+            }
+            el.videoOnlyNote.classList.toggle('hidden', !showNote);
+        }
     }
 }
 
@@ -113,6 +170,10 @@ function getNormalizedResolution(fmt) {
             return `${h}p`;
         }
     }
+
+    // Recognize HD and SD labels (common in Facebook, Instagram, Vimeo formats)
+    if (/\bhd\b/i.test(candidates)) return '720p';
+    if (/\bsd\b/i.test(candidates)) return '480p';
 
     return 'Unknown';
 }
@@ -566,7 +627,7 @@ function renderCompactRow(fmt, container, smartData = null) {
     // Row Click
     row.addEventListener('click', (e) => {
         if (e.target.closest('.custom-select-container') || e.target.closest('.copy-link-btn')) return;
-        handleRowClick(fmt, row);
+        handleRowClick(fmt, row, isMixed);
     });
 
     const copyBtn = row.querySelector('.copy-link-btn');
@@ -582,20 +643,20 @@ function renderCompactRow(fmt, container, smartData = null) {
     container.appendChild(row);
 }
 
-function handleRowClick(fmt, rowElement) {
+function handleRowClick(fmt, rowElement, isMixedColumn = false) {
     if (!fmt) return;
 
     const isVideo = fmt.vcodec !== 'none';
     const isAudio = fmt.acodec !== 'none';
-    const isMixed = isVideo && isAudio;
+    const isMixed = isMixedColumn || (isVideo && isAudio) || isFormatMixed(fmt);
 
     const safeFormats = Array.isArray(formats) ? formats : [];
 
-    // Helper to check if currently selected video is mixed
+    // Helper to check if currently selected video format is mixed
     const currentVideoIsMixed = () => {
         if (typeof selectedVideoId === 'undefined' || !selectedVideoId) return false;
         const f = safeFormats.find(x => x && x.format_id === selectedVideoId);
-        return f && f.vcodec !== 'none' && f.acodec !== 'none';
+        return f && isFormatMixed(f);
     };
 
     if (isMixed) {
@@ -604,20 +665,22 @@ function handleRowClick(fmt, rowElement) {
             selectedAudioId = null;
         } else {
             selectedVideoId = fmt.format_id;
-            selectedAudioId = null; // Mixed already has audio
+            selectedAudioId = null; // Mixed already has audio, never allow an audio stream alongside it
         }
     } else if (isVideo) {
         if (typeof selectedVideoId !== 'undefined' && selectedVideoId === fmt.format_id) {
             selectedVideoId = null;
         } else {
-            // If current selection is Mixed, clear everything first
+            // If current selection is Mixed, clear audio first to start clean separate stream selection
             if (currentVideoIsMixed()) {
                 selectedAudioId = null;
             }
             selectedVideoId = fmt.format_id;
 
             // AUTO-SELECT AUDIO: Pick the best one according to our UI priority (Opus > MP4A > others, excluding DRC)
-            if (typeof selectedAudioId === 'undefined' || !selectedAudioId) {
+            // BUT: Only auto-select audio if FFmpeg is available (since merging separate video+audio requires FFmpeg)
+            const ffmpegOk = typeof isFfmpegAvailable === 'function' ? isFfmpegAvailable() : true;
+            if (ffmpegOk && (typeof selectedAudioId === 'undefined' || !selectedAudioId)) {
                 const audioOnly = safeFormats.filter(f => f && (f.vcodec === 'audio only' || f.vcodec === 'none') && f.acodec !== 'none');
 
                 const getScore = (f) => {
@@ -648,7 +711,8 @@ function handleRowClick(fmt, rowElement) {
         if (typeof selectedAudioId !== 'undefined' && selectedAudioId === fmt.format_id) {
             selectedAudioId = null;
         } else {
-            // If current selection is Mixed, clear it because we want standalone audio
+            // CRITICAL: If a Mixed format or any video is currently selected, clear it when selecting audio,
+            // or if the currently selected video is Mixed, clear selectedVideoId because Mixed must NEVER mix with separate audio!
             if (currentVideoIsMixed()) {
                 selectedVideoId = null;
             }

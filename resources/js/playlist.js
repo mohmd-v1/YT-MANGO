@@ -259,6 +259,8 @@ function buildPlaylistItemCmd(entry, index) {
     const uniq = [...new Set(cands)];
     const audioSelector = uniq.join('/');
 
+    const ffmpegOk = typeof isFfmpegAvailable === 'function' ? isFfmpegAvailable() : true;
+
     let formatStr;
     let audioFlags = [];
     if (audioOnly) {
@@ -268,7 +270,7 @@ function buildPlaylistItemCmd(entry, index) {
         // audio path does — otherwise the item stays in its .webm container.
         // "Audio: Original" is the opt-out that keeps the source container.
         const targetFormat = convertTo || (aq === 'auto' ? 'opus' : null);
-        if (targetFormat) {
+        if (ffmpegOk && targetFormat) {
             audioFlags.push('-x', '--audio-format', targetFormat);
         }
     } else {
@@ -304,7 +306,7 @@ function buildPlaylistItemCmd(entry, index) {
         flags.push(`-o "${subFolder}%(title)s [%(height)sp].%(ext)s"`);
     }
 
-    if (!audioOnly && vq !== 'best') flags.push('--merge-output-format mp4');
+    if (ffmpegOk && !audioOnly && vq !== 'best') flags.push('--merge-output-format mp4');
 
     const parts = ['yt-dlp', flags.join(' '), jsRuntimeArg, cookiesArg, pathArg, escapeCmdArg(url)].filter(Boolean);
     return parts.join(' ').trim();
@@ -312,6 +314,22 @@ function buildPlaylistItemCmd(entry, index) {
 
 async function downloadPlaylistItems(indices) {
     if (!playlistData || !indices || indices.length === 0) return;
+
+    // Check if user is trying to download video items with merging without FFmpeg
+    const ffmpegOk = typeof isFfmpegAvailable === 'function' ? isFfmpegAvailable() : true;
+    const isAudioOnly = el.playlist && el.playlist.audioOnlyCheck ? el.playlist.audioOnlyCheck.checked : false;
+    const vq = el.playlist && el.playlist.videoQualitySelect ? el.playlist.videoQualitySelect.value : 'best';
+
+    if (!ffmpegOk && !isAudioOnly && vq !== 'best') {
+        if (typeof showAlert === 'function') {
+            showAlert('FFmpeg is required to merge selected video and audio qualities in playlists. Please install FFmpeg or choose Audio Only.', 'FFmpeg Required');
+        }
+        if (typeof showInstallModal === 'function') {
+            showInstallModal('ffmpeg');
+        }
+        return;
+    }
+
     const queue = [...indices];
     const running = new Set();
     const maxConc = (typeof playlistMaxConcurrent !== 'undefined') ? playlistMaxConcurrent : 3;

@@ -59,6 +59,11 @@ async function checkYtdlp() {
     return false;
 }
 
+function isFfmpegAvailable() {
+    const cache = getSharedCache();
+    return !!(cache.ffmpegVersion && cache.ffmpegVersion !== 'Not Found');
+}
+
 async function checkFfmpeg() {
     const cache = getSharedCache();
     if (cache.ffmpegVersion) {

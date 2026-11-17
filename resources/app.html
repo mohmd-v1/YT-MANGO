@@ -93,14 +93,14 @@
           <button type="button" class="tab-btn" data-tab="mixed">Mixed</button>
         </div>
 
-        <!-- Note for Video Only -->
+        <!-- Note for FFmpeg Missing / Video Only Warning -->
         <div id="videoOnlyNote" class="info-note hidden">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
           </svg>
-          <span>These formats are <strong>Video Only</strong>. Switch to the <strong>Video + Audio</strong> tab to pick a video stream and an audio stream together.</span>
+          <span id="videoOnlyNoteText">These formats are <strong>Video Only</strong>. Switch to the <strong>Video + Audio</strong> tab to pick a video stream and an audio stream together.</span>
         </div>
 
         <!-- Dual View (Video + Audio) -->
@@ -613,6 +613,24 @@
                     <small>Forces URL to be analyzed as playlist</small>
                   </div>
                   <input type="text" id="shortcutPlaylist" value="Alt + 2" readonly class="shortcut-input">
+                </div>
+
+                <!-- New Tab Shortcut -->
+                <div class="settings-card row-card">
+                  <div class="card-heading">
+                    <span class="setting-row-title">New Tab</span>
+                    <small>Opens a new browser tab</small>
+                  </div>
+                  <input type="text" id="shortcutNewTab" value="Ctrl + T" readonly class="shortcut-input">
+                </div>
+
+                <!-- Close Tab Shortcut -->
+                <div class="settings-card row-card">
+                  <div class="card-heading">
+                    <span class="setting-row-title">Close Tab</span>
+                    <small>Closes the current active tab</small>
+                  </div>
+                  <input type="text" id="shortcutCloseTab" value="Ctrl + W" readonly class="shortcut-input">
                 </div>
               </div>
             </div>
