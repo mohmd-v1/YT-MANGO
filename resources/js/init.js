@@ -9,41 +9,10 @@ Neutralino.events.on("windowClose", () => {
 
 // Protocol Handler Logic (Moved here to ensure registration before init if possible, but init should be last)
 Neutralino.events.on("ready", async () => {
-
-    // ==========================================
-    // Windows Scaling Fix
-    // ==========================================
-    try {
-        const baseWidth = 920;
-        const baseHeight = 700;
-
-        // Windows display scaling
-        const scale = window.devicePixelRatio || 1;
-
-        // Calculate window size according to scaling
-        const targetWidth = Math.round(baseWidth * scale);
-        const targetHeight = Math.round(baseHeight * scale);
-
-        await Neutralino.window.setSize({
-            width: targetWidth,
-            height: targetHeight
-        });
-
-        console.log(
-            `Windows Scaling: ${Math.round(scale * 100)}%`
-        );
-
-        console.log(
-            `Window Size: ${targetWidth}x${targetHeight}`
-        );
-
-    } catch (error) {
-        console.error("Scaling fix failed:", error);
-    }
-
-
     // Focus the window when app becomes ready
-    await Neutralino.window.focus();
+    try {
+        await Neutralino.window.focus();
+    } catch (e) { }
 
     if (window.NL_ARGS && window.NL_ARGS.length > 0) {
         for (const arg of window.NL_ARGS) {
@@ -199,20 +168,6 @@ if (el && el.openGithubAboutBtn) {
         Neutralino.os.open('https://github.com/mohmd-v1/yt-dlp-gui');
     });
 }
-
-
-// Float tabs on scroll
-window.addEventListener('scroll', () => {
-    const tabs = document.querySelector('.tabs');
-    if (!tabs) return;
-
-    // Check scroll position. 200px is roughly below the search input and video info
-    if (window.scrollY > 700) {
-        tabs.classList.add('tabs-floating');
-    } else {
-        tabs.classList.remove('tabs-floating');
-    }
-});
 
 
 /* =========================================================

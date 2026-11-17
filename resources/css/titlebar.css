@@ -108,3 +108,30 @@
 .window-btn:focus-visible {
     box-shadow: inset 0 0 0 2px var(--accent);
 }
+
+
+/* --------------------------------------------------------- RESIZE OVERLAY (borderless window, captures events over iframes) --------------------------------------------------------- */
+.resize-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    pointer-events: none;
+}
+.resize-overlay .resize-handle {
+    position: absolute;
+    pointer-events: auto;
+    touch-action: none;
+    background: transparent;
+}
+.resize-overlay .resize-n, .resize-overlay .resize-s { left: 6px; right: 6px; height: 8px; }
+.resize-overlay .resize-e, .resize-overlay .resize-w { top: 6px; bottom: 6px; width: 8px; }
+.resize-overlay .resize-n { top: 0; cursor: ns-resize; }
+.resize-overlay .resize-s { bottom: 0; cursor: ns-resize; }
+.resize-overlay .resize-e { right: 0; cursor: ew-resize; }
+.resize-overlay .resize-w { left: 0; cursor: ew-resize; }
+.resize-overlay .resize-ne, .resize-overlay .resize-nw, .resize-overlay .resize-se, .resize-overlay .resize-sw { width: 14px; height: 14px; }
+.resize-overlay .resize-ne { top: 0; right: 0; cursor: nesw-resize; }
+.resize-overlay .resize-nw { top: 0; left: 0; cursor: nwse-resize; }
+.resize-overlay .resize-se { bottom: 0; right: 0; cursor: nwse-resize; }
+.resize-overlay .resize-sw { bottom: 0; left: 0; cursor: nesw-resize; }
+body.maximized .resize-overlay { display: none; }

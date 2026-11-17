@@ -204,7 +204,7 @@ function showAlert(message, title = 'Notice') {
     el.alert.modal.classList.remove('hidden');
 }
 
-if (el && el.alert && el.alert.closeBtn) {
+if (typeof el !== 'undefined' && el && el.alert && el.alert.closeBtn) {
     el.alert.closeBtn.addEventListener('click', () => {
         if (el.alert.modal) el.alert.modal.classList.add('hidden');
     });

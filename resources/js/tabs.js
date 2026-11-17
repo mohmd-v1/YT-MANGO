@@ -1,4 +1,5 @@
 let activeTabId = null;
+let shellSettings = null;
 
 // Initialize Neutralino
 Neutralino.init();
@@ -31,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function updateMaximizeIcon() {
         const maximized = await Neutralino.window.isMaximized();
+        if (maximized) { document.body.classList.add("maximized"); } else { document.body.classList.remove("maximized"); }
         if (maximized) {
             maximizeIcon.innerHTML = ` <path d="M8 8h10v10"/> <path d="M6 6h10v10"/> `;
         } else {
@@ -45,11 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initial state
     updateMaximizeIcon();
 
-    // Workaround for resize borders
-    Neutralino.window.getSize().then(currentSize => {
-        Neutralino.window.setSize(currentSize);
-    }).catch(e => console.error(e));
-
     // Theme Management from storage
     function applyShellTheme(theme) {
         if (theme === 'light') {
@@ -62,7 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    let shellSettings = null;
     Neutralino.storage.getData('yt_dlp_settings').then(data => {
         shellSettings = JSON.parse(data);
         applyShellTheme(shellSettings?.theme);
@@ -328,3 +324,93 @@ window.addEventListener('message', (e) => {
         shellSettings.shortcuts = e.data.shortcuts;
     }
 });
+
+/* =========================================================
+   RESIZE HANDLES (pointer capture: works over iframes and
+   even when the cursor leaves the window bounds)
+   ========================================================= */
+(function () {
+    if (typeof Neutralino === 'undefined') return;
+    const MIN_W = 934, MIN_H = 600;
+    let resizing = false;
+    let dir = null;
+    let startMouse = { x: 0, y: 0 };
+    let startWin = null;
+    let inFlight = false;
+    let pendingTarget = null;
+    let applyTimer = null;
+
+    function computeTarget(e) {
+        if (!startWin) return null;
+        const dx = e.screenX - startMouse.x;
+        const dy = e.screenY - startMouse.y;
+        let x = startWin.x, y = startWin.y, w = startWin.w, h = startWin.h;
+        if (dir.indexOf('e') !== -1) w = Math.max(MIN_W, startWin.w + dx);
+        if (dir.indexOf('s') !== -1) h = Math.max(MIN_H, startWin.h + dy);
+        if (dir.indexOf('w') !== -1) { w = Math.max(MIN_W, startWin.w - dx); x = startWin.x + (startWin.w - w); }
+        if (dir.indexOf('n') !== -1) { h = Math.max(MIN_H, startWin.h - dy); y = startWin.y + (startWin.h - h); }
+        return { x, y, w, h };
+    }
+
+    async function applyTarget() {
+        if (inFlight) return;
+        const t = pendingTarget;
+        if (!t) return;
+        pendingTarget = null;
+        inFlight = true;
+        try { await Neutralino.window.move(t.x, t.y); } catch (e) {}
+        try { await Neutralino.window.setSize({ width: t.w, height: t.h }); } catch (e) {}
+        inFlight = false;
+        if (resizing && pendingTarget) scheduleApply();
+    }
+
+    function scheduleApply() {
+        if (applyTimer || !resizing) return;
+        applyTimer = setTimeout(() => {
+            applyTimer = null;
+            applyTarget();
+        }, 16);
+    }
+
+    function onDown(e) {
+        const handle = e.target.closest('.resize-handle');
+        if (!handle || e.button !== 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+        resizing = true;
+        dir = handle.dataset.dir;
+        startMouse = { x: e.screenX, y: e.screenY };
+        startWin = null;
+        pendingTarget = null;
+        document.body.style.userSelect = 'none';
+        // CRITICAL: capture the pointer. From now on, every pointer event is
+        // retargeted to this handle — even when the cursor is over an iframe
+        // or outside the window — so the drag never "hangs".
+        try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+        Promise.all([Neutralino.window.getPosition(), Neutralino.window.getSize()]).then(([pos, size]) => {
+            startWin = { x: pos.x, y: pos.y, w: size.width, h: size.height };
+        });
+    }
+
+    function onMove(e) {
+        if (!resizing || !startWin) return;
+        const t = computeTarget(e);
+        if (!t) return;
+        pendingTarget = t;
+        if (!inFlight) scheduleApply();
+    }
+
+    function onUp(e) {
+        if (!resizing) return;
+        resizing = false;
+        dir = null;
+        pendingTarget = null;
+        document.body.style.userSelect = '';
+        try { e.target.releasePointerCapture(e.pointerId); } catch (err) {}
+    }
+
+    document.addEventListener('pointerdown', onDown, true);
+    document.addEventListener('pointermove', onMove, true);
+    document.addEventListener('pointerup', onUp, true);
+    document.addEventListener('pointercancel', onUp, true);
+})();

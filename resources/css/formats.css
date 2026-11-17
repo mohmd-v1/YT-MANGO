@@ -13,27 +13,7 @@
 
 /* Tabs */
 .tabs {
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     z-index: 90;
-}
-
-.tabs.tabs-floating {
-    position: fixed;
-    top: 50%;
-    left: -6px;
-    transform: translateY(-50%);
-    flex-direction: column;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
-    background: rgba(15, 15, 15, 0.95);
-    border: 1px solid var(--border-light);
-    padding: 10px;
-    gap: 12px;
-    border-radius: 14px;
-}
-
-.tabs.tabs-floating .tab-btn {
-    padding: 10px 14px;
-    font-size: 11px;
 }
 
 .tab-btn {
@@ -134,36 +114,37 @@
 
 /* Dual View Grid */
 .dual-grid {
-    display: flex;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 14px;
     height: auto;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: stretch;
+    width: 100%;
 }
 
 .split-col {
-    flex: 1 1 400px;
     display: flex;
     flex-direction: column;
     min-width: 0;
-    max-width: 100%;
+    width: 100%;
 }
 
 .split-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 18px;
+    padding: 10px 14px;
     border: 1px solid var(--border);
     border-radius: var(--radius) var(--radius) 0 0;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-primary);
     border-bottom: 2px solid var(--accent);
     letter-spacing: 0.5px;
     position: relative;
     z-index: 10;
-    gap: 13px;
+    gap: 10px;
+    min-width: 0;
 }
 
 .split-header.audio-header {
@@ -175,21 +156,24 @@
     background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-primary) 100%);
     border-radius: 0 0 var(--radius) var(--radius);
     max-height: 580px;
-    min-height: 400px;
+    min-height: 350px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* Compact Row Styles */
 .compact-row {
     display: grid;
-    grid-template-columns: 1.6fr 1fr 1fr 0.5fr;
+    grid-template-columns: minmax(110px, 1.8fr) minmax(65px, 1.1fr) minmax(55px, 0.9fr) 30px;
     align-items: center;
-    gap: 12px;
-    padding: 12px 18px;
+    gap: 8px;
+    padding: 9px 4px;
     border-bottom: 1px solid var(--border);
     cursor: pointer;
-    transition: background-color 0.2s ease, padding-left 0.2s ease;
+    transition: background-color 0.1s ease, padding-left 0.1s ease;
     position: relative;
     justify-items: start;
+    min-width: 0;
 }
 
 .compact-row:has(.custom-select-container.active) {
@@ -208,15 +192,15 @@
 
 .compact-row:hover {
     background: rgba(255, 255, 255, 0.03);
-    padding-left: 22px;
+    padding-left: 8px;
 }
 
 .compact-row:hover::before {
     width: 4px;
 }
-
 .compact-row.selected {
     background: rgba(238, 55, 0, 0.08);
+    padding-left: 8px;
 }
 
 .compact-row.selected::before {
@@ -242,42 +226,49 @@
 
 .compact-row .info-group {
     min-width: 0;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     align-items: flex-start;
+    overflow: hidden;
 }
 
 .compact-row .info-main {
     font-weight: 700;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-primary);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .compact-row .info-details {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
+    gap: 6px;
+    white-space: nowrap;
     flex-direction: row-reverse;
+    align-items: baseline;
 }
 
 .compact-row .info-sub {
-    color: var(--text-muted);
-    font-size: 11px;
+color: var(--text-muted);
+    font-size: 10.5px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     font-weight: 500;
     display: inline-flex;
     align-items: center;
+    white-space: nowrap;
 }
 
 .compact-row .size-sub {
-    font-weight: 400;
-    font-size: 15px;
+    font-weight: 500;
+    font-size: 13px;
     color: var(--text-muted);
 }
 
@@ -296,14 +287,10 @@
     font-size: 12px;
 }
 
-/* Responsive */
-@media (max-width: 900px) {
+/* Responsive: only switch to single column if the window is resized extremely narrow */
+@media (max-width: 680px) {
     .dual-grid {
-        flex-direction: column;
-    }
-
-    .split-col {
-        flex: 1 1 100%;
+        grid-template-columns: 1fr;
     }
 }
 

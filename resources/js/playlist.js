@@ -286,7 +286,7 @@ function buildPlaylistItemCmd(entry, index) {
     // fetched earlier at another bitrate would otherwise be skipped as "has
     // already been downloaded" and the new quality would never take effect.
     const explicitQuality = ['opus-best', 'opus-med', 'opus-low', 'm4a-best', 'm4a-low'].includes(aq);
-    if (explicitQuality) {
+    if (explicitQuality || audioOnly) {
         flags.push('--force-overwrites');
     } else {
         flags.push('--no-overwrites');
@@ -317,7 +317,7 @@ async function downloadPlaylistItems(indices) {
 
     // Check if user is trying to download video items with merging without FFmpeg
     const ffmpegOk = typeof isFfmpegAvailable === 'function' ? isFfmpegAvailable() : true;
-    const isAudioOnly = el.playlist && el.playlist.audioOnlyCheck ? el.playlist.audioOnlyCheck.checked : false;
+    const isAudioOnly = el.playlist && el.playlist.audioOnlyCheckbox ? el.playlist.audioOnlyCheckbox.checked : false;
     const vq = el.playlist && el.playlist.videoQualitySelect ? el.playlist.videoQualitySelect.value : 'best';
 
     if (!ffmpegOk && !isAudioOnly && vq !== 'best') {
@@ -424,7 +424,7 @@ async function downloadPlaylistItems(indices) {
                     } catch (e) {}
 
                     const logContent = logEl ? (logEl.textContent || '') : '';
-                    const isAlreadyDownloaded = /has already been downloaded|already in target format/i.test(logContent);
+                    const isAlreadyDownloaded = /has already been downloaded/i.test(logContent);
 
                     // Parse the final file path from the complete log
                     // (chunk-safe, and prefers the post-merge path).

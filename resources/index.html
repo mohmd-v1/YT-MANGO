@@ -22,7 +22,7 @@
   })();
   </script>
   <link rel="stylesheet" href="css/theme.css">
-  <link rel="stylesheet" href="css/titlebar.css">
+  <link rel="stylesheet" href="css/titlebar.css?v=20261118">
   <link rel="stylesheet" href="css/tabs.css">
 </head>
 
@@ -63,9 +63,21 @@
     <!-- Iframes will be dynamically inserted here -->
   </div>
 
+  <!-- Resize overlay (captures resize events over iframes) -->
+  <div id="resizeOverlay" class="resize-overlay">
+    <div class="resize-handle resize-n" data-dir="n"></div>
+    <div class="resize-handle resize-s" data-dir="s"></div>
+    <div class="resize-handle resize-e" data-dir="e"></div>
+    <div class="resize-handle resize-w" data-dir="w"></div>
+    <div class="resize-handle resize-ne" data-dir="ne"></div>
+    <div class="resize-handle resize-nw" data-dir="nw"></div>
+    <div class="resize-handle resize-se" data-dir="se"></div>
+    <div class="resize-handle resize-sw" data-dir="sw"></div>
+  </div>
+
   <script src="js/neutralino.js"></script>
   <script src="js/utils.js"></script>
-  <script src="js/tabs.js"></script>
+  <script src="js/tabs.js?v=20261118"></script>
 </body>
 
 </html>
