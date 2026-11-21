@@ -391,7 +391,12 @@ function renderAudioColumn(filtered, container = el.audioGridBody) {
     });
 
     sortedGroupKeys.forEach(gKey => {
-        const variants = groups[gKey].sort((a, b) => (b.tbr || 0) - (a.tbr || 0));
+        const variants = groups[gKey].sort((a, b) => {
+            const ao = ((a.format_note || '').toLowerCase().includes('original')) ? 0 : 1;
+            const bo = ((b.format_note || '').toLowerCase().includes('original')) ? 0 : 1;
+            if (ao !== bo) return ao - bo;
+            return (b.tbr || 0) - (a.tbr || 0);
+        });
 
         // Track selection for audio too
         if (!resolutionSelections[gKey]) {
@@ -475,16 +480,29 @@ function renderCompactRow(fmt, container, smartData = null) {
     let langSelectContainer = null;
     if ((isAudioOnly || isMixed) && smartData?.isMultiLang && Array.isArray(smartData.variants)) {
         const langMap = new Map();
+        const codeIsOriginal = new Map();
         smartData.variants.forEach(v => {
             const info = getLangInfo(v);
+            if ((v.format_note || '').toLowerCase().includes('original')) codeIsOriginal.set(info.code, true);
             if (!langMap.has(info.code)) langMap.set(info.code, info.name);
         });
+        const hasAnyOriginal = [...codeIsOriginal.values()].some(Boolean);
 
-        const langOptions = Array.from(langMap).map(([code, name]) => ({
-            value: code,
-            label: `[${code.toUpperCase()}]`,
-            full: `[${code.toUpperCase()}]${name ? ' ' + name : ''}`
-        }));
+        const langOptions = Array.from(langMap).map(([code, name]) => {
+            const dubbed = hasAnyOriginal && !codeIsOriginal.get(code);
+            return {
+                value: code,
+                label: `[${code.toUpperCase()}]`,
+                full: `[${code.toUpperCase()}]${name ? ' ' + name : ''}${dubbed ? ' (dubbed)' : ''}`
+            };
+        });
+        // Original tracks first
+        langOptions.sort((a, b) => {
+            const aDub = a.full.toLowerCase().includes('dubbed');
+            const bDub = b.full.toLowerCase().includes('dubbed');
+            if (aDub !== bDub) return aDub ? 1 : -1;
+            return a.value.localeCompare(b.value);
+        });
 
         const currentLang = getLangInfo(fmt).code;
 
@@ -690,6 +708,8 @@ function handleRowClick(fmt, rowElement, isMixedColumn = false) {
                     const isDRC = note.includes('drc') || fid.includes('drc');
 
                     let score = isDRC ? -100 : 0;
+                    // Prefer the original track over dubbed translations
+                    if (note.includes('original')) score += 100;
                     if (ac.includes('opus')) score += 10;
                     else if (ac.includes('mp4a')) score += 5;
 

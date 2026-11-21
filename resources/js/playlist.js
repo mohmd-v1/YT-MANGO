@@ -31,7 +31,9 @@ function renderPlaylistList() {
         const index = idx + 1;
         const title = entry.title || 'Unknown Title';
         if (filter && !title.toLowerCase().includes(filter)) return;
-        const thumb = entry.thumbnail || (entry.thumbnails && entry.thumbnails[0] && entry.thumbnails[0].url) || '';
+        const thumb = (typeof getOptimalThumbnail === 'function')
+            ? getOptimalThumbnail(entry, 320)
+            : (entry.thumbnail || (entry.thumbnails && entry.thumbnails[0] && entry.thumbnails[0].url) || '');
         const dur = (typeof getDurationSeconds === 'function' && getDurationSeconds(entry))
             ? (typeof formatDuration === 'function' ? formatDuration(getDurationSeconds(entry)) : '')
             : '';
@@ -119,7 +121,7 @@ async function fetchPlaylistLanguages(data) {
     const sel = el.playlist.audioLangSelect;
     if (!sel || !data || !data.entries || data.entries.length === 0) return;
 
-    sel.innerHTML = '<option value="auto">Lang: Original (auto)</option>';
+    sel.innerHTML = '<option value="auto">Lang: Original (default)</option>';
     const entry = data.entries[0];
     const url = entry.url || entry.webpage_url || entry.id;
     const jsRuntimeArg = settings && settings.jsRuntime && settings.jsRuntime !== 'none' ? `--js-runtimes ${escapeCmdArg(settings.jsRuntime)}` : '';
@@ -139,9 +141,11 @@ async function fetchPlaylistLanguages(data) {
         }
 
         const langs = new Map();
+        const hasOriginal = (info.formats || []).some(f => (f.format_note || '').toLowerCase().includes('original'));
         (info.formats || []).forEach(f => {
             const ac = f.acodec; const vc = f.vcodec;
             if (ac && ac !== 'none' && (vc === 'none' || !vc)) {
+                if (hasOriginal && !(f.format_note || '').toLowerCase().includes('original')) return;
                 const code = f.language;
                 if (code && !langs.has(code)) {
                     const name = f.format_note ? (f.format_note.split(',')[0].trim()) : code;
@@ -252,6 +256,9 @@ function buildPlaylistItemCmd(entry, index) {
     const cands = [];
     const addLang = (expr) => (lang !== 'auto') ? `${expr}[language=${lang}]` : null;
     for (const expr of chain) {
+        // Prefer the original (non-dubbed) track when the user hasn't
+        // explicitly chosen a language.
+        if (lang === 'auto') cands.push(`${expr}[format_note*=original]`);
         const l = addLang(expr);
         if (l) cands.push(l);
         cands.push(expr);

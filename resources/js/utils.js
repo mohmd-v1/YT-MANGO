@@ -265,28 +265,61 @@ function createCustomSelect(options, selectedValue, onChange, placeholder = 'Sel
     const selectedOption = safeOptions.find(o => o.value === selectedValue) || safeOptions[0];
 
     container.innerHTML = `
-        <div class="custom-select-trigger">
-            <span>${selectedOption ? selectedOption.label : placeholder}</span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px; opacity: 0.6; flex-shrink: 0;"><polyline points="6 9 12 15 18 9"></polyline></svg>
-        </div>
-        <div class="custom-options custom-scrollbar">
+        <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="trigger-label">${selectedOption ? selectedOption.label : placeholder}</span>
+            <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+        <div class="custom-options custom-scrollbar" role="listbox">
             ${safeOptions.map(o => `
-                <div class="custom-option ${o.value === selectedValue ? 'selected' : ''}" data-value="${o.value}">
-                    ${o.full !== undefined ? o.full : o.label}
+                <div class="custom-option ${o.value === selectedValue ? 'selected' : ''}" data-value="${o.value}" role="option" aria-selected="${o.value === selectedValue}">
+                    <span class="option-text">${o.full !== undefined ? o.full : o.label}</span>
+                    <svg class="check-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
                 </div>
             `).join('')}
         </div>
     `;
 
     const trigger = container.querySelector('.custom-select-trigger');
+    const optionsMenu = container.querySelector('.custom-options');
+
+    // Function to calculate smart popover position (flip up if near bottom edge)
+    const updatePosition = () => {
+        if (!container.classList.contains('active')) return;
+        const rect = container.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+
+        if (spaceBelow < 220 && spaceAbove > spaceBelow) {
+            container.classList.add('pop-up');
+        } else {
+            container.classList.remove('pop-up');
+        }
+    };
 
     if (trigger) {
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
+            const wasActive = container.classList.contains('active');
             document.querySelectorAll('.custom-select-container.active').forEach(s => {
-                if (s !== container) s.classList.remove('active');
+                if (s !== container) {
+                    s.classList.remove('active');
+                    const tr = s.querySelector('.custom-select-trigger');
+                    if (tr) tr.setAttribute('aria-expanded', 'false');
+                }
             });
-            container.classList.toggle('active');
+
+            if (!wasActive) {
+                container.classList.add('active');
+                trigger.setAttribute('aria-expanded', 'true');
+                updatePosition();
+            } else {
+                container.classList.remove('active');
+                trigger.setAttribute('aria-expanded', 'false');
+            }
         });
     }
 
@@ -295,6 +328,7 @@ function createCustomSelect(options, selectedValue, onChange, placeholder = 'Sel
             e.stopPropagation();
             const value = opt.dataset.value;
             container.classList.remove('active');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
             if (value !== selectedValue && typeof onChange === 'function') {
                 onChange(value);
             }
@@ -495,4 +529,71 @@ function formatBytes(bytes, decimals = 1) {
     const sizes = ['B', 'K', 'M', 'G', 'T'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
+
+// Extract optimal small/medium thumbnail for UI cards & background (fast, lightweight, strictly 16:9 widescreen)
+function getOptimalThumbnail(data, targetWidth = 320) {
+    if (!data) return '';
+    const thumbs = data.thumbnails;
+    if (Array.isArray(thumbs) && thumbs.length > 0) {
+        // 1. YouTube specific: mqdefault.jpg is explicitly 320x180 (16:9 widescreen, ~15KB tiny size, no black bars!)
+        const mqThumb = thumbs.find(t => t.url && (t.url.includes('/mqdefault.jpg') || t.url.includes('/mqdefault.webp')));
+        if (mqThumb && mqThumb.url) return mqThumb.url;
+
+        // 2. Filter 16:9 widescreen thumbnails (~1.77 ratio) and pick the smallest one around 240px - 400px
+        const sized = thumbs.filter(t => t && t.width && t.height && t.url);
+        const widescreen = sized.filter(t => {
+            const ratio = t.width / t.height;
+            return ratio >= 1.7 && ratio <= 1.85;
+        });
+
+        if (widescreen.length > 0) {
+            widescreen.sort((a, b) => a.width - b.width);
+            // Pick smallest that is >= targetWidth, or the first/smallest available
+            const match = widescreen.find(t => t.width >= targetWidth) || widescreen[0];
+            if (match && match.url) return match.url;
+        }
+
+        // 3. Fallback: pick any sized thumbnail between 200px and 480px
+        const medium = sized.filter(t => t.width >= 200 && t.width <= 480);
+        if (medium.length > 0) {
+            medium.sort((a, b) => a.width - b.width);
+            return medium[0].url;
+        }
+
+        if (sized.length > 0) {
+            sized.sort((a, b) => a.width - b.width);
+            return sized[0].url; // Pick the smallest one available!
+        }
+
+        if (thumbs[0] && thumbs[0].url) return thumbs[0].url;
+    }
+    return data.thumbnail || '';
+}
+
+// Extract highest resolution thumbnail available for full-size inspection & download
+function getHighestResThumbnail(data) {
+    if (!data) return { url: '', width: 0, height: 0, label: 'Standard' };
+    const thumbs = data.thumbnails;
+    if (Array.isArray(thumbs) && thumbs.length > 0) {
+        const sized = thumbs.filter(t => t && t.width && t.width > 0 && t.url);
+        if (sized.length > 0) {
+            sized.sort((a, b) => (b.width * (b.height || 1)) - (a.width * (a.height || 1)));
+            const best = sized[0];
+            const label = best.width >= 1920 ? '1080p FHD' : (best.width >= 1280 ? '720p HD' : `${best.width}p`);
+            return { url: best.url, width: best.width, height: best.height, label };
+        }
+
+        // Prefer maxresdefault or sddefault
+        const maxRes = thumbs.find(t => t.url && (t.url.includes('maxresdefault') || t.url.includes('sddefault')));
+        if (maxRes && maxRes.url) {
+            return { url: maxRes.url, width: 1280, height: 720, label: 'HD' };
+        }
+
+        const last = thumbs[thumbs.length - 1];
+        if (last && last.url) {
+            return { url: last.url, width: last.width || 0, height: last.height || 0, label: 'Max' };
+        }
+    }
+    return { url: data.thumbnail || '', width: 0, height: 0, label: 'Standard' };
 }

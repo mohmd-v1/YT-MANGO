@@ -205,16 +205,22 @@ async function analyzeUrl(isPlaylistFormatMode = false) {
             updateTabTitle(data.title);
         }
 
-        if (data.thumbnail && data.thumbnail !== 'N/A') {
-            el.videoThumbnail.src = data.thumbnail;
+        const optThumb = (typeof getOptimalThumbnail === 'function')
+            ? getOptimalThumbnail(data, 480)
+            : (data.thumbnail || '');
+
+        if (optThumb && optThumb !== 'N/A') {
+            el.videoThumbnail.src = optThumb;
             el.thumbnailWrapper.classList.remove('hidden');
             el.thumbnailWrapper.classList.remove('no-thumb');
             el.videoThumbnail.classList.remove('hidden');
-            updateDynamicBackground(data.thumbnail);
+            el.thumbnailWrapper.title = "Click to preview full-size thumbnail & download";
+            updateDynamicBackground(optThumb);
         } else {
             el.thumbnailWrapper.classList.remove('hidden');
             el.thumbnailWrapper.classList.add('no-thumb');
             el.videoThumbnail.classList.add('hidden');
+            el.thumbnailWrapper.title = "";
             updateDynamicBackground(null);
         }
 

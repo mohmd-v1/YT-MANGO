@@ -156,6 +156,98 @@ el.closeCommandBtn.addEventListener('click', () => {
     el.commandModal.classList.add('hidden');
 });
 
+// Image Viewer Modal Listeners
+if (el.thumbnailWrapper) {
+    el.thumbnailWrapper.addEventListener('click', () => {
+        if (!currentData || el.thumbnailWrapper.classList.contains('no-thumb')) return;
+        const best = (typeof getHighestResThumbnail === 'function')
+            ? getHighestResThumbnail(currentData)
+            : { url: currentData.thumbnail, label: 'HD' };
+
+        if (!best.url) return;
+
+        if (el.imageViewerImg) el.imageViewerImg.src = best.url;
+        if (el.imageViewerResBadge) el.imageViewerResBadge.textContent = best.label || 'HD';
+        if (el.imageViewerModal) el.imageViewerModal.classList.remove('hidden');
+    });
+}
+
+if (el.closeImageViewerBtn) {
+    el.closeImageViewerBtn.addEventListener('click', () => {
+        if (el.imageViewerModal) el.imageViewerModal.classList.add('hidden');
+    });
+}
+
+if (el.imageViewerModal) {
+    el.imageViewerModal.addEventListener('click', (e) => {
+        if (e.target === el.imageViewerModal) {
+            el.imageViewerModal.classList.add('hidden');
+        }
+    });
+}
+
+if (el.downloadThumbnailBtn) {
+    el.downloadThumbnailBtn.addEventListener('click', async () => {
+        if (!currentData) return;
+        const best = (typeof getHighestResThumbnail === 'function')
+            ? getHighestResThumbnail(currentData)
+            : { url: currentData.thumbnail };
+
+        if (!best.url) {
+            showAlert('No thumbnail image available to download.', 'Download Error');
+            return;
+        }
+
+        const safeTitle = (currentData.title || 'thumbnail').replace(/[\\/:*?"<>|]/g, '_').substring(0, 80);
+        let ext = 'jpg';
+        if (best.url.includes('.webp')) ext = 'webp';
+        else if (best.url.includes('.png')) ext = 'png';
+
+        const defaultFileName = `${safeTitle}_thumbnail.${ext}`;
+
+        try {
+            const savePath = await Neutralino.os.showSaveDialog('Save Thumbnail Image', {
+                defaultPath: defaultFileName,
+                filters: [
+                    { name: 'Image Files', extensions: [ext, 'jpg', 'png', 'webp'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            });
+
+            if (!savePath) return; // User cancelled
+
+            const origHtml = el.downloadThumbnailBtn.innerHTML;
+            el.downloadThumbnailBtn.disabled = true;
+            el.downloadThumbnailBtn.innerHTML = `Downloading...`;
+
+            // Download using powershell / curl safely
+            const cmd = window.NL_OS === 'Windows'
+                ? `powershell -Command "Invoke-WebRequest -Uri '${best.url}' -OutFile ${escapeCmdArg(savePath)}"`
+                : `curl -s -L -o ${escapeCmdArg(savePath)} "${best.url}"`;
+
+            const res = await Neutralino.os.execCommand(cmd);
+
+            el.downloadThumbnailBtn.disabled = false;
+            el.downloadThumbnailBtn.innerHTML = origHtml;
+
+            if (res.exitCode === 0) {
+                if (typeof showToast === 'function') {
+                    showToast('Thumbnail saved successfully!', 'success');
+                } else {
+                    showAlert('Thumbnail saved successfully!', 'Saved');
+                }
+            } else {
+                showAlert('Failed to download thumbnail: ' + (res.stdErr || 'Unknown error'), 'Error');
+            }
+        } catch (err) {
+            console.error('Save thumbnail error:', err);
+            if (el.downloadThumbnailBtn) {
+                el.downloadThumbnailBtn.disabled = false;
+            }
+        }
+    });
+}
+
 const openGithubBtn = document.getElementById('openGithubBtn');
 if (openGithubBtn) {
     openGithubBtn.addEventListener('click', () => {

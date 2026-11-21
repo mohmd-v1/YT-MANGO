@@ -65,43 +65,57 @@
     letter-spacing: 0.3px;
 }
 
-/* Custom Dropdown System */
+/* Modern Popover / Custom Dropdown System */
 .custom-select-container {
     position: relative;
-    display: inline-block;
-    min-width: 80px;
+    display: inline-flex;
+    min-width: 76px;
     max-width: 100%;
+    vertical-align: middle;
 }
 
 .custom-select-trigger {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: space-between;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: var(--text-primary);
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 11px;
+    padding: 5px 9px;
+    border-radius: 7px;
+    font-size: 11.5px;
     font-weight: 600;
+    font-family: inherit;
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     user-select: none;
     max-width: 100%;
-    overflow: hidden;
-    gap: 6px;
+    outline: none;
 }
 
-.custom-select-trigger span {
+.custom-select-trigger .trigger-label {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     min-width: 0;
     flex: 1 1 auto;
+    letter-spacing: 0.2px;
+}
+
+.custom-select-trigger .trigger-chevron {
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 .custom-select-trigger:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+.custom-select-trigger:hover .trigger-chevron {
+    opacity: 0.9;
 }
 
 .custom-select-container.active {
@@ -110,61 +124,99 @@
 
 .custom-select-container.active .custom-select-trigger {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(238, 55, 0, 0.15);
+    background: rgba(238, 55, 0, 0.08);
+    box-shadow: 0 0 0 2px rgba(238, 55, 0, 0.25);
 }
 
+.custom-select-container.active .trigger-chevron {
+    transform: rotate(180deg);
+    opacity: 1;
+    color: var(--accent);
+}
+
+/* Popover Floating Menu */
 .custom-options {
     position: absolute;
-    top: calc(100% + 5px);
+    top: calc(100% + 6px);
     left: 0;
-    right: 0;
-    background: #1a1a1a;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.8);
+    min-width: 130px;
+    max-width: 260px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 9px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
     z-index: 999999;
+    padding: 4px;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
-    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
-    max-height: 250px;
+    transform: translateY(-8px) scale(0.97);
+    transform-origin: top left;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0.18s ease;
+    max-height: 220px;
     overflow-y: auto;
-    min-width: 140px;
+}
+
+/* Pop-up Mode (When near screen bottom) */
+.custom-select-container.pop-up .custom-options {
+    top: auto;
+    bottom: calc(100% + 6px);
+    transform: translateY(8px) scale(0.97);
+    transform-origin: bottom left;
 }
 
 .custom-select-container.active .custom-options {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
 }
 
 .custom-option {
-    padding: 8px 12px;
-    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 11.5px;
+    font-weight: 500;
     color: var(--text-secondary);
+    border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: anywhere;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+    user-select: none;
+}
+
+.custom-option .option-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.custom-option .check-icon {
+    flex-shrink: 0;
+    opacity: 0;
+    color: var(--accent);
+    transform: scale(0.7);
+    transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 .custom-option:hover {
-    background: var(--bg-hover);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
-    padding-left: 15px;
 }
 
 .custom-option.selected {
-    background: rgba(238, 55, 0, 0.1);
+    background: rgba(238, 55, 0, 0.12);
     color: var(--accent);
     font-weight: 700;
 }
 
-.custom-option.selected::after {
-    content: '✓';
-    float: right;
-    font-size: 10px;
+.custom-option.selected .check-icon {
+    opacity: 1;
+    transform: scale(1);
 }
 
 /* Language selects carry long names in their option rows:
@@ -396,14 +448,20 @@
 }
 
 [data-theme="light"] .custom-select-trigger {
-    background: #ffffff;
-    border: 1.5px solid #94a3b8;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
     color: #0f172a;
+}
+
+[data-theme="light"] .custom-select-trigger:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
 }
 
 [data-theme="light"] .custom-select-container.active .custom-select-trigger {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(238, 55, 0, 0.1);
+    background: rgba(238, 55, 0, 0.05);
+    box-shadow: 0 0 0 2px rgba(238, 55, 0, 0.2);
 }
 
 [data-theme="light"] .custom-option {
@@ -412,6 +470,7 @@
 
 [data-theme="light"] .custom-option:hover {
     background: #f1f5f9;
+    color: #0f172a;
 }
 
 [data-theme="light"] .custom-option.selected {
@@ -420,9 +479,9 @@
 }
 
 [data-theme="light"] .custom-select-container .custom-options {
-    background: #ffffff;
-    border: 1px solid #94a3b8;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="light"] .secondary-btn {

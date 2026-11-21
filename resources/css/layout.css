@@ -129,8 +129,33 @@ body:has(#contentArea:not(.hidden)) .main-content {
     display: inline-block;
     flex-shrink: 0;
     height: 134px;
+    aspect-ratio: 16 / 9;
+    width: 238px;
+    overflow: hidden;
     /*border-radius: var(--radius-sm);*/
     -webkit-mask: linear-gradient(90deg, #000000 89%, #00000000 99%) right;
+    cursor: pointer;
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.thumbnail-wrapper:hover {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+}
+
+.thumbnail-wrapper::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: calc(var(--radius-sm) - 2px);
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.2);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.thumbnail-wrapper:hover::after {
+    opacity: 1;
 }
 
 .thumbnail-wrapper.no-thumb {
